@@ -1,3 +1,4 @@
 @openzeppelin/=node_modules/@openzeppelin/
+@uniswap/=node_modules/@uniswap/
 ds-test/=lib/ds-test/src/
 alchemist/=node_modules/alchemist/
