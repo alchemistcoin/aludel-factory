@@ -3,4 +3,5 @@
 ds-test/=lib/ds-test/src/
 ds-auth/=lib/ds-auth/src/
 ds-math/=lib/ds-math/src/
+solmate/=lib/solmate/src/
 alchemist/=node_modules/alchemist/
