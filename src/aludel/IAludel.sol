@@ -67,12 +67,7 @@ interface IAludel is IRageQuit {
     function initializeLock() external;
 
     function initialize(
-        address ownerAddress,
-        address rewardPoolFactory,
-        address powerSwitchFactory,
-        address stakingToken,
-        address rewardToken,
-        RewardScaling memory rewardScaling
+        bytes calldata
     ) external;
 
     /* user functions */
