@@ -2,7 +2,8 @@
 pragma solidity ^0.8.6;
 
 import "ds-test/test.sol";
-import "ds-token/token.sol";
+// import "ds-token/token.sol";
+import "solmate/tokens/ERC20.sol";
 
 import "./AludelFactory.sol";
 import "./aludel/Aludel.sol";
@@ -15,6 +16,16 @@ contract User {
 
 }
 
+contract RewardToken is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol, 18) {
+    }
+}
+contract StakingToken is ERC20 {
+    constructor(string memory name, string memory symbol) ERC20(name, symbol, 18) {
+    }
+
+}
+
 contract AludelFactoryTest is DSTest {
     AludelFactory factory;
     User user;
@@ -23,6 +34,15 @@ contract AludelFactoryTest is DSTest {
         uint256 floor;
         uint256 ceiling;
         uint256 time;
+    }
+
+    struct AludelInitializationParams {
+        address ownerAddress;
+        address rewardPoolFactory;
+        address powerSwitchFactory;
+        address stakingToken;
+        address rewardToken;
+        RewardScaling rewardScaling;
     }
 
     function setUp() public {
@@ -38,34 +58,29 @@ contract AludelFactoryTest is DSTest {
         Aludel aludel = new Aludel();
         RewardPoolFactory rewardPoolFactory = new RewardPoolFactory();
         PowerSwitchFactory powerSwitchFactory = new PowerSwitchFactory();
-        DSToken token = new DSToken("TST");
-        DSToken rewardToken = new DSToken("RWD");
-    // struct RewardScaling {
-    //     uint256 floor;
-    //     uint256 ceiling;
-    //     uint256 time;
-    // }
+        ERC20 stakingToken = new StakingToken("", "TST");
+        ERC20 rewardToken = new RewardToken("", "RWD");
 
         RewardScaling memory rewardScaling = RewardScaling({
             floor: 1 ether,
             ceiling: 10 ether,
             time: 1 days
-        }); 
+        });
+
+        AludelInitializationParams memory params = AludelInitializationParams({
+            ownerAddress: address(user),
+            rewardPoolFactory: address(rewardPoolFactory),
+            powerSwitchFactory: address(powerSwitchFactory),
+            stakingToken: address(stakingToken),
+            rewardToken: address(rewardToken),
+            rewardScaling: rewardScaling
+        });
+
         factory.addTemplate(address(aludel));
-        // address ownerAddress,
-        // address rewardPoolFactory,
-        // address powerSwitchFactory,
-        // address stakingToken,
-        // address rewardToken,
-        // RewardScaling memory rewardScaling
+        
         factory.launch(
-            0, 
-            address(user),
-            address(rewardPoolFactory),
-            address(powerSwitchFactory),
-            address(token),
-            address(rewardToken),
-            rewardScaling
+            0,
+            abi.encode(params)
         );
     }
 }
