@@ -18,7 +18,7 @@ contract AludelFactory is Ownable {
     /// @param templateId the number of the template to launch
     /// @param data the calldata to use on the new aludel initialization
     /// @return aludel the new aludel address.
-	function launch(uint256 templateId, bytes calldata data) public returns (address aludel) {
+	function launch(uint256 templateId, bytes calldata data) external returns (address aludel) {
         // get the aludel template address
 		address template = _templates[templateId];
 
