@@ -6,6 +6,9 @@ import "ds-token/token.sol";
 
 import "./AludelFactory.sol";
 import "./aludel/Aludel.sol";
+import "./aludel/IAludel.sol";
+import "./aludel/RewardPoolFactory.sol";
+import "./aludel/PowerSwitchFactory.sol";
 
 contract User {
     constructor() {}
@@ -15,6 +18,13 @@ contract User {
 contract AludelFactoryTest is DSTest {
     AludelFactory factory;
     User user;
+
+    struct RewardScaling {
+        uint256 floor;
+        uint256 ceiling;
+        uint256 time;
+    }
+
     function setUp() public {
         factory = new AludelFactory();
         user = new User();
