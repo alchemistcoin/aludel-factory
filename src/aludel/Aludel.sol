@@ -67,6 +67,15 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
     EnumerableSet.AddressSet internal _bonusTokenSet;
     EnumerableSet.AddressSet internal _vaultFactorySet;
 
+    struct AludelInitializationParams {
+        address ownerAddress;
+        address rewardPoolFactory;
+        address powerSwitchFactory;
+        address stakingToken;
+        address rewardToken;
+        RewardScaling rewardScaling;
+    }
+
     /* initializer */
 
 
@@ -78,42 +87,34 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
     /// state machine: can only be called once
     /// state scope: set initialization variables
     /// token transfer: none
-    /// @param ownerAddress address The admin address
-    /// @param rewardPoolFactory address The factory to use for deploying the RewardPool
-    /// @param powerSwitchFactory address The factory to use for deploying the PowerSwitch
-    /// @param stakingToken address The address of the staking token for this Aludel
-    /// @param rewardToken address The address of the reward token for this Aludel
-    /// @param rewardScaling RewardScaling The config for reward scaling floor, ceiling, and time
-    function initialize(
-        address ownerAddress,
-        address rewardPoolFactory,
-        address powerSwitchFactory,
-        address stakingToken,
-        address rewardToken,
-        RewardScaling memory rewardScaling
-    ) external override initializer {
+    function initialize(bytes calldata data) external override initializer {
+
+        (AludelInitializationParams memory params) = abi.decode(
+            data, (AludelInitializationParams)
+        );
+
         // the scaling floor must be smaller than ceiling
-        require(rewardScaling.floor <= rewardScaling.ceiling, "Aludel: floor above ceiling");
+        require(params.rewardScaling.floor <= params.rewardScaling.ceiling, "Aludel: floor above ceiling");
 
         // setting rewardScalingTime to 0 would cause divide by zero error
         // to disable reward scaling, use rewardScalingFloor == rewardScalingCeiling
-        require(rewardScaling.time != 0, "Aludel: scaling time cannot be zero");
+        require(params.rewardScaling.time != 0, "Aludel: scaling time cannot be zero");
 
         // deploy power switch
-        address powerSwitch = IFactory(powerSwitchFactory).create(abi.encode(ownerAddress));
+        address powerSwitch = IFactory(params.powerSwitchFactory).create(abi.encode(params.ownerAddress));
 
-        // deploy reward pool
-        address rewardPool = IFactory(rewardPoolFactory).create(abi.encode(powerSwitch));
+        // // deploy reward pool
+        address rewardPool = IFactory(params.rewardPoolFactory).create(abi.encode(powerSwitch));
 
-        // set internal configs
-        Ownable.transferOwnership(ownerAddress);
+        // // set internal configs
+        _transferOwnership(params.ownerAddress);
         Powered._setPowerSwitch(powerSwitch);
 
         // commit to storage
-        _aludel.stakingToken = stakingToken;
-        _aludel.rewardToken = rewardToken;
+        _aludel.stakingToken = params.stakingToken;
+        _aludel.rewardToken = params.rewardToken;
         _aludel.rewardPool = rewardPool;
-        _aludel.rewardScaling = rewardScaling;
+        _aludel.rewardScaling = params.rewardScaling;
 
         // emit event
         emit AludelCreated(rewardPool, powerSwitch);
