@@ -8,6 +8,7 @@ export const ETHER = (amount: number = 1) => parseEther(amount.toString());
 export const DAYS = (days: number = 1) => days * 60 * 60 * 24;
 
 task("launch-program")
+  .addParam('aludelId', '')
   .addParam("aludelFactory", "address of the aludel factory")
   .addParam("owner", "address of the aludel's owner")
   .addParam("rewardPool", "address of the reward pool factory")
@@ -68,6 +69,6 @@ task("launch-program")
     );
 
     // deploy minimal proxy using `params` as init params
-    await (await factory.launch(0, params)).wait();
+    await (await factory.launch(args.aludelId, params)).wait();
 
   });
