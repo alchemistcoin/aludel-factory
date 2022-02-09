@@ -1,1 +1,2 @@
 export DAPP_REMAPPINGS=$(cat remappings.txt)
+export DAPP_SRC=src
