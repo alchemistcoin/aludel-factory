@@ -53,10 +53,11 @@ describe("Aludel factory", function () {
 
     const params = new AbiCoder().encode(
       ['address', 'address', 'address', 'address', 'address', 'uint256', 'uint256', 'uint256'],
-        [admin.address,
+      [
+        admin.address,
         rewardPoolFactory.address, powerSwitchFactory.address,
         stakingToken.address, rewardToken.address,
-        parseEther('1'), parseEther('10'), 24*60*60
+        1, 10, DAYS(1)
       ]
     )
 
@@ -67,7 +68,10 @@ describe("Aludel factory", function () {
 
     await aludel.fund(ETHER(1), DAYS(1))
 		
-    const crucibleFactory = await ethers.getContractAt("IFactory", "0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56")
+    const crucibleFactory = await ethers.getContractAt(
+      "IFactory",
+      "0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56"
+    )
     // console.log(await (await ethers.getContractAt('InstanceRegistry', "0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56")).instanceCount())
     await crucibleFactory.connect(admin).create('0x')
     const crucibleAddress = await crucibleFactory.connect(admin).callStatic.create('0x')
@@ -91,10 +95,6 @@ describe("Aludel factory", function () {
         0
       )
     )
-    
 
-
-    // expect(await greeter.greet()).to.equal("Hello, world!");
-    // expect(await greeter.greet()).to.equal("Hola, mundo!");
   });
 });
