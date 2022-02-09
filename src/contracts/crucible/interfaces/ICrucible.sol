@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
 
-interface ICrucible {
+import {IUniversalVault } from "./IUniversalVault.sol";
+
+interface ICrucible is IUniversalVault {
 
     /* initialize function */
 
