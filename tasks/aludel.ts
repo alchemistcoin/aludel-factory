@@ -7,21 +7,8 @@ import { parseEther } from "@ethersproject/units";
 export const ETHER = (amount: number = 1) => parseEther(amount.toString());
 export const DAYS = (days: number = 1) => days * 60 * 60 * 24;
 
-/*
-yarn hardhat launch-program \
-  --alude-factory 
-  --owner
-  --rewardPool 0xf016fa84d5f3a252409a63b5cb89b555a0d27ccf
-  --powerSwitch 0x89d2d92eace71977dd0b159062f8ec90ea64fc24
-  --stakingToken 0xCD6bcca48069f8588780dFA274960F15685aEe0e
-  --rewardToken 0x88ACDd2a6425c3FaAE4Bc9650Fd7E27e0Bebb7aB
-  --rewardScalingFloor 1
-  --rewardScalingCeiling 10
-  --rewardScalingTime 1
-*/
-
 task("launch-program")
-  .addParam("aludel-factory", "address of the aludel factory")
+  .addParam("aludelFactory", "address of the aludel factory")
   .addParam("owner", "address of the aludel's owner")
   .addParam("rewardPool", "address of the reward pool factory")
   .addParam("powerSwitch", "address of the power switch factory")
@@ -50,14 +37,13 @@ task("launch-program")
     console.log("  at", signer.address);
     console.log("  ETH", formatEther(await signer.getBalance()));
 
-    // deploy contracts
-    const mintFee = parseEther(args.fee);
-
+    // get factory instance
     const factory = await ethers.getContractAt(
       "AludelFactory",
       args.aludelFactory
     );
-
+    
+    // encode init params
     const params = new AbiCoder().encode(
       [
         "address",
@@ -81,6 +67,7 @@ task("launch-program")
       ]
     );
 
+    // deploy minimal proxy using `params` as init params
     await (await factory.launch(0, params)).wait();
 
   });
