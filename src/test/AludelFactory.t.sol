@@ -4,18 +4,16 @@ pragma solidity ^0.8.6;
 import 'ds-test/test.sol';
 import 'solmate/tokens/ERC20.sol';
 
-import './AludelFactory.sol';
-import './aludel/Aludel.sol';
-import { IAludel } from './aludel/IAludel.sol';
-import './aludel/RewardPoolFactory.sol';
-import './aludel/PowerSwitchFactory.sol';
-import { IFactory } from './factory/IFactory.sol';
-
-import {EIP712 } from "./EIP712.sol";
+import '../contracts/AludelFactory.sol';
+import '../contracts/aludel/Aludel.sol';
+import { IAludel } from '../contracts/aludel/IAludel.sol';
+import '../contracts/aludel/RewardPoolFactory.sol';
+import '../contracts/aludel/PowerSwitchFactory.sol';
+import { IFactory } from '../contracts/factory/IFactory.sol';
 
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-contract User is DSTest, ERC721Holder, EIP712 {
+contract User is DSTest, ERC721Holder {
 
 	constructor() {}
 
@@ -101,7 +99,7 @@ contract AludelFactoryTest is DSTest {
 
 		Token(data.stakingToken).mint(address(user), 1 ether);
         user.setupAludel(aludel);
-		address crucible = user.mintCrucible(aludel);
-        user.stake(aludel, crucible, 0);
+		// address crucible = user.mintCrucible(aludel);
+        // user.stake(aludel, crucible, 0);
 	}
 }
