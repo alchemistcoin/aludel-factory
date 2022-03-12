@@ -4,9 +4,11 @@ pragma solidity ^0.8.6;
 import { ProxyFactory } from './factory/ProxyFactory.sol';
 import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 import { IAludel } from './aludel/IAludel.sol';
+import { InstanceRegistry } from "./factory/InstanceRegistry.sol";
 
-contract AludelFactory is Ownable {
+contract AludelFactory is Ownable, InstanceRegistry {
     /// @notice array of template addresses
+	/// todo : do we want to have any kind of control over this array? 
 	address[] private _templates;
 
     /// @dev event emitted every time a new aludel is spawned
@@ -29,6 +31,7 @@ contract AludelFactory is Ownable {
         );
 
 		// emit event
+		// todo : maybe we can relay on the aludel's AludelCreated.
 		emit AludelSpawned(aludel);
 
 		// explicit return
@@ -39,10 +42,11 @@ contract AludelFactory is Ownable {
 		// do we need any checks here?
         require(template != address(0), "invalid template");
 
-		// add template to the list
+		// add template to the array of templates addresses
 		_templates.push(template);
 
-        // bleep?
+        // register instance
+		_register(template);
 	}
 
 	function getTemplate(uint256 templateId) public view returns (address) {
