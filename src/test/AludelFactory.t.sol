@@ -13,6 +13,8 @@ import { IFactory } from '../contracts/factory/IFactory.sol';
 
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
+import {CheatCodes} from './interfaces/CheatCodes.sol';
+
 contract User is DSTest, ERC721Holder {
 
 	constructor() {}
@@ -51,6 +53,7 @@ contract Token is ERC20 {
 contract AludelFactoryTest is DSTest {
 	AludelFactory factory;
 	User user;
+    CheatCodes cheats;
 
 	struct RewardScaling {
 		uint256 floor;
@@ -68,6 +71,9 @@ contract AludelFactoryTest is DSTest {
 	}
 
 	function setUp() public {
+
+        cheats = CheatCodes(HEVM_ADDRESS);
+
 		factory = new AludelFactory();
 		user = new User();
 	}
