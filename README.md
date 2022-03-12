@@ -15,7 +15,7 @@ dapp.tools tests
 dapp test
 ```
 
-Hardhat tests require a node forking mainnet, you can configure this using the `.env` file
+These hardhat tests require a node forking mainnet, you can configure this using the `.env` file
 ```
 yarn hardhat test
 ```
