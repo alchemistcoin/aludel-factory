@@ -50,6 +50,7 @@ contract AludelFactoryTest is DSTest {
 		factory = new AludelFactory();
 
 		Aludel template = new Aludel();
+		template.initializeLock();
 		RewardPoolFactory rewardPoolFactory = new RewardPoolFactory();
 		PowerSwitchFactory powerSwitchFactory = new PowerSwitchFactory();
 		// Crucible crucibleTemplate = new Crucible();
