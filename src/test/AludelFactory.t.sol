@@ -14,33 +14,17 @@ import {ICrucible} from '../contracts/crucible/interfaces/ICrucible.sol';
 // import {CrucibleFactory } from '../contracts/crucible/CrucibleFactory.sol';
 // import {Crucible } from '../contracts/crucible/Crucible.sol';
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-
+import {MockERC20} from './mocks/MockERC20.sol';
 import {CheatCodes} from './interfaces/CheatCodes.sol';
-
-contract User is DSTest, ERC721Holder {
-
-	constructor() {}
-
-}
-
-contract Token is ERC20 {
-	constructor(string memory name, string memory symbol) ERC20(name, symbol, 18) {}
-
-	function mint(address to, uint256 amount) public {
-		_mint(to, amount);
-	}
-}
 
 contract AludelFactoryTest is DSTest {
 
 	AludelFactory factory;
-	User user;
     CheatCodes cheats;
 	IAludel aludel;
 
-
-	ERC20 stakingToken;
-	ERC20 rewardToken;
+	MockERC20 stakingToken;
+	MockERC20 rewardToken;
 	address owner;
 	address crucible;
 
@@ -72,8 +56,8 @@ contract AludelFactoryTest is DSTest {
 		// crucibleTemplate.initializeLock();
 		// CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
 		IFactory crucibleFactory = IFactory(address(0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56));
-		stakingToken = new Token('', 'STK');
-		rewardToken = new Token('', 'RWD');
+		stakingToken = new MockERC20('', 'STK');
+		rewardToken = new MockERC20('', 'RWD');
 
 		RewardScaling memory rewardScaling = RewardScaling({ floor: 1 ether, ceiling: 10 ether, time: 1 days });
 
@@ -92,23 +76,23 @@ contract AludelFactoryTest is DSTest {
 
 		aludel = IAludel(factory.launch(0, abi.encode(params)));
 		IAludel.AludelData memory data = aludel.getAludelData();
-		Token(data.rewardToken).mint(address(this), 1 ether);
-		Token(data.rewardToken).approve(address(aludel), 1 ether);
+		MockERC20(data.rewardToken).mint(address(this), 1 ether);
+		MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
 		aludel.fund(1 ether, 1 days);
 		aludel.registerVaultFactory(address(crucibleFactory));
 
-		Token(data.stakingToken).mint(owner, 1 ether);
+		MockERC20(data.stakingToken).mint(owner, 1 ether);
 		cheats.prank(owner);
 		crucible = crucibleFactory.create('');
-		Token(data.stakingToken).mint(crucible, 1 ether);
+		MockERC20(data.stakingToken).mint(crucible, 1 ether);
 
 	}
 
 	function test_stake() public {
 
-		bytes memory permission = stakePermission(
+		bytes memory permission = getPermission(
 			PRIVATE_KEY,
-			'Lock'
+			'Lock',
 			crucible,
 			address(aludel),
 			address(stakingToken),
@@ -120,16 +104,27 @@ contract AludelFactoryTest is DSTest {
 
 	function test_unstake() public {
 
-		bytes memory permission = stakePermission(
+		bytes memory lockPermission = getPermission(
 			PRIVATE_KEY,
-			'Lock'
+			'Lock',
 			crucible,
 			address(aludel),
 			address(stakingToken),
 			1 ether
 		);
 		cheats.prank(owner);
-		aludel.stake(crucible, 1 ether, permission);
+		aludel.stake(crucible, 1 ether, lockPermission);
+		bytes memory unlockPermission = getPermission(
+			PRIVATE_KEY,
+			'Unlock',
+			crucible,
+			address(aludel),
+			address(stakingToken),
+			1 ether
+		);
+		cheats.prank(owner);
+		aludel.unstakeAndClaim(crucible, 1 ether, unlockPermission);
+
 	}
 
 
@@ -157,7 +152,7 @@ contract AludelFactoryTest is DSTest {
 			crucible
 		));
 		bytes32 structHash = keccak256(abi.encode(
-			keccak256("Lock(address delegate,address token,uint256 amount,uint256 nonce)"),
+			keccak256(abi.encodePacked(method, "(address delegate,address token,uint256 amount,uint256 nonce)")),
 			address(delegate),
 			address(token),
 			amount,
