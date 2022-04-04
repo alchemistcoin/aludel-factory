@@ -45,7 +45,7 @@ contract AludelTimedLockTest is DSTest {
 		// Crucible crucibleTemplate = new Crucible();
 		// crucibleTemplate.initializeLock();
 		// CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
-		IFactory crucibleFactory = IFactory(address(0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56));
+		IFactory crucibleFactory = IFactory(CRUCIBLE_FACTORY);
 		stakingToken = new MockERC20('', 'STK');
 		rewardToken = new MockERC20('', 'RWD');
 
@@ -62,7 +62,7 @@ contract AludelTimedLockTest is DSTest {
 			stakingToken: address(stakingToken),
 			rewardToken: address(rewardToken),
 			rewardScaling: rewardScaling,
-			minimumLockTime: 0.5 days
+			minimumLockTime: 1 days
 		});
 
 		owner = cheats.addr(PRIVATE_KEY);
@@ -98,7 +98,10 @@ contract AludelTimedLockTest is DSTest {
 		aludel.stake(crucible, 1 ether, permission);
 	}
 
-	function test_unstake2() public {
+	function testFail_unstake_notEnoughDuration(uint256 stakeDuration) public {
+
+		cheats.assume(stakeDuration < 1 days);
+
 		bytes memory lockPermission = getPermission(
 			PRIVATE_KEY,
 			'Lock',
@@ -110,7 +113,7 @@ contract AludelTimedLockTest is DSTest {
 		cheats.prank(owner);
 		aludel.stake(crucible, 1 ether, lockPermission);
 		
-		cheats.warp(block.timestamp + 2 days);
+		cheats.warp(block.timestamp + stakeDuration);
 		
 		bytes memory unlockPermission = getPermission(
 			PRIVATE_KEY,
@@ -124,6 +127,34 @@ contract AludelTimedLockTest is DSTest {
 		aludel.unstakeAndClaim(crucible, 1 ether, unlockPermission);
 	}
 
+	function test_unstake(uint64 stakeDuration) public {
+
+		cheats.assume(stakeDuration >= 1 days);
+
+		bytes memory lockPermission = getPermission(
+			PRIVATE_KEY,
+			'Lock',
+			crucible,
+			address(aludel),
+			address(stakingToken),
+			1 ether
+		);
+		cheats.prank(owner);
+		aludel.stake(crucible, 1 ether, lockPermission);
+		
+		cheats.warp(block.timestamp + stakeDuration);
+		
+		bytes memory unlockPermission = getPermission(
+			PRIVATE_KEY,
+			'Unlock',
+			crucible,
+			address(aludel),
+			address(stakingToken),
+			1 ether
+		);
+		cheats.prank(owner);
+		aludel.unstakeAndClaim(crucible, 1 ether, unlockPermission);
+	}
 
 	function getPermission(
 		uint256 privateKey,

@@ -78,7 +78,8 @@ contract AludelTimedLock is IAludelTimedLock, Powered, Ownable, Initializable {
     error NoAmountUnstaked();
     error InsufficientVaultStake();
     error NoStakes();
-
+    error LockedStake();
+    
     /* storage */
 
     AludelData internal _aludel;
@@ -463,7 +464,7 @@ contract AludelTimedLock is IAludelTimedLock, Powered, Ownable, Initializable {
 
             // revert when stake duration is smaller than minimum lock time.
             // todo : expand 
-            if (stakeDuration < minimumLockTime) revert();
+            if (stakeDuration < minimumLockTime) revert LockedStake();
 
             uint256 currentAmount;
             if (lastStake.amount > unstakeAmount) {
