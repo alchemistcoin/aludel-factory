@@ -28,6 +28,8 @@ contract AludelFactoryTest is DSTest {
 	address owner;
 	address crucible;
 
+	address public constant CRUCIBLE_FACTORY = 0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56;
+
 	uint248 public constant PRIVATE_KEY = type(uint248).max >> 7;
 
 	struct RewardScaling {
