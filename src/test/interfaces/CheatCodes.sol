@@ -55,4 +55,6 @@ interface CheatCodes {
     function getCode(string calldata) external returns (bytes memory);
     // Label an address in test traces
     function label(address addr, string memory label) external;
+    // When fuzzing, generate new inputs if conditional not met
+    function assume(bool) external;
 }
