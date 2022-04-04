@@ -17,11 +17,17 @@ library FIFO {
         mapping(uint256 => StakeData) values;
     }
 
+    /// @notice push an item into the queue
+    /// @param queue queue internal state
+    /// @param stake the stake data to push into the queue
     function push(StakesQueue storage queue, StakeData memory stake) public {
         queue.last += 1;
         queue.values[queue.last] = stake;
     }
 
+    /// @notice remove the first element of the queue
+    /// @param queue queue internal state
+    /// @return stake the queue's first element
     function pop(StakesQueue storage queue) public returns (StakeData memory stake) {
         stake = queue.values[queue.first];
         delete queue.values[queue.first];
@@ -29,14 +35,25 @@ library FIFO {
         return stake;
     }
 
+    /// @notice returns the queue's length
+    /// @param queue queue internal state
     function length(StakesQueue storage queue) public view returns (uint256) {
         return queue.last - queue.first;
     }
 
+    /// @notice returns the queue's n-th element 
+    /// @dev `index` must be strictly less than the queue's length.
+    /// @param queue queue internal state
+    /// @param index number of the position to return
     function at(StakesQueue storage queue, uint256 index) public view returns (StakeData memory) {
         return queue.values[queue.first + index];
     }
 
+    /// @notice update stake's amount of the given index
+    /// @dev `index` must be strictly less than the queue's length.
+    /// @param queue queue internal state
+    /// @param index number of the position to modify
+    /// @param amount number of the new stake's value.
     function update(StakesQueue storage queue, uint256 index, uint256 amount) public {
         queue.values[queue.first + index].amount = amount;
     }
