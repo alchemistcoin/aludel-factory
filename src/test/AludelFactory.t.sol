@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.13;
 
 import 'ds-test/test.sol';
 import 'solmate/tokens/ERC20.sol';
@@ -10,7 +10,9 @@ import { IAludel } from '../contracts/aludel/IAludel.sol';
 import '../contracts/aludel/RewardPoolFactory.sol';
 import '../contracts/aludel/PowerSwitchFactory.sol';
 import { IFactory } from '../contracts/factory/IFactory.sol';
-
+import {ICrucible} from '../contracts/crucible/interfaces/ICrucible.sol';
+// import {CrucibleFactory } from '../contracts/crucible/CrucibleFactory.sol';
+// import {Crucible } from '../contracts/crucible/Crucible.sol';
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 import {CheatCodes} from './interfaces/CheatCodes.sol';
@@ -19,27 +21,6 @@ contract User is DSTest, ERC721Holder {
 
 	constructor() {}
 
-	function setupAludel(IAludel aludel) public {
-		IFactory factory = IFactory(0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56);
-		aludel.registerVaultFactory(address(factory));
-	}
-
-	function mintCrucible(IAludel aludel) public returns(address) {
-		IFactory factory = IFactory(0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56);
-		address crucible = factory.create('');
-		emit log_named_address('Crucible: ', crucible);
-        return crucible;
-	}
-
-    function stake(IAludel aludel, address crucible, uint256 nonce) public {
-    }
-
-	function fundAludel(IAludel aludel) public {
-		IAludel.AludelData memory data = aludel.getAludelData();
-		Token(data.rewardToken).mint(address(this), 1 ether);
-		Token(data.rewardToken).approve(address(aludel), 1 ether);
-		aludel.fund(1 ether, 1 days);
-	}
 }
 
 contract Token is ERC20 {
@@ -51,9 +32,19 @@ contract Token is ERC20 {
 }
 
 contract AludelFactoryTest is DSTest {
+
 	AludelFactory factory;
 	User user;
     CheatCodes cheats;
+	IAludel aludel;
+
+
+	ERC20 stakingToken;
+	ERC20 rewardToken;
+	address owner;
+	address crucible;
+
+	uint248 public constant PRIVATE_KEY = type(uint248).max >> 7;
 
 	struct RewardScaling {
 		uint256 floor;
@@ -71,24 +62,23 @@ contract AludelFactoryTest is DSTest {
 	}
 
 	function setUp() public {
-
-        cheats = CheatCodes(HEVM_ADDRESS);
-
+		cheats = CheatCodes(HEVM_ADDRESS);
 		factory = new AludelFactory();
-		user = new User();
-	}
 
-	function test_full() public {
 		Aludel template = new Aludel();
 		RewardPoolFactory rewardPoolFactory = new RewardPoolFactory();
 		PowerSwitchFactory powerSwitchFactory = new PowerSwitchFactory();
-		ERC20 stakingToken = new Token('', 'TST');
-		ERC20 rewardToken = new Token('', 'RWD');
+		// Crucible crucibleTemplate = new Crucible();
+		// crucibleTemplate.initializeLock();
+		// CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
+		IFactory crucibleFactory = IFactory(address(0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56));
+		stakingToken = new Token('', 'STK');
+		rewardToken = new Token('', 'RWD');
 
 		RewardScaling memory rewardScaling = RewardScaling({ floor: 1 ether, ceiling: 10 ether, time: 1 days });
 
 		AludelInitializationParams memory params = AludelInitializationParams({
-			ownerAddress: address(user),
+			ownerAddress: address(this),
 			rewardPoolFactory: address(rewardPoolFactory),
 			powerSwitchFactory: address(powerSwitchFactory),
 			stakingToken: address(stakingToken),
@@ -96,16 +86,104 @@ contract AludelFactoryTest is DSTest {
 			rewardScaling: rewardScaling
 		});
 
+		owner = cheats.addr(PRIVATE_KEY);
+
 		factory.addTemplate(address(template));
 
-		IAludel aludel = IAludel(factory.launch(0, abi.encode(params)));
-
-		user.fundAludel(aludel);
+		aludel = IAludel(factory.launch(0, abi.encode(params)));
 		IAludel.AludelData memory data = aludel.getAludelData();
+		Token(data.rewardToken).mint(address(this), 1 ether);
+		Token(data.rewardToken).approve(address(aludel), 1 ether);
+		aludel.fund(1 ether, 1 days);
+		aludel.registerVaultFactory(address(crucibleFactory));
 
-		Token(data.stakingToken).mint(address(user), 1 ether);
-        user.setupAludel(aludel);
-		// address crucible = user.mintCrucible(aludel);
-        // user.stake(aludel, crucible, 0);
+		Token(data.stakingToken).mint(owner, 1 ether);
+		cheats.prank(owner);
+		crucible = crucibleFactory.create('');
+		Token(data.stakingToken).mint(crucible, 1 ether);
+
+	}
+
+	function test_stake() public {
+
+		bytes memory permission = stakePermission(
+			PRIVATE_KEY,
+			'Lock'
+			crucible,
+			address(aludel),
+			address(stakingToken),
+			1 ether
+		);
+		cheats.prank(owner);
+		aludel.stake(crucible, 1 ether, permission);
+	}
+
+	function test_unstake() public {
+
+		bytes memory permission = stakePermission(
+			PRIVATE_KEY,
+			'Lock'
+			crucible,
+			address(aludel),
+			address(stakingToken),
+			1 ether
+		);
+		cheats.prank(owner);
+		aludel.stake(crucible, 1 ether, permission);
+	}
+
+
+	function getPermission(
+		uint256 privateKey,
+		string memory method,
+		address crucible,
+		address delegate,
+		address token,
+		uint256 amount
+	) public returns(bytes memory) {
+		
+		uint256 nonce = ICrucible(crucible).getNonce();
+		// emit log_named_uint('nonce', nonce);
+		// emit log_named_address('crucible', crucible);
+		// emit log_named_address('delegate', delegate);
+		// emit log_named_address('token', token);
+		// emit log_named_uint('amount', amount);
+		
+        bytes32 domainSeparator = keccak256(abi.encode(
+			keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
+			keccak256('UniversalVault'),
+			keccak256('1.0.0'),
+			getChainId(),
+			crucible
+		));
+		bytes32 structHash = keccak256(abi.encode(
+			keccak256("Lock(address delegate,address token,uint256 amount,uint256 nonce)"),
+			address(delegate),
+			address(token),
+			amount,
+			nonce
+		));
+
+		bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+
+		(uint8 v, bytes32 r, bytes32 s) = cheats.sign(privateKey, digest);
+
+		return joinSignature(r, s, v);
+	}
+
+	/// 
+
+    function getChainId() internal view returns (uint chainId) {
+        assembly { chainId := chainid() }
+    }
+
+	function joinSignature(bytes32 r, bytes32 s, uint8 v) internal returns (bytes memory) {
+		bytes memory sig = new bytes(65);
+		assembly {
+			mstore(add(sig, 0x20), r)
+			mstore(add(sig, 0x40), s)
+			mstore8(add(sig, 0x60), v)
+		}
+		return sig;
 	}
 }
