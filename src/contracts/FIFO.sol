@@ -21,8 +21,8 @@ library FIFO {
     /// @param queue queue internal state
     /// @param stake the stake data to push into the queue
     function push(StakesQueue storage queue, StakeData memory stake) public {
-        queue.last += 1;
         queue.values[queue.last] = stake;
+        queue.last += 1;
     }
 
     /// @notice remove the first element of the queue
