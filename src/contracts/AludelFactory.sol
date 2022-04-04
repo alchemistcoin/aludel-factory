@@ -52,4 +52,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	function getTemplate(uint256 templateId) public view returns (address) {
 		return _templates[templateId];
 	}
+
+	function getTemplates() public view returns (address[] memory) {
+		return _templates;
+	}
 }
