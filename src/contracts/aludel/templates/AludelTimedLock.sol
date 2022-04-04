@@ -463,7 +463,7 @@ contract AludelTimedLock is IAludelTimedLock, Powered, Ownable, Initializable {
 
             // revert when stake duration is smaller than minimum lock time.
             // todo : expand 
-            if (minimumLockTime < stakeDuration) revert();
+            if (stakeDuration < minimumLockTime) revert();
 
             uint256 currentAmount;
             if (lastStake.amount > unstakeAmount) {
