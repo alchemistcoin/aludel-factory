@@ -13,16 +13,19 @@ import '../contracts/aludel/RewardPoolFactory.sol';
 import '../contracts/aludel/PowerSwitchFactory.sol';
 import { IFactory } from '../contracts/factory/IFactory.sol';
 import {ICrucible} from '../contracts/crucible/interfaces/ICrucible.sol';
+import {IUniversalVault} from '../contracts/crucible/interfaces/IUniversalVault.sol';
 
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
 import {CheatCodes} from './interfaces/CheatCodes.sol';
 import {MockERC20} from './mocks/MockERC20.sol';
+import {Utils} from './Utils.sol';
 
 contract AludelTimedLockTest is DSTest {
 
 	address public constant CRUCIBLE_FACTORY = 0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56;
 	uint248 public constant PRIVATE_KEY = type(uint248).max >> 7;
+	uint256 public constant MINIMUM_LOCK_TIME = 1 days;
 
 	AludelFactory factory;
     CheatCodes cheats;
@@ -62,7 +65,7 @@ contract AludelTimedLockTest is DSTest {
 			stakingToken: address(stakingToken),
 			rewardToken: address(rewardToken),
 			rewardScaling: rewardScaling,
-			minimumLockTime: 1 days
+			minimumLockTime: uint96(MINIMUM_LOCK_TIME)
 		});
 
 		owner = cheats.addr(PRIVATE_KEY);
@@ -86,25 +89,32 @@ contract AludelTimedLockTest is DSTest {
 	}
 
 	function test_stake() public {
-
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
-
 	}
 
 	function testFail_unstake_notEnoughDuration(uint256 stakeDuration) public {
 
-		cheats.assume(stakeDuration < 1 days);
+		cheats.assume(stakeDuration < MINIMUM_LOCK_TIME);
 
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
 
 		cheats.warp(block.timestamp + stakeDuration);
 
+		cheats.expectRevert(AludelTimedLock.LockedStake.selector);
 		_unstake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
+	}
+
+
+	function testFail_unstake_MoreThanStaked() public {
+		_stake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
+		cheats.warp(block.timestamp + MINIMUM_LOCK_TIME);
+		cheats.expectRevert(AludelTimedLock.InsufficientVaultStake.selector);
+		_unstake(PRIVATE_KEY, crucible, address(stakingToken), 10 ether);
 	}
 
 	function test_unstake(uint64 stakeDuration) public {
 
-		cheats.assume(stakeDuration >= 1 days);
+		cheats.assume(stakeDuration >= MINIMUM_LOCK_TIME);
 
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
 
@@ -116,31 +126,27 @@ contract AludelTimedLockTest is DSTest {
 
 	function test_unstakeMultiples() public {
 
-		_stake(
-			PRIVATE_KEY,
-			crucible,
-			address(stakingToken),
-			0.5 ether
-		);
+		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.5 ether);
 		
-		cheats.warp(block.timestamp + 1 days);
+		cheats.warp(block.timestamp + MINIMUM_LOCK_TIME);
 
-		_stake(
-			PRIVATE_KEY,
-			crucible,
-			address(stakingToken),
-			0.5 ether
-		);
+		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.5 ether);
 
-		cheats.warp(block.timestamp + 1 days);
+		cheats.warp(block.timestamp + MINIMUM_LOCK_TIME);
 
-		_unstake(
-			PRIVATE_KEY,
-			crucible,
-			address(stakingToken),
-			1 ether
-		);
+		_unstake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
 	}
+
+	function test_ragequit() public {
+		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.5 ether);
+
+		cheats.prank(owner);
+		IUniversalVault(crucible).rageQuit(address(aludel), address(stakingToken));		
+	}
+ 
+
+
+
 
 	function _stake(
 		uint256 privateKey,
@@ -149,13 +155,14 @@ contract AludelTimedLockTest is DSTest {
 		uint256 amount
 	) internal {
 		// stake 
-		bytes memory lockPermission = getPermission(
+		bytes memory lockPermission = Utils.getPermission(
 			privateKey,
 			'Lock',
 			crucible,
 			address(aludel),
 			address(stakingToken),
-			amount
+			amount,
+			ICrucible(crucible).getNonce()
 		);
 		cheats.prank(owner);
 		aludel.stake(crucible, amount, lockPermission);
@@ -168,70 +175,17 @@ contract AludelTimedLockTest is DSTest {
 		uint256 amount
 	) internal {
 		// unstake 
-		bytes memory lockPermission = getPermission(
+		bytes memory lockPermission = Utils.getPermission(
 			privateKey,
 			'Unlock',
 			crucible,
 			address(aludel),
 			address(stakingToken),
-			amount
+			amount,
+			ICrucible(crucible).getNonce()
 		);
 		cheats.prank(owner);
 		aludel.unstakeAndClaim(crucible, amount, lockPermission);
-	}
-
-	function getPermission(
-		uint256 privateKey,
-		string memory method,
-		address crucible,
-		address delegate,
-		address token,
-		uint256 amount
-	) public returns(bytes memory) {
-		
-		uint256 nonce = ICrucible(crucible).getNonce();
-		// emit log_named_uint('nonce', nonce);
-		// emit log_named_address('crucible', crucible);
-		// emit log_named_address('delegate', delegate);
-		// emit log_named_address('token', token);
-		// emit log_named_uint('amount', amount);
-		
-        bytes32 domainSeparator = keccak256(abi.encode(
-			keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-			keccak256('UniversalVault'),
-			keccak256('1.0.0'),
-			getChainId(),
-			crucible
-		));
-		bytes32 structHash = keccak256(abi.encode(
-			keccak256(abi.encodePacked(method, "(address delegate,address token,uint256 amount,uint256 nonce)")),
-			address(delegate),
-			address(token),
-			amount,
-			nonce
-		));
-
-		bytes32 digest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
-
-		(uint8 v, bytes32 r, bytes32 s) = cheats.sign(privateKey, digest);
-
-		return joinSignature(r, s, v);
-	}
-
-	/// 
-
-    function getChainId() internal view returns (uint chainId) {
-        assembly { chainId := chainid() }
-    }
-
-	function joinSignature(bytes32 r, bytes32 s, uint8 v) internal returns (bytes memory) {
-		bytes memory sig = new bytes(65);
-		assembly {
-			mstore(add(sig, 0x20), r)
-			mstore(add(sig, 0x40), s)
-			mstore8(add(sig, 0x60), v)
-		}
-		return sig;
 	}
 
 }
