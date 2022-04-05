@@ -107,7 +107,9 @@ contract AludelTimedLockTest is DSTest {
 
 	function testFail_unstake_MoreThanStaked() public {
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
+		
 		cheats.warp(block.timestamp + MINIMUM_LOCK_TIME);
+
 		cheats.expectRevert(AludelTimedLock.InsufficientVaultStake.selector);
 		_unstake(PRIVATE_KEY, crucible, address(stakingToken), 10 ether);
 	}
@@ -126,16 +128,41 @@ contract AludelTimedLockTest is DSTest {
 
 	function test_unstakeMultiples() public {
 
-		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.5 ether);
+		IAludelTimedLock.AludelData memory aludelData;
+		IAludelTimedLock.LegacyVaultData memory vaultData;
+
+		assertEq(ICrucible(crucible).getLockSetCount(), 0);
+
+		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.4 ether);
 		
+		vaultData = aludel.getVaultData(crucible);
+		assertEq(vaultData.totalStake, 0.4 ether);
+		assertEq(vaultData.stakes.length, 1);
+
 		cheats.warp(block.timestamp + MINIMUM_LOCK_TIME);
 
-		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.5 ether);
+		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.6 ether);
+
+		vaultData = aludel.getVaultData(crucible);
+		assertEq(vaultData.totalStake, 1 ether);
+		assertEq(vaultData.stakes.length, 2);
+		assertTrue(vaultData.stakes[0].timestamp < vaultData.stakes[1].timestamp);
+		assertEq(vaultData.stakes[0].amount, 0.4 ether);
+		assertEq(vaultData.stakes[1].amount, 0.6 ether);
 
 		cheats.warp(block.timestamp + MINIMUM_LOCK_TIME);
+
+		assertEq(ICrucible(crucible).getLockSetCount(), 1);
 
 		_unstake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
+
+		aludelData = aludel.getAludelData();		 
+		assertEq(aludelData.totalStake, 0);
+        assertEq(aludelData.totalStakeUnits, 0);
+		assertEq(ICrucible(crucible).getLockSetCount(), 0);
 	}
+
+
 
 	function test_ragequit() public {
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.5 ether);
