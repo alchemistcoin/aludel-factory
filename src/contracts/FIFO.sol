@@ -63,7 +63,7 @@ library FIFO {
         uint128 last = queue.last;
         StakeData[] memory stakes = new StakeData[](last-first);
         for (uint256 i = first; i < last; ++i) {
-            stakes[i-first] = queue.values[queue.first];
+            stakes[i-first] = queue.values[queue.first+i];
         }
         return stakes;
     }
