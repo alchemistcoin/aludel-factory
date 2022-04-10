@@ -4,15 +4,13 @@ pragma solidity ^0.8.13;
 import 'ds-test/test.sol';
 import 'solmate/tokens/ERC20.sol';
 
-import '../contracts/AludelFactory.sol';
-import '../contracts/aludel/Aludel.sol';
-import { IAludel } from '../contracts/aludel/IAludel.sol';
-import '../contracts/aludel/RewardPoolFactory.sol';
-import '../contracts/aludel/PowerSwitchFactory.sol';
-import { IFactory } from '../contracts/factory/IFactory.sol';
-import {ICrucible} from '../contracts/crucible/interfaces/ICrucible.sol';
-// import {CrucibleFactory } from '../contracts/crucible/CrucibleFactory.sol';
-// import {Crucible } from '../contracts/crucible/Crucible.sol';
+import {AludelFactory} from '../contracts/AludelFactory.sol';
+import {IAludel} from '../contracts/aludel/IAludel.sol';
+import { Aludel } from '../contracts/aludel/Aludel.sol';
+import 'alchemist/aludel/RewardPoolFactory.sol';
+import 'alchemist/aludel/PowerSwitchFactory.sol';
+import { IFactory } from 'alchemist/factory/IFactory.sol';
+import {IUniversalVault} from 'alchemist/crucible/Crucible.sol';
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from './mocks/MockERC20.sol';
 import {CheatCodes} from './interfaces/CheatCodes.sol';
@@ -77,8 +75,8 @@ contract AludelFactoryTest is DSTest {
 
 		factory.addTemplate(address(template));
 
-		aludel = IAludel(factory.launch(0, abi.encode(params)));
-		IAludel.AludelData memory data = aludel.getAludelData();
+		aludel = Aludel(factory.launch(0, abi.encode(params)));
+		Aludel.AludelData memory data = aludel.getAludelData();
 		MockERC20(data.rewardToken).mint(address(this), 1 ether);
 		MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
 		aludel.fund(1 ether, 1 days);
@@ -129,8 +127,6 @@ contract AludelFactoryTest is DSTest {
 		aludel.unstakeAndClaim(crucible, 1 ether, unlockPermission);
 
 	}
-
-
 	function getPermission(
 		uint256 privateKey,
 		string memory method,
@@ -140,7 +136,7 @@ contract AludelFactoryTest is DSTest {
 		uint256 amount
 	) public returns(bytes memory) {
 		
-		uint256 nonce = ICrucible(crucible).getNonce();
+		uint256 nonce = IUniversalVault(crucible).getNonce();
 		// emit log_named_uint('nonce', nonce);
 		// emit log_named_address('crucible', crucible);
 		// emit log_named_address('delegate', delegate);

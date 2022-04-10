@@ -4,16 +4,15 @@ pragma solidity ^0.8.6;
 import 'ds-test/test.sol';
 import 'solmate/tokens/ERC20.sol';
 
-import '../contracts/AludelFactory.sol';
-import '../contracts/aludel/templates/AludelTimedLock.sol';
-import '../contracts/aludel/templates/IAludelTimedLock.sol';
+import {AludelFactory}from'../contracts/AludelFactory.sol';
+import {AludelTimedLock}from'../contracts/aludel/templates/AludelTimedLock.sol';
+import {IAludelTimedLock}from'../contracts/aludel/templates/IAludelTimedLock.sol';
 
 import { IAludel } from '../contracts/aludel/IAludel.sol';
-import '../contracts/aludel/RewardPoolFactory.sol';
-import '../contracts/aludel/PowerSwitchFactory.sol';
-import { IFactory } from '../contracts/factory/IFactory.sol';
-import {ICrucible} from '../contracts/crucible/interfaces/ICrucible.sol';
-import {IUniversalVault} from '../contracts/crucible/interfaces/IUniversalVault.sol';
+import 'alchemist/aludel/RewardPoolFactory.sol';
+import 'alchemist/aludel/PowerSwitchFactory.sol';
+import { IFactory } from 'alchemist/factory/IFactory.sol';
+import {IUniversalVault} from 'alchemist/crucible/Crucible.sol';
 
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
@@ -131,7 +130,7 @@ contract AludelTimedLockTest is DSTest {
 		IAludelTimedLock.AludelData memory aludelData;
 		IAludelTimedLock.LegacyVaultData memory vaultData;
 
-		assertEq(ICrucible(crucible).getLockSetCount(), 0);
+		assertEq(IUniversalVault(crucible).getLockSetCount(), 0);
 
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.4 ether);
 		
@@ -152,17 +151,15 @@ contract AludelTimedLockTest is DSTest {
 
 		cheats.warp(block.timestamp + MINIMUM_LOCK_TIME);
 
-		assertEq(ICrucible(crucible).getLockSetCount(), 1);
+		assertEq(IUniversalVault(crucible).getLockSetCount(), 1);
 
 		_unstake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
 
 		aludelData = aludel.getAludelData();		 
 		assertEq(aludelData.totalStake, 0);
         assertEq(aludelData.totalStakeUnits, 0);
-		assertEq(ICrucible(crucible).getLockSetCount(), 0);
+		assertEq(IUniversalVault(crucible).getLockSetCount(), 0);
 	}
-
-
 
 	function test_ragequit() public {
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.5 ether);
@@ -171,10 +168,6 @@ contract AludelTimedLockTest is DSTest {
 		IUniversalVault(crucible).rageQuit(address(aludel), address(stakingToken));		
 	}
  
-
-
-
-
 	function _stake(
 		uint256 privateKey,
 		address crucible,
@@ -189,7 +182,7 @@ contract AludelTimedLockTest is DSTest {
 			address(aludel),
 			address(stakingToken),
 			amount,
-			ICrucible(crucible).getNonce()
+			IUniversalVault(crucible).getNonce()
 		);
 		cheats.prank(owner);
 		aludel.stake(crucible, amount, lockPermission);
@@ -209,7 +202,7 @@ contract AludelTimedLockTest is DSTest {
 			address(aludel),
 			address(stakingToken),
 			amount,
-			ICrucible(crucible).getNonce()
+			IUniversalVault(crucible).getNonce()
 		);
 		cheats.prank(owner);
 		aludel.unstakeAndClaim(crucible, amount, lockPermission);

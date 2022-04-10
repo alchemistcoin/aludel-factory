@@ -120,7 +120,7 @@ interface IAludelTimedLock is IRageQuit {
 
     function getVaultFactoryAtIndex(uint256 index) external view returns (address factory);
 
-    // function getVaultData(address vault) external view returns (LegacyVaultData memory vaultData);
+    function getVaultData(address vault) external view returns (LegacyVaultData memory vaultData);
 
     function isValidAddress(address target) external view returns (bool validity);
 

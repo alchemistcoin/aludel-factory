@@ -10,11 +10,11 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {TransferHelper} from "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
-import {IFactory} from "../factory/IFactory.sol";
-import {IInstanceRegistry} from "../factory/InstanceRegistry.sol";
-import {IUniversalVault} from "../crucible/interfaces/IUniversalVault.sol";
-import {IRewardPool} from "./RewardPool.sol";
-import {Powered} from "./Powered.sol";
+import {IFactory} from "alchemist/factory/IFactory.sol";
+import {IInstanceRegistry} from "alchemist/factory/InstanceRegistry.sol";
+import {IUniversalVault} from "alchemist/crucible/Crucible.sol";
+import {IRewardPool} from "alchemist/aludel/RewardPool.sol";
+import {Powered} from "alchemist/aludel/Powered.sol";
 
 import { IAludel } from "./IAludel.sol";
 
@@ -514,10 +514,10 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
             // calculate bonus reward with vested portion of scaling factor
             uint256 bonusReward =
                 baseReward
-                    .mul(stakeDuration)
-                    .mul(rewardScaling.ceiling.sub(rewardScaling.floor))
-                    .div(rewardScaling.ceiling)
-                    .div(rewardScaling.time);
+                    * stakeDuration
+                    * (rewardScaling.ceiling - rewardScaling.floor)
+                    / rewardScaling.ceiling
+                    / rewardScaling.time;
 
             // add minimum reward and bonus reward
             reward = minReward.add(bonusReward);
