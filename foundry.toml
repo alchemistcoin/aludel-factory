@@ -7,4 +7,4 @@ ffi = true
 optimizer = true
 optimizer_runs = 1000000
 
-eth-rpc-url = "http://localhost:8545"
+gieth-rpc-url = "http://localhost:8545"

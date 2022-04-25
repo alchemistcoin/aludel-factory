@@ -1,3 +1,4 @@
+import { formatEther } from "ethers/lib/utils";
 import { ethers, run } from "hardhat";
 
 const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
@@ -6,6 +7,7 @@ async function main() {
 
   const signer = (await ethers.getSigners())[0]
   console.log('Signer:', signer.address)
+  console.log('Signer balance:',  formatEther(await signer.getBalance()))
 
   // We get the contract to deploy
   const AludelFactory = await ethers.getContractFactory("AludelFactory");
@@ -13,8 +15,7 @@ async function main() {
   await factory.deployed()
   console.log("AludelFactory deployed to:", factory.address);
   
-  // await factory.deployTransaction.wait(1)
-  await sleep(150000)  
+  await factory.deployTransaction.wait(20)
   // verify source
   console.log('Verifying source on etherscan')
   await run('verify:verify', {
@@ -27,8 +28,9 @@ async function main() {
   await template.deployed()
   console.log("AludelTemplate deployed to:", template.address);
   
-  // await template.deployTransaction.wait(1)
-  await sleep(150000)  
+  await template.initializeLock()
+  
+  await template.deployTransaction.wait(3)
   
   // verify source
   console.log('Verifying source on etherscan')
