@@ -1,23 +1,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.6;
 
-import 'ds-test/test.sol';
+import {DSTest} from "ds-test/test.sol";
+import {Hevm} from "solmate/test/utils/Hevm.sol";
 import 'solmate/tokens/ERC20.sol';
 
-import '../contracts/AludelFactory.sol';
-import '../contracts/aludel/templates/AludelTimedLock.sol';
-import '../contracts/aludel/templates/IAludelTimedLock.sol';
+import {AludelFactory} from '../contracts/AludelFactory.sol';
+import {AludelTimedLock} from '../contracts/aludel/templates/AludelTimedLock.sol';
+import {IAludelTimedLock} from '../contracts/aludel/templates/IAludelTimedLock.sol';
 
 import { IAludel } from '../contracts/aludel/IAludel.sol';
-import '../contracts/aludel/RewardPoolFactory.sol';
-import '../contracts/aludel/PowerSwitchFactory.sol';
-import { IFactory } from '../contracts/factory/IFactory.sol';
+import {RewardPoolFactory} from "alchemist/aludel/RewardPoolFactory.sol";
+import {PowerSwitchFactory} from "alchemist/aludel/PowerSwitchFactory.sol";
+import { IFactory } from 'alchemist/factory/IFactory.sol';
 import {ICrucible} from '../contracts/crucible/interfaces/ICrucible.sol';
-import {IUniversalVault} from '../contracts/crucible/interfaces/IUniversalVault.sol';
+import {IUniversalVault} from 'alchemist/crucible/Crucible.sol';
 
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 
-import {CheatCodes} from './interfaces/CheatCodes.sol';
 import {MockERC20} from './mocks/MockERC20.sol';
 import {Utils} from './Utils.sol';
 
@@ -28,7 +28,7 @@ contract AludelTimedLockTest is DSTest {
 	uint256 public constant MINIMUM_LOCK_TIME = 1 days;
 
 	AludelFactory factory;
-    CheatCodes cheats;
+    Hevm cheats;
 	AludelTimedLock aludel;
 
 	MockERC20 stakingToken;
@@ -38,7 +38,7 @@ contract AludelTimedLockTest is DSTest {
 
 	function setUp() public {
 
-		cheats = CheatCodes(HEVM_ADDRESS);
+		cheats = Hevm(HEVM_ADDRESS);
 		factory = new AludelFactory();
 
 		AludelTimedLock template = new AludelTimedLock();

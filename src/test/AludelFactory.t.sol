@@ -3,24 +3,27 @@ pragma solidity ^0.8.13;
 
 import 'ds-test/test.sol';
 import 'solmate/tokens/ERC20.sol';
+import {Hevm} from "solmate/test/utils/Hevm.sol";
 
-import '../contracts/AludelFactory.sol';
-import '../contracts/aludel/Aludel.sol';
+
+import {AludelFactory} from '../contracts/AludelFactory.sol';
+import {Aludel} from '../contracts/aludel/Aludel.sol';
 import { IAludel } from '../contracts/aludel/IAludel.sol';
-import '../contracts/aludel/RewardPoolFactory.sol';
-import '../contracts/aludel/PowerSwitchFactory.sol';
-import { IFactory } from '../contracts/factory/IFactory.sol';
+import {RewardPoolFactory} from 'alchemist/aludel/RewardPoolFactory.sol';
+import {PowerSwitchFactory} from 'alchemist/aludel/PowerSwitchFactory.sol';
+
+import {IFactory} from "alchemist/factory/IFactory.sol";
+
 import {ICrucible} from '../contracts/crucible/interfaces/ICrucible.sol';
 // import {CrucibleFactory } from '../contracts/crucible/CrucibleFactory.sol';
 // import {Crucible } from '../contracts/crucible/Crucible.sol';
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from './mocks/MockERC20.sol';
-import {CheatCodes} from './interfaces/CheatCodes.sol';
 
 contract AludelFactoryTest is DSTest {
 
 	AludelFactory factory;
-    CheatCodes cheats;
+    Hevm cheats;
 	IAludel aludel;
 
 	MockERC20 stakingToken;
@@ -48,7 +51,7 @@ contract AludelFactoryTest is DSTest {
 	}
 
 	function setUp() public {
-		cheats = CheatCodes(HEVM_ADDRESS);
+		cheats = Hevm(HEVM_ADDRESS);
 		factory = new AludelFactory();
 
 		Aludel template = new Aludel();
