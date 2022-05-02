@@ -14,6 +14,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @dev event emitted every time a new aludel is spawned
 	event AludelSpawned(address aludel);
 
+	error InvalidTemplate();
+
 	constructor() Ownable() {}
 
     /// @notice perform a minimal proxy deploy
@@ -31,7 +33,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
         );
 
 		// emit event
-		// todo : maybe we can relay on the aludel's AludelCreated.
 		emit AludelSpawned(aludel);
 
 		// explicit return
@@ -39,8 +40,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	}
 
 	function addTemplate(address template) public onlyOwner {
-		// do we need any checks here?
-        require(template != address(0), "invalid template");
+		// do we need any other checks here?
+		if (template == address(0)) {
+			revert InvalidTemplate();
+		}
 
 		// add template to the array of templates addresses
 		_templates.push(template);
