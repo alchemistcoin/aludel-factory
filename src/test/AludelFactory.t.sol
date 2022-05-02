@@ -5,7 +5,6 @@ import 'ds-test/test.sol';
 import 'solmate/tokens/ERC20.sol';
 import {Hevm} from "solmate/test/utils/Hevm.sol";
 
-
 import {AludelFactory} from '../contracts/AludelFactory.sol';
 import {Aludel} from '../contracts/aludel/Aludel.sol';
 import { IAludel } from '../contracts/aludel/IAludel.sol';
@@ -14,7 +13,7 @@ import {PowerSwitchFactory} from 'alchemist/aludel/PowerSwitchFactory.sol';
 
 import {IFactory} from "alchemist/factory/IFactory.sol";
 
-import {ICrucible} from '../contracts/crucible/interfaces/ICrucible.sol';
+import {IUniversalVault} from 'alchemist/crucible/Crucible.sol';
 // import {CrucibleFactory } from '../contracts/crucible/CrucibleFactory.sol';
 // import {Crucible } from '../contracts/crucible/Crucible.sol';
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
@@ -147,7 +146,7 @@ contract AludelFactoryTest is DSTest {
 		uint256 amount
 	) public returns(bytes memory) {
 		
-		uint256 nonce = ICrucible(crucible).getNonce();
+		uint256 nonce = IUniversalVault(crucible).getNonce();
 		
         bytes32 domainSeparator = keccak256(abi.encode(
 			keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),

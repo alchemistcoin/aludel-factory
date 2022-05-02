@@ -8,7 +8,7 @@ import { InstanceRegistry } from "alchemist/factory/InstanceRegistry.sol";
 
 contract AludelFactory is Ownable, InstanceRegistry {
     /// @notice array of template addresses
-	/// todo : do we want to have any kind of control over this array? 
+	/// review : do we want to have any kind of control over this array? 
 	address[] private _templates;
 
     /// @dev event emitted every time a new aludel is spawned
