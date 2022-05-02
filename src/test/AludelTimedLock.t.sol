@@ -13,7 +13,6 @@ import { IAludel } from '../contracts/aludel/IAludel.sol';
 import {RewardPoolFactory} from "alchemist/aludel/RewardPoolFactory.sol";
 import {PowerSwitchFactory} from "alchemist/aludel/PowerSwitchFactory.sol";
 import { IFactory } from 'alchemist/factory/IFactory.sol';
-import {ICrucible} from '../contracts/crucible/interfaces/ICrucible.sol';
 import {IUniversalVault} from 'alchemist/crucible/Crucible.sol';
 
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
