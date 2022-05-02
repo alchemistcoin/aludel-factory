@@ -1,24 +1,10 @@
-# about
 
-This project is a hardhat & dapp project. You can use either dapp.tools or hardhat to develop on it.
+# Development
 
-# install
-
-```
-yarn install
-```
-
-# tests
-
-dapp.tools tests
-```
-dapp test
-```
-
-These hardhat tests require a node forking mainnet, you can configure this using the `.env` file
-```
-yarn hardhat test
-```
+* Install foundry
+* Install dependencies with yarn & forge update
+* Compile the contracts: ```forge build```
+* Run tests: ```forge test``` (you need to setup a RPC url in `foundry.toml`)
 
 
 # aludel factory
