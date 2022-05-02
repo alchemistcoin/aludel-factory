@@ -16,8 +16,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 	error InvalidTemplate();
 
-	constructor() Ownable() {}
-
     /// @notice perform a minimal proxy deploy
     /// @param templateId the number of the template to launch
     /// @param data the calldata to use on the new aludel initialization
