@@ -1,7 +1,7 @@
-@openzeppelin/=node_modules/@openzeppelin/
-@uniswap/=node_modules/@uniswap/
+@openzeppelin/=lib/openzeppelin-contracts/
+@uniswap/lib/=lib/solidity-lib/
 ds-test/=lib/ds-test/src/
 ds-auth/=lib/ds-auth/src/
 ds-math/=lib/ds-math/src/
 solmate/=lib/solmate/src/
-alchemist/=node_modules/alchemist/
+alchemist/=lib/alchemist/contracts
