@@ -94,6 +94,10 @@ contract AludelFactoryTest is DSTest {
 
 	}
 
+	function test_ownership() public {
+		assertEq(factory.owner(), address(this));
+	}
+
 	function test_stake() public {
 
 		bytes memory permission = getPermission(
@@ -144,11 +148,6 @@ contract AludelFactoryTest is DSTest {
 	) public returns(bytes memory) {
 		
 		uint256 nonce = ICrucible(crucible).getNonce();
-		// emit log_named_uint('nonce', nonce);
-		// emit log_named_address('crucible', crucible);
-		// emit log_named_address('delegate', delegate);
-		// emit log_named_address('token', token);
-		// emit log_named_uint('amount', amount);
 		
         bytes32 domainSeparator = keccak256(abi.encode(
 			keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
