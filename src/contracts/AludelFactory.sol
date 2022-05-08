@@ -7,6 +7,13 @@ import { IAludel } from './aludel/IAludel.sol';
 import { InstanceRegistry } from "alchemist/factory/InstanceRegistry.sol";
 
 contract AludelFactory is Ownable, InstanceRegistry {
+
+	struct TemplateData {
+		address template;
+		string title;
+		string description;
+	}
+
     /// @notice array of template addresses
 	/// review : do we want to have any kind of control over this array? 
 	address[] private _templates;
@@ -37,7 +44,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		return aludel;
 	}
 
-	function addTemplate(address template) public onlyOwner {
+	function addTemplate(address template, string memory title, string memory description) public onlyOwner {
 		// do we need any other checks here?
 		if (template == address(0)) {
 			revert InvalidTemplate();
