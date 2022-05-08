@@ -44,11 +44,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		return aludel;
 	}
 
-	function addTemplate(address template) public onlyOwner {
-		addTemplate(template, '', '');
-	}
-
-
 	function addTemplate(address template, string memory title, string memory description) public onlyOwner {
 		// do we need any other checks here?
 		if (template == address(0)) {
