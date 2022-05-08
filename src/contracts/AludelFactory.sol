@@ -19,7 +19,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @notice perform a minimal proxy deploy
     /// @param templateId the number of the template to launch
     /// @param data the calldata to use on the new aludel initialization
-    /// @return aludel the new aludel address.
+    /// @return aludel the new aludel deployed address.
 	function launch(uint256 templateId, bytes calldata data) public returns (address aludel) {
         // get the aludel template address
 		address template = _templates[templateId];
@@ -49,6 +49,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
         // register instance
 		_register(template);
 	}
+
+
 
 	function getTemplate(uint256 templateId) public view returns (address) {
 		return _templates[templateId];
