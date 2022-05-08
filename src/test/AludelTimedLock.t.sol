@@ -69,7 +69,7 @@ contract AludelTimedLockTest is DSTest {
 
 		owner = cheats.addr(PRIVATE_KEY);
 
-		factory.addTemplate(address(template));
+		factory.addTemplate(address(template), 'a title', 'a desc');
 
 		aludel = AludelTimedLock(factory.launch(0, abi.encode(params)));
 

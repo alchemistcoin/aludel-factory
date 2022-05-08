@@ -77,7 +77,7 @@ contract AludelFactoryTest is DSTest {
 
 		owner = cheats.addr(PRIVATE_KEY);
 
-		factory.addTemplate(address(template), '', '');
+		factory.addTemplate(address(template), 'a title', 'a desc');
 
 		aludel = IAludel(factory.launch(0, abi.encode(params)));
 		IAludel.AludelData memory data = aludel.getAludelData();
