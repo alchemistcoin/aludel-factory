@@ -93,6 +93,12 @@ contract AludelFactoryTest is DSTest {
 
 	}
 
+	function test_getTemplate() public {
+		AludelFactory.TemplateData memory data = factory.getTemplate(0);
+		assertEq(data.title, "a title");
+		assertEq(data.description, "a desc");
+	}
+
 	function test_ownership() public {
 		assertEq(factory.owner(), address(this));
 	}
