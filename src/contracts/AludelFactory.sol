@@ -44,6 +44,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		return aludel;
 	}
 
+	/// @notice adds a new template to the factory
 	function addTemplate(address template, string memory title, string memory description) public onlyOwner {
 		// do we need any other checks here?
 		if (template == address(0)) {
@@ -60,8 +61,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
         // register instance
 		_register(template);
 	}
-
-
 
 	function getTemplate(uint256 templateId) public view returns (TemplateData memory) {
 		return _templates[templateId];
