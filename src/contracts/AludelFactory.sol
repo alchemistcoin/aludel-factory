@@ -14,7 +14,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		string description;
 	}
 
-    /// @notice array of template addresses
+    /// @notice array of template datas
 	/// todo : do we want to have any kind of control over this array? 
 	TemplateData[] private _templates;
 
@@ -29,11 +29,11 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @return aludel the new aludel deployed address.
 	function launch(uint256 templateId, bytes calldata data) public returns (address aludel) {
         // get the aludel template's data
-		TemplateData memory data = _templates[templateId];
+		TemplateData memory template = _templates[templateId];
 
 		// create clone and initialize
 		aludel = ProxyFactory._create(
-            data.template,
+            template.template,
             abi.encodeWithSelector(IAludel.initialize.selector, data)
         );
 
