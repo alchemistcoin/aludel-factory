@@ -15,8 +15,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	}
 
     /// @notice array of template addresses
-	/// review : do we want to have any kind of control over this array? 
-	address[] private _templates;
+	/// todo : do we want to have any kind of control over this array? 
+	TemplateData[] private _templates;
 
     /// @dev event emitted every time a new aludel is spawned
 	event AludelSpawned(address aludel);
@@ -28,12 +28,12 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @param data the calldata to use on the new aludel initialization
     /// @return aludel the new aludel deployed address.
 	function launch(uint256 templateId, bytes calldata data) public returns (address aludel) {
-        // get the aludel template address
-		address template = _templates[templateId];
+        // get the aludel template's data
+		TemplateData memory data = _templates[templateId];
 
 		// create clone and initialize
 		aludel = ProxyFactory._create(
-            template,
+            data.template,
             abi.encodeWithSelector(IAludel.initialize.selector, data)
         );
 
@@ -44,14 +44,23 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		return aludel;
 	}
 
+	function addTemplate(address template) public onlyOwner {
+		addTemplate(template, '', '');
+	}
+
+
 	function addTemplate(address template, string memory title, string memory description) public onlyOwner {
 		// do we need any other checks here?
 		if (template == address(0)) {
 			revert InvalidTemplate();
 		}
 
-		// add template to the array of templates addresses
-		_templates.push(template);
+		// add template data to the array of templates
+		_templates.push(TemplateData({
+			template: template,
+			title: title,
+			description: description
+		}));
 
         // register instance
 		_register(template);
@@ -59,11 +68,11 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 
 
-	function getTemplate(uint256 templateId) public view returns (address) {
+	function getTemplate(uint256 templateId) public view returns (TemplateData memory) {
 		return _templates[templateId];
 	}
 
-	function getTemplates() public view returns (address[] memory) {
+	function getTemplates() public view returns (TemplateData[] memory) {
 		return _templates;
 	}
 }
