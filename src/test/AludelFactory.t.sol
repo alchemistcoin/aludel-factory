@@ -79,7 +79,7 @@ contract AludelFactoryTest is DSTest {
 
 		factory.addTemplate(address(template), 'a title', 'a desc');
 
-		aludel = IAludel(factory.launch(0, abi.encode(params)));
+		aludel = IAludel(factory.launch(0, "name", "desc", abi.encode(params)));
 		IAludel.AludelData memory data = aludel.getAludelData();
 		MockERC20(data.rewardToken).mint(address(this), 1 ether);
 		MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
