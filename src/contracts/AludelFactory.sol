@@ -10,7 +10,6 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 
 contract AludelFactory is Ownable, InstanceRegistry {
 
-	// using EnumerableMap for EnumerableMap.AddressToRewardProgramMap;
 	using EnumerableSet for EnumerableSet.AddressSet;
 
 	struct Program {
@@ -32,13 +31,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/// todo : do we want to have any kind of control over this array? 
 	TemplateData[] private _templates;
 
-
-	// EnumerableSet.AddressSet private _programsSet;
-	// mapping(address => Program) private _programs;
-
 	Program[] private _programs;
-
-	// EnumerableMap.AddressToRewardProgramMap private _rewardPrograms;
 
     /// @dev event emitted every time a new aludel is spawned
 	event AludelSpawned(address aludel);
@@ -65,13 +58,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
             template.template,
             abi.encodeWithSelector(IAludel.initialize.selector, data)
         );
-
-		// require(_programsSet.add(aludel));
-		// _rewardPrograms[aludel] = RewardProgram({
-		// 	creation: uint64(block.timestamp),
-		// 	name: name,
-		// 	description: description
-		// });
 		
 		// add program's data to the array or programs
 		_programs.push(Program({
