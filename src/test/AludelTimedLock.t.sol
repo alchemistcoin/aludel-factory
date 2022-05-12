@@ -71,7 +71,7 @@ contract AludelTimedLockTest is DSTest {
 
 		factory.addTemplate(address(template), 'a title', 'a desc');
 
-		aludel = AludelTimedLock(factory.launch(0, abi.encode(params)));
+		aludel = AludelTimedLock(factory.launch(0, "name", "desc", abi.encode(params)));
 
 		AludelTimedLock.AludelData memory data = aludel.getAludelData();
 		MockERC20(data.rewardToken).mint(address(this), 1 ether);
@@ -130,7 +130,7 @@ contract AludelTimedLockTest is DSTest {
 		IAludelTimedLock.AludelData memory aludelData;
 		IAludelTimedLock.LegacyVaultData memory vaultData;
 
-		assertEq(ICrucible(crucible).getLockSetCount(), 0);
+		assertEq(IUniversalVault(crucible).getLockSetCount(), 0);
 
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.4 ether);
 		
@@ -151,14 +151,14 @@ contract AludelTimedLockTest is DSTest {
 
 		cheats.warp(block.timestamp + MINIMUM_LOCK_TIME);
 
-		assertEq(ICrucible(crucible).getLockSetCount(), 1);
+		assertEq(IUniversalVault(crucible).getLockSetCount(), 1);
 
 		_unstake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
 
 		aludelData = aludel.getAludelData();		 
 		assertEq(aludelData.totalStake, 0);
         assertEq(aludelData.totalStakeUnits, 0);
-		assertEq(ICrucible(crucible).getLockSetCount(), 0);
+		assertEq(IUniversalVault(crucible).getLockSetCount(), 0);
 	}
 
 
@@ -188,7 +188,7 @@ contract AludelTimedLockTest is DSTest {
 			address(aludel),
 			address(stakingToken),
 			amount,
-			ICrucible(crucible).getNonce()
+			IUniversalVault(crucible).getNonce()
 		);
 		cheats.prank(owner);
 		aludel.stake(crucible, amount, lockPermission);
@@ -208,7 +208,7 @@ contract AludelTimedLockTest is DSTest {
 			address(aludel),
 			address(stakingToken),
 			amount,
-			ICrucible(crucible).getNonce()
+			IUniversalVault(crucible).getNonce()
 		);
 		cheats.prank(owner);
 		aludel.unstakeAndClaim(crucible, amount, lockPermission);
