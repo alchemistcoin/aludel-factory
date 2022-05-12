@@ -6,7 +6,21 @@ import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 import { IAludel } from './aludel/IAludel.sol';
 import { InstanceRegistry } from "alchemist/factory/InstanceRegistry.sol";
 
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 contract AludelFactory is Ownable, InstanceRegistry {
+
+	// using EnumerableMap for EnumerableMap.AddressToRewardProgramMap;
+	using EnumerableSet for EnumerableSet.AddressSet;
+
+	struct Program {
+		address deployedAddress;
+		uint32 templateId;
+		uint64 creation;
+
+		string name;
+		string description;		
+	}
 
 	struct TemplateData {
 		address template;
@@ -18,6 +32,14 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/// todo : do we want to have any kind of control over this array? 
 	TemplateData[] private _templates;
 
+
+	// EnumerableSet.AddressSet private _programsSet;
+	// mapping(address => Program) private _programs;
+
+	Program[] private _programs;
+
+	// EnumerableMap.AddressToRewardProgramMap private _rewardPrograms;
+
     /// @dev event emitted every time a new aludel is spawned
 	event AludelSpawned(address aludel);
 
@@ -25,9 +47,16 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
     /// @notice perform a minimal proxy deploy
     /// @param templateId the number of the template to launch
+	/// @param name the string represeting the program's name
+	/// @param description the string describing the program or ipfs hash
     /// @param data the calldata to use on the new aludel initialization
     /// @return aludel the new aludel deployed address.
-	function launch(uint256 templateId, bytes calldata data) public returns (address aludel) {
+	function launch(
+		uint256 templateId,
+		string memory name,
+		string memory description,
+		bytes calldata data
+	) public returns (address aludel) {
         // get the aludel template's data
 		TemplateData memory template = _templates[templateId];
 
@@ -36,6 +65,22 @@ contract AludelFactory is Ownable, InstanceRegistry {
             template.template,
             abi.encodeWithSelector(IAludel.initialize.selector, data)
         );
+
+		// require(_programsSet.add(aludel));
+		// _rewardPrograms[aludel] = RewardProgram({
+		// 	creation: uint64(block.timestamp),
+		// 	name: name,
+		// 	description: description
+		// });
+		
+		// add program's data to the array or programs
+		_programs.push(Program({
+			deployedAddress: aludel,
+			templateId: uint32(templateId),
+			creation: uint64(block.timestamp),
+			name: name,
+			description: description
+		}));
 
 		// emit event
 		emit AludelSpawned(aludel);
@@ -66,7 +111,16 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		return _templates[templateId];
 	}
 
-	function getTemplates() public view returns (TemplateData[] memory) {
+	function getTemplates() external view returns (TemplateData[] memory) {
 		return _templates;
 	}
+
+	function getProgram(uint256 programId) external view returns (Program memory) {
+		return _programs[programId];
+	}
+
+	function getPrograms() external view returns (Program[] memory) {
+		return _programs;
+	}
+
 }
