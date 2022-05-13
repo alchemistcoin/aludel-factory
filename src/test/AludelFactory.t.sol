@@ -13,9 +13,8 @@ import {PowerSwitchFactory} from 'alchemist/aludel/PowerSwitchFactory.sol';
 
 import {IFactory} from "alchemist/factory/IFactory.sol";
 
-import {IUniversalVault} from 'alchemist/crucible/Crucible.sol';
-// import {CrucibleFactory } from '../contracts/crucible/CrucibleFactory.sol';
-// import {Crucible } from '../contracts/crucible/Crucible.sol';
+import {IUniversalVault, Crucible} from 'alchemist/crucible/Crucible.sol';
+import {CrucibleFactory } from 'alchemist/crucible/CrucibleFactory.sol';
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from './mocks/MockERC20.sol';
 
@@ -60,7 +59,7 @@ contract AludelFactoryTest is DSTest {
 		// Crucible crucibleTemplate = new Crucible();
 		// crucibleTemplate.initializeLock();
 		// CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
-		IFactory crucibleFactory = IFactory(address(0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56));
+		IFactory crucibleFactory = IFactory(address(CRUCIBLE_FACTORY));
 		stakingToken = new MockERC20('', 'STK');
 		rewardToken = new MockERC20('', 'RWD');
 
