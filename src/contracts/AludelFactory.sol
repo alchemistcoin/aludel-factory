@@ -18,7 +18,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		uint64 creation;
 
 		string name;
-		string description;		
 	}
 
 	struct TemplateData {
@@ -41,13 +40,11 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @notice perform a minimal proxy deploy
     /// @param templateId the number of the template to launch
 	/// @param name the string represeting the program's name
-	/// @param description the string describing the program or ipfs hash
     /// @param data the calldata to use on the new aludel initialization
     /// @return aludel the new aludel deployed address.
 	function launch(
 		uint256 templateId,
 		string memory name,
-		string memory description,
 		bytes calldata data
 	) public returns (address aludel) {
         // get the aludel template's data
@@ -61,11 +58,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		
 		// add program's data to the array or programs
 		_programs.push(Program({
+			name: name,
 			deployedAddress: aludel,
 			templateId: uint32(templateId),
-			creation: uint64(block.timestamp),
-			name: name,
-			description: description
+			creation: uint64(block.timestamp)
 		}));
 
 		// emit event
