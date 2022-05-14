@@ -71,7 +71,7 @@ contract AludelTimedLockTest is DSTest {
 
 		factory.addTemplate(address(template), 'a title', 'a desc');
 
-		aludel = AludelTimedLock(factory.launch(0, "name", "desc", abi.encode(params)));
+		aludel = AludelTimedLock(factory.launch(0, "name", abi.encode(params)));
 
 		AludelTimedLock.AludelData memory data = aludel.getAludelData();
 		MockERC20(data.rewardToken).mint(address(this), 1 ether);
@@ -102,7 +102,6 @@ contract AludelTimedLockTest is DSTest {
 		cheats.expectRevert(AludelTimedLock.LockedStake.selector);
 		_unstake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
 	}
-
 
 	function testFail_unstake_MoreThanStaked() public {
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 1 ether);
@@ -161,8 +160,6 @@ contract AludelTimedLockTest is DSTest {
 		assertEq(IUniversalVault(crucible).getLockSetCount(), 0);
 	}
 
-
-
 	function test_ragequit() public {
 		_stake(PRIVATE_KEY, crucible, address(stakingToken), 0.5 ether);
 
@@ -170,10 +167,6 @@ contract AludelTimedLockTest is DSTest {
 		IUniversalVault(crucible).rageQuit(address(aludel), address(stakingToken));		
 	}
  
-
-
-
-
 	function _stake(
 		uint256 privateKey,
 		address crucible,
