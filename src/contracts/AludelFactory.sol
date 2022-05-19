@@ -4,7 +4,7 @@ pragma solidity ^0.8.6;
 import { ProxyFactory } from 'alchemist/factory/ProxyFactory.sol';
 import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 import { IAludel } from './aludel/IAludel.sol';
-import { InstanceRegistry } from "alchemist/factory/InstanceRegistry.sol";
+import { InstanceRegistry } from "./libraries/InstanceRegistry.sol";
 
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
@@ -12,11 +12,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 	using EnumerableSet for EnumerableSet.AddressSet;
 
-	struct Program {
-		address deployedAddress;
-		uint32 templateId;
+	struct ProgramData {
+		address template;
 		uint64 creation;
-
+		string url;
 		string name;
 	}
 
@@ -26,83 +25,93 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		string description;
 	}
 
-    /// @notice array of template datas
-	/// todo : do we want to have any kind of control over this array? 
-	TemplateData[] private _templates;
+    /// @notice set of template addresses
+	EnumerableSet.AddressSet private _templates;
 
-	Program[] private _programs;
+	/// @notice address => ProgramData mapping
+	mapping(address => ProgramData) private _programs;
 
-    /// @dev event emitted every time a new aludel is spawned
-	event AludelSpawned(address aludel);
+	/// @dev emitted when a new template is added 
+	event TemplateAdded(address template);
+	/// @dev emitted when an URL program is changed
+	event URLChanged(address program, string url);
 
 	error InvalidTemplate();
+	error TemplateNotRegistered();
+	error TemplateAlreadyAdded();
 
     /// @notice perform a minimal proxy deploy
-    /// @param templateId the number of the template to launch
+    /// @param template the number of the template to launch
 	/// @param name the string represeting the program's name
+	/// @param url the program's url
     /// @param data the calldata to use on the new aludel initialization
     /// @return aludel the new aludel deployed address.
 	function launch(
-		uint256 templateId,
+		address template,
 		string memory name,
+		string memory url,
 		bytes calldata data
 	) public returns (address aludel) {
-        // get the aludel template's data
-		TemplateData memory template = _templates[templateId];
+
+		// check if template address is registered
+		if (!_templates.contains(template)) {
+			revert TemplateNotRegistered();
+		}
 
 		// create clone and initialize
 		aludel = ProxyFactory._create(
-            template.template,
+            template,
             abi.encodeWithSelector(IAludel.initialize.selector, data)
         );
-		
-		// add program's data to the array or programs
-		_programs.push(Program({
+
+		// add program's data to the storage 
+		_programs[aludel] = ProgramData({
+			template: template,
 			name: name,
-			deployedAddress: aludel,
-			templateId: uint32(templateId),
+			url: url,
 			creation: uint64(block.timestamp)
-		}));
+		});
 
-		// emit event
-		emit AludelSpawned(aludel);
-
+		// register aludel instance
+		_register(aludel);
+		
 		// explicit return
 		return aludel;
 	}
 
 	/// @notice adds a new template to the factory
 	function addTemplate(address template, string memory title, string memory description) public onlyOwner {
-		// do we need any other checks here?
+
 		if (template == address(0)) {
 			revert InvalidTemplate();
 		}
 
-		// add template data to the array of templates
-		_templates.push(TemplateData({
-			template: template,
-			title: title,
-			description: description
-		}));
+		if (!_templates.add(template)) {
+			revert TemplateAlreadyAdded();
+		}
 
-        // register instance
-		_register(template);
+		emit TemplateAdded(template);
 	}
 
-	function getTemplate(uint256 templateId) public view returns (TemplateData memory) {
-		return _templates[templateId];
+	/// @notice updates the url for the given program
+	function updateURL(address program, string memory newUrl) external {
+		require(isInstance(program));
+		require(
+			msg.sender == owner() ||
+			msg.sender == Ownable(program).owner()
+		);
+
+		_programs[program].url = newUrl;
 	}
 
-	function getTemplates() external view returns (TemplateData[] memory) {
-		return _templates;
+	/// @notice retrieves a program's data
+	function getProgram(address program) external view returns (ProgramData memory) {
+		return _programs[program];
 	}
 
-	function getProgram(uint256 programId) external view returns (Program memory) {
-		return _programs[programId];
-	}
-
-	function getPrograms() external view returns (Program[] memory) {
-		return _programs;
+	/// @notice removes program as a registered instance of the factory.
+	function delistProgram(address program) external onlyOwner {
+		_unregister(program);
 	}
 
 }
