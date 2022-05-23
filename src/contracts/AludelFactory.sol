@@ -15,8 +15,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	struct ProgramData {
 		address template;
 		uint64 creation;
-		string url;
 		string name;
+		string url;
+		string stakingTokenUrl;
 	}
 
 	struct TemplateData {
@@ -51,6 +52,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		address template,
 		string memory name,
 		string memory url,
+		string memory stakingTokenUrl,
 		bytes calldata data
 	) public returns (address aludel) {
 
@@ -70,7 +72,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 			creation: uint64(block.timestamp),
 			template: template,
 			name: name,
-			url: url
+			url: url,
+			stakingTokenUrl: stakingTokenUrl
 		});
 
 		// register aludel instance
@@ -102,8 +105,15 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		_programs[program].url = newUrl;
 	}
 
+	function updateStakingTokenUrl(address program, string memory newUrl) external {
+		require(isInstance(program));
+		require(msg.sender == owner());
+		_programs[program].stakingTokenUrl = newUrl;
+	}
+
+	/// @notice retrieves the program's url
 	function getStakingTokenUrl(address program) external view returns (string memory) {
-		return _programs[program].url;
+		return _programs[program].stakingTokenUrl;
 	}
 
 	/// @notice retrieves a program's data
@@ -117,7 +127,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		address program,
 		address template,
 		string memory name,
-		string memory url
+		string memory url,
+		string memory stakingTokenUrl
 	) external onlyOwner {
 
 		// register aludel instance, if program is already registered this will revert
@@ -128,7 +139,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 			creation: uint64(block.timestamp),
 			template: template,
 			name: name,
-			url: url
+			url: url,
+			stakingTokenUrl: stakingTokenUrl
 		});
 	}
 
