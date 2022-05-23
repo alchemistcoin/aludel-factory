@@ -76,9 +76,9 @@ contract AludelFactoryTest is DSTest {
 
 		owner = cheats.addr(PRIVATE_KEY);
 
-		factory.addTemplate(address(template), 'a title', 'a desc');
+		factory.addTemplate(address(template));
 
-		aludel = IAludel(factory.launch(address(template), "name", "https://", abi.encode(params)));
+		aludel = IAludel(factory.launch(address(template), "name", "https://url", "https://staking.token", abi.encode(params)));
 		
 		AludelFactory.ProgramData memory program = factory.getProgram(address(aludel));
 		
