@@ -39,6 +39,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	error InvalidTemplate();
 	error TemplateNotRegistered();
 	error TemplateAlreadyAdded();
+	error ProgramAlreadyRegistered();
 
     /// @notice perform a minimal proxy deploy
     /// @param template the number of the template to launch
@@ -108,6 +109,27 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/// @notice retrieves a program's data
 	function getProgram(address program) external view returns (ProgramData memory) {
 		return _programs[program];
+	}
+
+	/// @notice allow owner to add a program manually
+	///         this allows to have pre-aludelfactory programs to be stored onchain
+	function addProgram(
+		address program,
+		address template,
+		string memory name,
+		string memory url
+	) external onlyOwner {
+
+		// register aludel instance, if program is already registered this will revert
+		_register(program);
+
+		// add program's data to the storage 
+		_programs[program] = ProgramData({
+			creation: uint64(block.timestamp),
+			template: template,
+			name: name,
+			url: url
+		});
 	}
 
 	/// @notice removes program as a registered instance of the factory.
