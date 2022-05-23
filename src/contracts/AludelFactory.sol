@@ -66,10 +66,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 		// add program's data to the storage 
 		_programs[aludel] = ProgramData({
+			creation: uint64(block.timestamp),
 			template: template,
 			name: name,
-			url: url,
-			creation: uint64(block.timestamp)
+			url: url
 		});
 
 		// register aludel instance
@@ -80,7 +80,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	}
 
 	/// @notice adds a new template to the factory
-	function addTemplate(address template, string memory title, string memory description) public onlyOwner {
+	function addTemplate(address template) public onlyOwner {
 
 		if (template == address(0)) {
 			revert InvalidTemplate();
@@ -96,12 +96,13 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/// @notice updates the url for the given program
 	function updateURL(address program, string memory newUrl) external {
 		require(isInstance(program));
-		require(
-			msg.sender == owner() ||
-			msg.sender == Ownable(program).owner()
-		);
+		require(msg.sender == owner());
 
 		_programs[program].url = newUrl;
+	}
+
+	function getStakingTokenUrl(address program) external view returns (string memory) {
+		return _programs[program].url;
 	}
 
 	/// @notice retrieves a program's data
