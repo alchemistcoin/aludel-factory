@@ -20,12 +20,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		string stakingTokenUrl;
 	}
 
-	struct TemplateData {
-		address template;
-		string title;
-		string description;
-	}
-
     /// @notice set of template addresses
 	EnumerableSet.AddressSet private _templates;
 
