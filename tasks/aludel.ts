@@ -18,7 +18,8 @@ task("launch-program")
   .addParam("rewardScalingFloor", "reward scaling floor amount (in ETH)")
   .addParam("rewardScalingCeiling", "reward scaling ceiling amount (in ETH)")
   .addParam("rewardScalingTime", "duration of the reward scaling period (in days)")
-
+  .addParam('url', 'the URL of the program')
+  .addParam('stakingTokenUrl', 'the URL of the staking token')
   .setAction(async (args, { ethers, run, network }) => {
     // log config
 
@@ -29,7 +30,7 @@ task("launch-program")
 
     // compile
 
-    await run("compile");
+    // await run("compile");
 
     // get signer
 
@@ -69,6 +70,14 @@ task("launch-program")
     );
 
     // deploy minimal proxy using `params` as init params
-    await (await factory.launch(args.aludelId, params)).wait();
+    await (
+      await factory.launch(
+        args.aludelId,
+        'Test Aludel',
+        args.url,
+        args.stakingTokenUrl, 
+        params
+      )
+    ).wait();
 
   });
