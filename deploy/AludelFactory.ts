@@ -1,7 +1,6 @@
 import "@nomiclabs/hardhat-ethers"
 import "hardhat-deploy";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
-import { Contract, ContractFactory } from '@ethersproject/contracts'
 
 export default async function ({
     ethers,
@@ -11,26 +10,9 @@ export default async function ({
     artifacts
 }: HardhatRuntimeEnvironment) {
 
-    async function deployTemplate(
-        templateName: string,
-        libraries?: {[key: string]: string
-    } ): Promise<Contract> {
-    // } ): Promise<[DeployResult, Contract]> {
-            const result = await deploy(templateName, {
-            from: deployer,
-            args: [],
-            log: true,
-            libraries,
-            deterministicDeployment: false,
-        });
-        return ethers.getContractAt(templateName, result.address)
-    }
-
     const { deploy } = deployments;
     const { deployer, dev } = await getNamedAccounts();
     
-    console.log(deployer)
-
     // deploy factory 
     const deployedFactory = await deploy("AludelFactory", {
         from: deployer,
@@ -39,37 +21,36 @@ export default async function ({
         deterministicDeployment: false,
     });
 
-    // deploy libraries
-    const fifoLibrary = await deploy('FIFO', {
+    const result = await deploy('Aludel', {
         from: deployer,
+        args: [],
         log: true,
+        contract: 'src/contracts/aludel/Aludel.sol:Aludel',
         deterministicDeployment: false
-    })
+    });
 
-    // deploy aludel v1.5
-    const aludel = await deployTemplate('Aludel')
-    await aludel.initializeLock();
+    const aludel = await ethers.getContractAt(
+        result.abi,
+        result.address
+    )
+
+    // instead of using a try catch block this should
+    // access the template's contract storage and read the _initialized flag 
+    try {
+        await aludel.initializeLock();
+    } catch (err) {
+        console.log('initialization failed, it was probably already initialized.')
+    }
     
-
-    // deploy aludel timed lock
-    const aludelTimedLock = await deployTemplate('AludelTimedLock', {
-        FIFO: fifoLibrary.address
-    })
-    await aludelTimedLock.initializeLock();
-
-    const factory = await ethers.getContractAt('AludelFactory', deployedFactory.address)
+    const factory = await ethers.getContractAt(deployedFactory.abi, deployedFactory.address)
     
     console.log('Adding templates to', factory.address)
     // add templates in factory
     if (!(await factory.isInstance(aludel.address))) {
+        console.log("adding template")
         await factory.addTemplate(aludel.address)
     } else {
         console.log('Skipping', aludel.address)
     }
-    
-    if (!(await factory.isInstance(aludelTimedLock.address))) {
-        await factory.addTemplate(aludelTimedLock.address)
-    } else {
-        console.log('Skipping', aludelTimedLock.address)
-    }
+
 };
