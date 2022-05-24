@@ -28,6 +28,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 	/// @dev emitted when a new template is added 
 	event TemplateAdded(address template);
+
 	/// @dev emitted when an URL program is changed
 	event URLChanged(address program, string url);
 
@@ -36,7 +37,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	error TemplateAlreadyAdded();
 	error ProgramAlreadyRegistered();
 
-    /// @notice perform a minimal proxy deploy
+    /// @notice perform a minimal proxy deploy of a predefined aludel template
     /// @param template the number of the template to launch
 	/// @param name the string represeting the program's name
 	/// @param url the program's url
@@ -77,6 +78,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		return aludel;
 	}
 
+	/* admin */
+
 	/// @notice adds a new template to the factory
 	function addTemplate(address template) public onlyOwner {
 
@@ -99,24 +102,15 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		_programs[program].url = newUrl;
 	}
 
+	/// @notice updates the stakingTokenUrl for a given program
 	function updateStakingTokenUrl(address program, string memory newUrl) external {
 		require(isInstance(program));
 		require(msg.sender == owner());
 		_programs[program].stakingTokenUrl = newUrl;
 	}
 
-	/// @notice retrieves the program's url
-	function getStakingTokenUrl(address program) external view returns (string memory) {
-		return _programs[program].stakingTokenUrl;
-	}
-
-	/// @notice retrieves a program's data
-	function getProgram(address program) external view returns (ProgramData memory) {
-		return _programs[program];
-	}
-
-	/// @notice allow owner to add a program manually
-	///         this allows to have pre-aludelfactory programs to be stored onchain
+	/// @notice allow owner to manually add a program
+	/// @dev this allows to have pre-aludelfactory programs to be stored onchain
 	function addProgram(
 		address program,
 		address template,
@@ -125,7 +119,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		string memory stakingTokenUrl
 	) external onlyOwner {
 
-		// register aludel instance, if program is already registered this will revert
+		// register aludel instance
+		// if program is already registered this will revert
 		_register(program);
 
 		// add program's data to the storage 
@@ -142,5 +137,18 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	function delistProgram(address program) external onlyOwner {
 		_unregister(program);
 	}
+
+	/* getters */
+
+	/// @notice retrieves the program's url
+	function getStakingTokenUrl(address program) external view returns (string memory) {
+		return _programs[program].stakingTokenUrl;
+	}
+
+	/// @notice retrieves a program's data
+	function getProgram(address program) external view returns (ProgramData memory) {
+		return _programs[program];
+	}
+
 
 }
