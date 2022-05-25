@@ -96,16 +96,21 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 	/// @notice updates the url for the given program
 	function updateURL(address program, string memory newUrl) external {
+		// check if the address is already registered
 		require(isInstance(program));
+		// only owner
 		require(msg.sender == owner());
-
+		// update storage
 		_programs[program].url = newUrl;
 	}
 
 	/// @notice updates the stakingTokenUrl for a given program
 	function updateStakingTokenUrl(address program, string memory newUrl) external {
+		// check if the address is already registered
 		require(isInstance(program));
+		// only owner
 		require(msg.sender == owner());
+		// update storage
 		_programs[program].stakingTokenUrl = newUrl;
 	}
 
@@ -148,6 +153,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/// @notice retrieves a program's data
 	function getProgram(address program) external view returns (ProgramData memory) {
 		return _programs[program];
+	}
+
+	function getTemplates() external view returns(address[] memory) {
+		return _templates.values();
 	}
 
 
