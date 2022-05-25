@@ -17,9 +17,10 @@ const forkingUrl = process.env.FORK_URL || ''
 const mnemonic = process.env.DEV_MNEMONIC || ''
 const privateKey = process.env.PRIVATE_KEY || ''
 const rinkebyUrl = process.env.RINKEBY_URL || ''
+const goerliUrl = process.env.GOERLI_URL || ''
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.12",
+  solidity: "0.8.13",
   networks: {
     hardhat: {
       forking: {
@@ -29,6 +30,15 @@ const config: HardhatUserConfig = {
     },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
+      accounts: {
+        mnemonic
+      },
+      live: true,
+      saveDeployments: true,
+      tags: ['staging']
+    },
+    goerli: {
+      url: goerliUrl,
       accounts: {
         mnemonic
       },
@@ -50,8 +60,14 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic
       }
+    },
+    avalanche: {
+      url: 'https://api.avax.network/ext/bc/C/rpc',
+      chainId: 43114,
+      accounts: {
+        mnemonic
+      }
     }
-  
   },
   gasReporter: {
     enabled: process.env.REPORT_GAS !== undefined,
