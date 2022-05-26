@@ -18,6 +18,7 @@ task("launch-program")
   .addParam("rewardScalingFloor", "reward scaling floor amount (in ETH)")
   .addParam("rewardScalingCeiling", "reward scaling ceiling amount (in ETH)")
   .addParam("rewardScalingTime", "duration of the reward scaling period (in days)")
+  .addParam('name', 'the name of the program')
   .addParam('url', 'the URL of the program')
   .addParam('stakingTokenUrl', 'the URL of the staking token')
   .setAction(async (args, { ethers, run, network }) => {
@@ -73,7 +74,7 @@ task("launch-program")
     await (
       await factory.launch(
         args.aludelId,
-        'Test Aludel',
+        name,
         args.url,
         args.stakingTokenUrl, 
         params
