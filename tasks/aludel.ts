@@ -1,5 +1,5 @@
 import { AbiCoder } from "@ethersproject/abi";
-import { formatEther, parseUnits } from "ethers/lib/utils";
+import { formatEther, getAddress, parseUnits } from "ethers/lib/utils";
 import { task } from "hardhat/config";
 import "@nomiclabs/hardhat-ethers";
 import { parseEther } from "@ethersproject/units";
@@ -78,6 +78,48 @@ task("launch-program")
         args.url,
         args.stakingTokenUrl, 
         params
+      )
+    ).wait();
+
+  });
+
+
+  task("add-program")
+  .addParam("aludelFactory", "address of the aludel factory")
+  .addParam("program", "deployed address of the program")
+  .addParam("template", "Optional. deployed address of the program's template", getAddress('0x0'))
+  .addParam('name', 'the name of the program')
+  .addParam('url', 'the URL of the program')
+  .addParam('stakingTokenUrl', 'the URL of the staking token')
+  .setAction(async (args, { ethers, run, network }) => {
+    // log config
+
+    console.log("Network");
+    console.log("  ", network.name);
+    console.log("Task Args");
+    console.log(args);
+
+    // get signer
+
+    const signer = (await ethers.getSigners())[0];
+    console.log("Signer");
+    console.log("  at", signer.address);
+    console.log("  ETH", formatEther(await signer.getBalance()));
+
+    // get factory instance
+    const factory = await ethers.getContractAt(
+      "AludelFactory",
+      args.aludelFactory
+    );
+   
+    // deploy minimal proxy using `params` as init params
+    await (
+      await factory.addProgram(
+        args.program,
+        args.template,
+        args.name,
+        args.url,
+        args.stakingTokenUrl, 
       )
     ).wait();
 
