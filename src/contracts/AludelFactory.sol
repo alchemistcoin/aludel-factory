@@ -6,7 +6,6 @@ import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 import { IAludel } from './aludel/IAludel.sol';
 import { InstanceRegistry } from "./libraries/InstanceRegistry.sol";
 
-// import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {EnumerableSet} from "./libraries/EnumerableSet.sol";
 
 contract AludelFactory is Ownable, InstanceRegistry {
