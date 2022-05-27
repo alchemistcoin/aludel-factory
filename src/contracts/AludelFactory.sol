@@ -34,6 +34,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 	/// @dev emitted when an URL program is changed
 	event URLChanged(address program, string url);
+	event StakingTokenURLChanged(address program, string url);
 
 	error InvalidTemplate();
 	error TemplateNotRegistered();
@@ -86,7 +87,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/// @notice adds a new template to the factory
 	function addTemplate(address template) public onlyOwner returns (uint256 templateIndex) {
 
-
 		if (template == address(0)) {
 			revert InvalidTemplate();
 		}
@@ -124,6 +124,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		require(msg.sender == owner());
 		// update storage
 		_programs[program].url = newUrl;
+		// emit event
+		emit URLChanged(program, newUrl);
 	}
 
 	/// @notice updates the stakingTokenUrl for a given program
@@ -134,6 +136,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		require(msg.sender == owner());
 		// update storage
 		_programs[program].stakingTokenUrl = newUrl;
+		// emit event
+		emit StakingTokenURLChanged(program, newUrl);
 	}
 
 	/// @notice allow owner to manually add a program
