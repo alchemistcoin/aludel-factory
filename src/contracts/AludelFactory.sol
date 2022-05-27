@@ -55,12 +55,13 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		bytes calldata data
 	) public returns (address aludel) {
 
-		// check if template address is registered
+		// revert when template address is not registered
 		if (!_templates.contains(template)) {
 			revert TemplateNotRegistered();
 		}
 
-		if (template.at(template).disabled) {
+		// revert when template is disabled
+		if (_templates.at(template).disabled) {
 			revert TemplateDisabled();
 		}
 
