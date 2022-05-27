@@ -18,6 +18,10 @@ import {CrucibleFactory } from 'alchemist/crucible/CrucibleFactory.sol';
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from './mocks/MockERC20.sol';
 
+import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
+
+import "forge-std/console.sol";
+
 contract AludelFactoryTest is DSTest {
 
 	AludelFactory factory;
@@ -33,6 +37,11 @@ contract AludelFactoryTest is DSTest {
 
 	uint248 public constant PRIVATE_KEY = type(uint248).max >> 7;
 
+
+	RewardPoolFactory rewardPoolFactory;
+	PowerSwitchFactory powerSwitchFactory;
+	RewardScaling rewardScaling;
+ 
 	struct RewardScaling {
 		uint256 floor;
 		uint256 ceiling;
@@ -54,8 +63,8 @@ contract AludelFactoryTest is DSTest {
 
 		Aludel template = new Aludel();
 		template.initializeLock();
-		RewardPoolFactory rewardPoolFactory = new RewardPoolFactory();
-		PowerSwitchFactory powerSwitchFactory = new PowerSwitchFactory();
+		rewardPoolFactory = new RewardPoolFactory();
+		powerSwitchFactory = new PowerSwitchFactory();
 		// Crucible crucibleTemplate = new Crucible();
 		// crucibleTemplate.initializeLock();
 		// CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
@@ -63,7 +72,7 @@ contract AludelFactoryTest is DSTest {
 		stakingToken = new MockERC20('', 'STK');
 		rewardToken = new MockERC20('', 'RWD');
 
-		RewardScaling memory rewardScaling = RewardScaling({ floor: 1 ether, ceiling: 10 ether, time: 1 days });
+		rewardScaling = RewardScaling({ floor: 1 ether, ceiling: 10 ether, time: 1 days });
 
 		AludelInitializationParams memory params = AludelInitializationParams({
 			ownerAddress: address(this),
@@ -100,15 +109,61 @@ contract AludelFactoryTest is DSTest {
 	}
 
 	function test_ownership() public {
-
 		assertEq(factory.owner(), address(this));
 	}
 
 	function test_template_initialization() public {
 		Aludel template = new Aludel();
-		emit log_address(template.owner());
 		template.initializeLock();
 		factory.addTemplate(address(template));
+	}
+
+	function test_disable_template() public {
+		Aludel template = new Aludel();
+		// emit log_address(template.owner());
+		template.initializeLock();
+		// expect emit
+		uint256 templateIndex = factory.addTemplate(address(template)) - 1;
+
+		EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
+		// template should not be disabled
+		assertTrue(templates[templateIndex].disabled == false);
+
+		// disable template
+		factory.disableTemplate(address(template), true);
+
+		templates = factory.getTemplates();
+		// now template is disabled
+		assertTrue(templates[templateIndex].disabled == true);
+
+	}
+
+	function test_launch_with_disable_template() public {
+		Aludel template = new Aludel();
+		template.initializeLock();
+		// expect emit
+		factory.addTemplate(address(template));
+		// disable template
+		factory.disableTemplate(address(template), true);
+
+		AludelInitializationParams memory params = AludelInitializationParams({
+			ownerAddress: address(this),
+			rewardPoolFactory: address(rewardPoolFactory),
+			powerSwitchFactory: address(powerSwitchFactory),
+			stakingToken: address(stakingToken),
+			rewardToken: address(rewardToken),
+			rewardScaling: rewardScaling
+		});
+
+		cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
+		factory.launch(
+			address(template),
+			"name",
+			"https://url",
+			"https://staking.token",
+			abi.encode(params)
+		);
+
 	}
 
 	function testFail_template_double_initialization() public {
