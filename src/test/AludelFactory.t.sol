@@ -20,8 +20,6 @@ import {MockERC20} from './mocks/MockERC20.sol';
 
 import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
 
-import "forge-std/console.sol";
-
 contract AludelFactoryTest is DSTest {
 
 	AludelFactory factory;
@@ -36,7 +34,6 @@ contract AludelFactoryTest is DSTest {
 	address public constant CRUCIBLE_FACTORY = 0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56;
 
 	uint248 public constant PRIVATE_KEY = type(uint248).max >> 7;
-
 
 	RewardPoolFactory rewardPoolFactory;
 	PowerSwitchFactory powerSwitchFactory;
@@ -105,7 +102,6 @@ contract AludelFactoryTest is DSTest {
 		cheats.prank(owner);
 		crucible = crucibleFactory.create('');
 		MockERC20(data.stakingToken).mint(crucible, 1 ether);
-
 	}
 
 	function test_ownership() public {

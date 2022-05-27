@@ -3,8 +3,6 @@
 
 pragma solidity ^0.8.0;
 
-import "forge-std/console.sol";
-
 /**
  * @dev Library for managing
  * https://en.wikipedia.org/wiki/Set_(abstract_data_type)[sets] of primitive
