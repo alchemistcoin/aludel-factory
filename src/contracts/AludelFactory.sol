@@ -20,7 +20,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		string stakingTokenUrl;
 	}
 
-    /// @notice set of template addresses
+    /// @notice set of template data
 	EnumerableSet.TemplateDataSet private _templates;
 
 	/// @notice address => ProgramData mapping
@@ -55,12 +55,12 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		bytes calldata data
 	) public returns (address aludel) {
 
-		// revert when template address is not registered
+		// reverts when template address is not registered
 		if (!_templates.contains(template)) {
 			revert TemplateNotRegistered();
 		}
 
-		// revert when template is disabled
+		// reverts when template is disabled
 		if (_templates.at(template).disabled) {
 			revert TemplateDisabled();
 		}
@@ -111,6 +111,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		return _templates.length();
 	}
 
+
+	/// @notice sets a template as disable or enabled 
 	function disableTemplate(address template, bool disabled) external onlyOwner {
 		if (!_templates.contains(template)) {
 			revert InvalidTemplate();
@@ -186,10 +188,12 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		return _programs[program];
 	}
 
+	/// @notice retrieves the full list of templates (even disabled templates)
 	function getTemplates() external view returns(EnumerableSet.TemplateData[] memory) {
 		return _templates.values();
 	}
 
+	/// @notice retrieves a template's data
 	function getTemplate(address template) external view returns(EnumerableSet.TemplateData memory) {
 		return _templates.at(template);
 	}
