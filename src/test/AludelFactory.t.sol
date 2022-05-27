@@ -100,7 +100,22 @@ contract AludelFactoryTest is DSTest {
 	}
 
 	function test_ownership() public {
+
 		assertEq(factory.owner(), address(this));
+	}
+
+	function test_template_initialization() public {
+		Aludel template = new Aludel();
+		emit log_address(template.owner());
+		template.initializeLock();
+		factory.addTemplate(address(template));
+	}
+
+	function testFail_template_double_initialization() public {
+		Aludel template = new Aludel();
+		template.initializeLock();
+		cheats.expectRevert(new bytes(0));
+		template.initializeLock();
 	}
 
 	function test_stake() public {
