@@ -37,6 +37,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 	error InvalidTemplate();
 	error TemplateNotRegistered();
+	error TemplateDisabled();
 	error TemplateAlreadyAdded();
 	error ProgramAlreadyRegistered();
 
@@ -57,6 +58,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		// check if template address is registered
 		if (!_templates.contains(template)) {
 			revert TemplateNotRegistered();
+		}
+
+		if (template.at(template).disabled) {
+			revert TemplateDisabled();
 		}
 
 		// create clone and initialize
