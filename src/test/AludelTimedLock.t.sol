@@ -69,11 +69,11 @@ contract AludelTimedLockTest is DSTest {
 
 		owner = cheats.addr(PRIVATE_KEY);
 
-		factory.addTemplate(address(template));
+		factory.addTemplate(address(template), 'a title', 'a desc');
 
 		aludel = AludelTimedLock(factory.launch(address(template), "name", "https://", "https://staking.token", abi.encode(params)));
-	
-		AludelTimedLock.AludelData memory data = aludel.getAludelData();
+
+    AludelTimedLock.AludelData memory data = aludel.getAludelData();
 		MockERC20(data.rewardToken).mint(address(this), 1 ether);
 		MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
 

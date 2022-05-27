@@ -8,6 +8,8 @@ import { InstanceRegistry } from "./libraries/InstanceRegistry.sol";
 
 import {EnumerableSet} from "./libraries/EnumerableSet.sol";
 
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
 contract AludelFactory is Ownable, InstanceRegistry {
 
 	using EnumerableSet for EnumerableSet.TemplateDataSet;
@@ -41,12 +43,12 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	error TemplateAlreadyAdded();
 	error ProgramAlreadyRegistered();
 
-    /// @notice perform a minimal proxy deploy of a predefined aludel template
-    /// @param template the number of the template to launch
+  /// @notice perform a minimal proxy deploy of a predefined aludel templat
+  /// @param template the number of the template to launch
 	/// @param name the string represeting the program's name
 	/// @param url the program's url
-    /// @param data the calldata to use on the new aludel initialization
-    /// @return aludel the new aludel deployed address.
+  /// @param data the calldata to use on the new aludel initialization
+  /// @return aludel the new aludel deployed address.
 	function launch(
 		address template,
 		string memory name,
@@ -67,9 +69,17 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 		// create clone and initialize
 		aludel = ProxyFactory._create(
-            template,
+            template.template,
             abi.encodeWithSelector(IAludel.initialize.selector, data)
         );
+		
+		// add program's data to the array or programs
+		_programs.push(Program({
+			name: name,
+			deployedAddress: aludel,
+			templateId: uint32(templateId),
+			creation: uint64(block.timestamp)
+		}));
 
 		// add program's data to the storage 
 		_programs[aludel] = ProgramData({
@@ -110,7 +120,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 		return _templates.length();
 	}
-
 
 	/// @notice sets a template as disable or enabled 
 	function disableTemplate(address template, bool disabled) external onlyOwner {
