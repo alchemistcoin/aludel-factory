@@ -6,11 +6,12 @@ import { Ownable } from '@openzeppelin/contracts/access/Ownable.sol';
 import { IAludel } from './aludel/IAludel.sol';
 import { InstanceRegistry } from "./libraries/InstanceRegistry.sol";
 
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+// import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableSet} from "./libraries/EnumerableSet.sol";
 
 contract AludelFactory is Ownable, InstanceRegistry {
 
-	using EnumerableSet for EnumerableSet.AddressSet;
+	using EnumerableSet for EnumerableSet.TemplateDataSet;
 
 	struct ProgramData {
 		address template;
@@ -21,13 +22,15 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	}
 
     /// @notice set of template addresses
-	EnumerableSet.AddressSet private _templates;
+	EnumerableSet.TemplateDataSet private _templates;
 
 	/// @notice address => ProgramData mapping
 	mapping(address => ProgramData) private _programs;
 
 	/// @dev emitted when a new template is added 
 	event TemplateAdded(address template);
+	/// @dev emitted when a template is updated 
+	event TemplateUpdated(address template, bool disabled);
 
 	/// @dev emitted when an URL program is changed
 	event URLChanged(address program, string url);
@@ -81,17 +84,36 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/* admin */
 
 	/// @notice adds a new template to the factory
-	function addTemplate(address template) public onlyOwner {
+	function addTemplate(address template) public onlyOwner returns (uint256 templateIndex) {
+
 
 		if (template == address(0)) {
 			revert InvalidTemplate();
 		}
 
-		if (!_templates.add(template)) {
+		// create template data
+		EnumerableSet.TemplateData memory data = EnumerableSet.TemplateData({
+			template: template,
+			disabled: false
+		});
+
+		if (!_templates.add(data)) {
 			revert TemplateAlreadyAdded();
 		}
 
 		emit TemplateAdded(template);
+
+		return _templates.length();
+	}
+
+	function disableTemplate(address template, bool disabled) external onlyOwner {
+		if (!_templates.contains(template)) {
+			revert InvalidTemplate();
+		}
+		// update disable value for the given template
+		require(_templates.update(template, disabled));
+		// emit event
+		emit TemplateUpdated(template, disabled);
 	}
 
 	/// @notice updates the url for the given program
@@ -155,9 +177,12 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		return _programs[program];
 	}
 
-	function getTemplates() external view returns(address[] memory) {
+	function getTemplates() external view returns(EnumerableSet.TemplateData[] memory) {
 		return _templates.values();
 	}
 
+	function getTemplate(address template) external view returns(EnumerableSet.TemplateData memory) {
+		return _templates.at(template);
+	}
 
 }
