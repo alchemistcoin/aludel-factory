@@ -8,7 +8,7 @@ import { InstanceRegistry } from "./libraries/InstanceRegistry.sol";
 
 import {EnumerableSet} from "./libraries/EnumerableSet.sol";
 
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableSet} from "./libraries/EnumerableSet.sol";
 
 contract AludelFactory is Ownable, InstanceRegistry {
 
@@ -69,18 +69,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 		// create clone and initialize
 		aludel = ProxyFactory._create(
-            template.template,
+            template,
             abi.encodeWithSelector(IAludel.initialize.selector, data)
         );
 		
-		// add program's data to the array or programs
-		_programs.push(Program({
-			name: name,
-			deployedAddress: aludel,
-			templateId: uint32(templateId),
-			creation: uint64(block.timestamp)
-		}));
-
 		// add program's data to the storage 
 		_programs[aludel] = ProgramData({
 			creation: uint64(block.timestamp),

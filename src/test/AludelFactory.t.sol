@@ -6,7 +6,7 @@ import 'solmate/tokens/ERC20.sol';
 import {Hevm} from "solmate/test/utils/Hevm.sol";
 
 import {AludelFactory} from '../contracts/AludelFactory.sol';
-import {Aludel} from '../contracts/aludezl/Aludel.sol';
+import {Aludel} from '../contracts/aludel/Aludel.sol';
 import { IAludel } from '../contracts/aludel/IAludel.sol';
 import {RewardPoolFactory} from 'alchemist/aludel/RewardPoolFactory.sol';
 import {PowerSwitchFactory} from 'alchemist/aludel/PowerSwitchFactory.sol';
@@ -82,16 +82,7 @@ contract AludelFactoryTest is DSTest {
 
 		owner = cheats.addr(PRIVATE_KEY);
 
-		factory.addTemplate(address(template), 'a title', 'a desc');
-
-		aludel = IAludel(factory.launch(0, "name", abi.encode(params)));
-		
-		AludelFactory.Program memory program = factory.getProgram(0);
-		
-		assertEq(program.name, "name");
-		assertEq(program.templateId, 0);
-		assertEq(program.creation, block.timestamp);
-		assertEq(program.deployedAddress, address(aludel));
+		factory.addTemplate(address(template));
 
 		aludel = IAludel(factory.launch(address(template), "name", "https://url", "https://staking.token", abi.encode(params)));
 		
@@ -111,12 +102,6 @@ contract AludelFactoryTest is DSTest {
 		cheats.prank(owner);
 		crucible = crucibleFactory.create('');
 		MockERC20(data.stakingToken).mint(crucible, 1 ether);
-	}
-
-	function test_getTemplate() public {
-		AludelFactory.TemplateData memory data = factory.getTemplate(0);
-		assertEq(data.title, "a title");
-		assertEq(data.description, "a desc");
 	}
 
 	function test_ownership() public {
