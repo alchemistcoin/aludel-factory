@@ -3,6 +3,7 @@ import { formatEther, getAddress, parseUnits } from "ethers/lib/utils";
 import { task } from "hardhat/config";
 import "@nomiclabs/hardhat-ethers";
 import { parseEther } from "@ethersproject/units";
+import { AddressZero } from "@ethersproject/constants"
 
 export const ETHER = (amount: number = 1) => parseEther(amount.toString());
 export const DAYS = (days: number = 1) => days * 60 * 60 * 24;
@@ -87,7 +88,7 @@ task("launch-program")
   task("add-program")
   .addParam("aludelFactory", "address of the aludel factory")
   .addParam("program", "deployed address of the program")
-  .addParam("template", "Optional. deployed address of the program's template", getAddress('0x0'))
+  .addParam("template", "Optional. deployed address of the program's template", AddressZero)
   .addParam('name', 'the name of the program')
   .addParam('url', 'the URL of the program')
   .addParam('stakingTokenUrl', 'the URL of the staking token')
