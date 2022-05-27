@@ -140,22 +140,22 @@ library EnumerableSet {
     }
 
     /**
-     * @dev Returns the value stored at position `index` in the set. O(1).
+     * @dev Returns the value stored with a template value matching `template` in the set. O(1).
      *
      * Note that there are no guarantees on the ordering of values inside the
      * array, and it may change when more values are added or removed.
      *
      * Requirements:
      *
-     * - `index` must be strictly exist in `_indexes`.
+     * - `template` must exist as a key in `_indexes`.
      */
     function at(TemplateDataSet storage set, address template) internal view returns (TemplateData memory) {
         uint256 index = set._indexes[template];
-        return set._values[index];
+        return set._values[index-1];
     }
 
     /**
-     * @dev Returns the value stored with a template value matching `template` in the set. O(1).
+     * @dev Returns the value stored at position `index` in the set. O(1).
      *
      * Note that there are no guarantees on the ordering of values inside the
      * array, and it may change when more values are added or removed.
