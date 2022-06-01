@@ -18,7 +18,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		address template;
 		uint64 creation;
 		string name;
-		string url;
 		string stakingTokenUrl;
 	}
 
@@ -34,7 +33,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	event TemplateUpdated(address template, bool disabled);
 
 	/// @dev emitted when an URL program is changed
-	event URLChanged(address program, string url);
 	event StakingTokenURLChanged(address program, string url);
 
 	error InvalidTemplate();
@@ -43,12 +41,12 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	error TemplateAlreadyAdded();
 	error ProgramAlreadyRegistered();
 
-  /// @notice perform a minimal proxy deploy of a predefined aludel templat
-  /// @param template the number of the template to launch
+	/// @notice perform a minimal proxy deploy of a predefined aludel templat
+	/// @param template the number of the template to launch
 	/// @param name the string represeting the program's name
-	/// @param url the program's url
-  /// @param data the calldata to use on the new aludel initialization
-  /// @return aludel the new aludel deployed address.
+	/// @param stakingTokenUrl the program's url
+	/// @param data the calldata to use on the new aludel initialization
+	/// @return aludel the new aludel deployed address.
 	function launch(
 		address template,
 		string memory name,
@@ -78,7 +76,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 			creation: uint64(block.timestamp),
 			template: template,
 			name: name,
-			url: url,
 			stakingTokenUrl: stakingTokenUrl
 		});
 
@@ -124,18 +121,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		emit TemplateUpdated(template, disabled);
 	}
 
-	/// @notice updates the url for the given program
-	function updateURL(address program, string memory newUrl) external {
-		// check if the address is already registered
-		require(isInstance(program));
-		// only owner
-		require(msg.sender == owner());
-		// update storage
-		_programs[program].url = newUrl;
-		// emit event
-		emit URLChanged(program, newUrl);
-	}
-
 	/// @notice updates the stakingTokenUrl for a given program
 	function updateStakingTokenUrl(address program, string memory newUrl) external {
 		// check if the address is already registered
@@ -149,12 +134,11 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	}
 
 	/// @notice allow owner to manually add a program
-	/// @dev this allows to have pre-aludelfactory programs to be stored onchain
+	/// @dev this allows onchain storage of pre-aludel factory programs
 	function addProgram(
 		address program,
 		address template,
 		string memory name,
-		string memory url,
 		string memory stakingTokenUrl
 	) external onlyOwner {
 
@@ -167,7 +151,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 			creation: uint64(block.timestamp),
 			template: template,
 			name: name,
-			url: url,
 			stakingTokenUrl: stakingTokenUrl
 		});
 	}
