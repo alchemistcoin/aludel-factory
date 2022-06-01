@@ -50,7 +50,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	function launch(
 		address template,
 		string memory name,
-		string memory url,
 		string memory stakingTokenUrl,
 		bytes calldata data
 	) public returns (address aludel) {
@@ -91,6 +90,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/// @notice adds a new template to the factory
 	function addTemplate(address template) public onlyOwner returns (uint256 templateIndex) {
 
+		// cannot add address(0) as template
 		if (template == address(0)) {
 			revert InvalidTemplate();
 		}
@@ -101,10 +101,12 @@ contract AludelFactory is Ownable, InstanceRegistry {
 			disabled: false
 		});
 
+		// add template to the storage
 		if (!_templates.add(data)) {
 			revert TemplateAlreadyAdded();
 		}
 
+		// emit event
 		emit TemplateAdded(template);
 
 		return _templates.length();
