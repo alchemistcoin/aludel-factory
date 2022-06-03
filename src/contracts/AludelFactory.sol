@@ -32,8 +32,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/// @dev emitted when a template is updated 
 	event TemplateUpdated(address template, bool disabled);
 
-	/// @dev emitted when an URL program is changed
+	/// @dev emitted when a program's url is changed
 	event StakingTokenURLChanged(address program, string url);
+	/// @dev emitted when a program's name is changed
+	event NameChanged(address program, string name);
 
 	error InvalidTemplate();
 	error TemplateNotRegistered();
@@ -133,6 +135,18 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		_programs[program].stakingTokenUrl = newUrl;
 		// emit event
 		emit StakingTokenURLChanged(program, newUrl);
+	}
+
+	/// @notice updates the name for a given program
+	function updateName(address program, string memory newName) external {
+		// check if the address is already registered
+		require(isInstance(program));
+		// only owner
+		require(msg.sender == owner());
+		// update storage
+		_programs[program].name = newName;
+		// emit event
+		emit NameChanged(program, newName);	
 	}
 
 	/// @notice allow owner to manually add a program
