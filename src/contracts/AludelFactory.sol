@@ -115,7 +115,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	}
 
 	/// @notice sets a template as disable or enabled 
-	function disableTemplate(address template, bool disabled) external onlyOwner {
+	function updateTemplate(address template, bool disabled) external onlyOwner {
 		if (!_templates.contains(template)) {
 			revert InvalidTemplate();
 		}
@@ -126,11 +126,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	}
 
 	/// @notice updates the stakingTokenUrl for a given program
-	function updateStakingTokenUrl(address program, string memory newUrl) external {
+	function updateStakingTokenUrl(address program, string memory newUrl) external onlyOwner {
 		// check if the address is already registered
 		require(isInstance(program));
-		// only owner
-		require(msg.sender == owner());
 		// update storage
 		_programs[program].stakingTokenUrl = newUrl;
 		// emit event
@@ -138,11 +136,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	}
 
 	/// @notice updates the name for a given program
-	function updateName(address program, string memory newName) external {
+	function updateName(address program, string memory newName) external onlyOwner {
 		// check if the address is already registered
 		require(isInstance(program));
-		// only owner
-		require(msg.sender == owner());
 		// update storage
 		_programs[program].name = newName;
 		// emit event
