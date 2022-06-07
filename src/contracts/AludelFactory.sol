@@ -90,7 +90,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	/* admin */
 
 	/// @notice adds a new template to the factory
-	function addTemplate(address template) public onlyOwner returns (uint256 templateIndex) {
+	function addTemplate(address template, string memory name) public onlyOwner returns (uint256 templateIndex) {
 
 		// cannot add address(0) as template
 		if (template == address(0)) {
@@ -100,7 +100,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		// create template data
 		EnumerableSet.TemplateData memory data = EnumerableSet.TemplateData({
 			template: template,
-			disabled: false
+			disabled: false,
+			name: name
 		});
 
 		// add template to the storage
