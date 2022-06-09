@@ -20,7 +20,6 @@ task("launch-program")
   .addParam("rewardScalingCeiling", "reward scaling ceiling amount (in ETH)")
   .addParam("rewardScalingTime", "duration of the reward scaling period (in days)")
   .addParam('name', 'the name of the program')
-  .addParam('url', 'the URL of the program')
   .addParam('stakingTokenUrl', 'the URL of the staking token')
   .setAction(async (args, { ethers, run, network }) => {
     // log config
@@ -43,7 +42,7 @@ task("launch-program")
 
     // get factory instance
     const factory = await ethers.getContractAt(
-      "AludelFactory",
+      "src/contracts/AludelFactory.sol:AludelFactory",
       args.aludelFactory
     );
     
@@ -74,9 +73,8 @@ task("launch-program")
     // deploy minimal proxy using `params` as init params
     await (
       await factory.launch(
-        args.aludelId,
+        args.templateId,
         args.name,
-        args.url,
         args.stakingTokenUrl, 
         params
       )
@@ -85,7 +83,107 @@ task("launch-program")
   });
 
 
-  task("add-program")
+task('update-template')
+  .addParam("aludelFactory", "address of the aludel factory")
+  .addParam("template", "address of a template")
+  .addFlag('disable')
+  .setAction(async (args, { ethers, run, network }) => {
+    // log config
+
+    console.log("Network");
+    console.log("  ", network.name);
+    console.log("Task Args");
+    console.log(args);
+
+    // get signer
+
+    const signer = (await ethers.getSigners())[0];
+    console.log("Signer");
+    console.log("  at", signer.address);
+    console.log("  ETH", formatEther(await signer.getBalance()));
+
+    // get factory instance
+    const factory = await ethers.getContractAt(
+      "src/contracts/AludelFactory.sol:AludelFactory",
+      args.aludelFactory
+    );
+   
+      console.log(factory)
+
+    // deploy minimal proxy using `params` as init params
+    await (
+      await factory.updateTemplate(args.template, args.disable ? true : false)
+    ).wait();
+   
+  })
+
+task("add-template")
+  .addParam("aludelFactory", "address of the aludel factory")
+  .addParam("template", "address of a template")
+  .setAction(async (args, { ethers, run, network }) => {
+    // log config
+
+    console.log("Network");
+    console.log("  ", network.name);
+    console.log("Task Args");
+    console.log(args);
+
+    // get signer
+
+    const signer = (await ethers.getSigners())[0];
+    console.log("Signer");
+    console.log("  at", signer.address);
+    console.log("  ETH", formatEther(await signer.getBalance()));
+
+    // get factory instance
+    const factory = await ethers.getContractAt(
+      "src/contracts/AludelFactory.sol:AludelFactory",
+      args.aludelFactory
+    );
+   
+    // deploy minimal proxy using `params` as init params
+    await (
+      await factory.addTemplate(args.template)
+    ).wait();
+
+  });
+
+  
+task("delist-program")
+  .addParam("aludelFactory", "address of the aludel factory")
+  .addParam("program", "address of a program")
+  .setAction(async (args, { ethers, run, network }) => {
+    // log config
+
+    console.log("Network");
+    console.log("  ", network.name);
+    console.log("Task Args");
+    console.log(args);
+
+    // get signer
+
+    const signer = (await ethers.getSigners())[0];
+    console.log("Signer");
+    console.log("  at", signer.address);
+    console.log("  ETH", formatEther(await signer.getBalance()));
+
+    // get factory instance
+    const factory = await ethers.getContractAt(
+      "src/contracts/AludelFactory.sol:AludelFactory",
+      args.aludelFactory
+    );
+   
+    // deploy minimal proxy using `params` as init params
+    await (
+      await factory.delistProgram(args.program)
+    ).wait();
+
+  });
+
+
+
+
+task("add-program")
   .addParam("aludelFactory", "address of the aludel factory")
   .addParam("program", "deployed address of the program")
   .addParam("template", "Optional. deployed address of the program's template", AddressZero)
@@ -109,7 +207,7 @@ task("launch-program")
 
     // get factory instance
     const factory = await ethers.getContractAt(
-      "AludelFactory",
+      "src/contracts/AludelFactory.sol:AludelFactory",
       args.aludelFactory
     );
    
