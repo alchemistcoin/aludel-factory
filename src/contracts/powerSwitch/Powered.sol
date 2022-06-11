@@ -10,6 +10,8 @@ interface IPowered {
 
     function isShutdown() external view returns (bool status);
 
+    function isStarted() external view returns (bool status);
+
     function getPowerSwitch() external view returns (address powerSwitch);
 
     function getPowerController() external view returns (address controller);
