@@ -69,7 +69,7 @@ contract Powered is IPowered {
         return IPowerSwitch(_powerSwitch).isShutdown();
     }
 
-    function hasStarted() public view override returns (bool status) {
+    function isStarted() public view override returns (bool status) {
         return IPowerSwitch(_powerSwitch).getStatus() != IPowerSwitch.State.NotStarted;
     }
 
@@ -100,6 +100,6 @@ contract Powered is IPowered {
     }
 
     function _hasStarted() private view {
-        require(hasStarted(), "Powered: not started");
+        require(isStarted(), "Powered: not started");
     }
 }
