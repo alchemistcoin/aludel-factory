@@ -40,7 +40,6 @@ interface IPowerSwitch {
 contract PowerSwitch is IPowerSwitch, Ownable {
     /* storage */
 
-
     uint64 private _startTimestamp;
     IPowerSwitch.State private _status;
 
@@ -49,6 +48,7 @@ contract PowerSwitch is IPowerSwitch, Ownable {
     constructor(address owner, uint64 startTimestamp) {
         // sanity check owner
         require(owner != address(0), "PowerSwitch: invalid owner");
+
         _startTimestamp = startTimestamp;
         // transfer ownership
         Ownable.transferOwnership(owner);
@@ -73,7 +73,7 @@ contract PowerSwitch is IPowerSwitch, Ownable {
     /// state scope: only modify _status
     /// token transfer: none
     function powerOff() external override onlyOwner {
-        // require(_status == IPowerSwitch.State.Online, "PowerSwitch: cannot power off");
+        require(_status == IPowerSwitch.State.Online, "PowerSwitch: cannot power off");
         _status = IPowerSwitch.State.Offline;
         emit PowerOff();
     }
@@ -94,7 +94,9 @@ contract PowerSwitch is IPowerSwitch, Ownable {
     /* getter functions */
 
     function isOnline() external view override returns (bool status) {
-        // return _status == State.Online;
+        // the difference with the original PowerSwitch contract is that
+        // we check if the current timestamp is greater than _startTimestamp
+        // _status is online by default.
         return block.timestamp >= uint256(_startTimestamp) &&_status == State.Online;
     }
 
