@@ -107,7 +107,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         address rewardPool = IFactory(params.rewardPoolFactory).create(abi.encode(powerSwitch));
 
         // // set internal configs
-        _transferOwnership(params.ownerAddress);
+        _transferOwnership(msg.sender);
         Powered._setPowerSwitch(powerSwitch);
 
         // commit to storage
