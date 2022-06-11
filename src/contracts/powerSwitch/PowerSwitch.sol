@@ -43,11 +43,19 @@ contract PowerSwitch is IPowerSwitch, Ownable {
     uint64 private _startTimestamp;
     IPowerSwitch.State private _status;
 
+    error PowerSwitch_CannotPowerOn();
+    error PowerSwitch_InvalidOwner();
+    error PowerSwitch_CannotPowerOff();
+    error PowerSwitch_CannotShutdown();
+    
+
     /* initializer */
 
     constructor(address owner, uint64 startTimestamp) {
         // sanity check owner
-        require(owner != address(0), "PowerSwitch: invalid owner");
+        if (owner == address(0)) {
+            revert PowerSwitch_InvalidOwner();
+        }
 
         _startTimestamp = startTimestamp;
         // transfer ownership
@@ -62,7 +70,9 @@ contract PowerSwitch is IPowerSwitch, Ownable {
     /// state scope: only modify _status
     /// token transfer: none
     function powerOn() external override onlyOwner {
-        require(_status == IPowerSwitch.State.Offline, "PowerSwitch: cannot power on");
+        if (_status != IPowerSwitch.State.Offline) {
+            revert PowerSwitch_CannotPowerOn();
+        }
         _status = IPowerSwitch.State.Online;
         emit PowerOn();
     }
@@ -73,7 +83,9 @@ contract PowerSwitch is IPowerSwitch, Ownable {
     /// state scope: only modify _status
     /// token transfer: none
     function powerOff() external override onlyOwner {
-        require(_status == IPowerSwitch.State.Online, "PowerSwitch: cannot power off");
+        if (_status != IPowerSwitch.State.Online) {
+            revert PowerSwitch_CannotPowerOff();
+        }
         _status = IPowerSwitch.State.Offline;
         emit PowerOff();
     }
@@ -86,7 +98,9 @@ contract PowerSwitch is IPowerSwitch, Ownable {
     /// state scope: only modify _status
     /// token transfer: none
     function emergencyShutdown() external override onlyOwner {
-        require(_status != IPowerSwitch.State.Shutdown, "PowerSwitch: cannot shutdown");
+        if (_status == IPowerSwitch.State.Shutdown) {
+            revert PowerSwitch_CannotShutdown();
+        }
         _status = IPowerSwitch.State.Shutdown;
         emit EmergencyShutdown();
     }
