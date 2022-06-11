@@ -73,7 +73,9 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         address powerSwitchFactory;
         address stakingToken;
         address rewardToken;
+        uint64 startTimestamp;
         RewardScaling rewardScaling;
+
     }
 
     /* initializer */
@@ -101,7 +103,9 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         require(params.rewardScaling.time != 0, "Aludel: scaling time cannot be zero");
 
         // deploy power switch
-        address powerSwitch = IFactory(params.powerSwitchFactory).create(abi.encode(params.ownerAddress));
+        address powerSwitch = IFactory(params.powerSwitchFactory).create(
+            abi.encode(params.ownerAddress, params.startTimestamp)
+        );
 
         // // deploy reward pool
         address rewardPool = IFactory(params.rewardPoolFactory).create(abi.encode(powerSwitch));

@@ -9,7 +9,7 @@ import {AludelFactory} from '../contracts/AludelFactory.sol';
 import {Aludel} from '../contracts/aludel/Aludel.sol';
 import { IAludel } from '../contracts/aludel/IAludel.sol';
 import {RewardPoolFactory} from 'alchemist/aludel/RewardPoolFactory.sol';
-import {PowerSwitchFactory} from 'alchemist/aludel/PowerSwitchFactory.sol';
+import {PowerSwitchFactory} from '../contracts/powerSwitch/PowerSwitchFactory.sol';
 
 import {IFactory} from "alchemist/factory/IFactory.sol";
 
@@ -51,6 +51,7 @@ contract AludelFactoryTest is DSTest {
 		address powerSwitchFactory;
 		address stakingToken;
 		address rewardToken;
+		uint64 startTimestamp;
 		RewardScaling rewardScaling;
 	}
 
@@ -77,7 +78,8 @@ contract AludelFactoryTest is DSTest {
 			powerSwitchFactory: address(powerSwitchFactory),
 			stakingToken: address(stakingToken),
 			rewardToken: address(rewardToken),
-			rewardScaling: rewardScaling
+			rewardScaling: rewardScaling,
+			startTimestamp: uint64(block.timestamp)
 		});
 
 		owner = cheats.addr(PRIVATE_KEY);
@@ -148,7 +150,8 @@ contract AludelFactoryTest is DSTest {
 			powerSwitchFactory: address(powerSwitchFactory),
 			stakingToken: address(stakingToken),
 			rewardToken: address(rewardToken),
-			rewardScaling: rewardScaling
+			rewardScaling: rewardScaling,
+			startTimestamp: uint64(block.timestamp)
 		});
 
 		cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
