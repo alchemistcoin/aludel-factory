@@ -12,7 +12,12 @@ interface IPowerSwitch {
 
     /* data types */
 
-    enum State {Online, Offline, Shutdown}
+    enum State {
+        Online,
+        Offline,
+        Shutdown,
+        NotStarted
+    }
 
     /* admin functions */
 
@@ -47,7 +52,6 @@ contract PowerSwitch is IPowerSwitch, Ownable {
     error PowerSwitch_InvalidOwner();
     error PowerSwitch_CannotPowerOff();
     error PowerSwitch_CannotShutdown();
-    
 
     /* initializer */
 
@@ -111,7 +115,7 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         // the difference with the original PowerSwitch contract is that
         // we check if the current timestamp is greater than _startTimestamp
         // _status is online by default.
-        return block.timestamp >= uint256(_startTimestamp) &&_status == State.Online;
+        return _status == State.Online;
     }
 
     function isOffline() external view override returns (bool status) {
@@ -122,11 +126,25 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         return _status == State.Shutdown;
     }
 
-    function getStatus() external view override returns (IPowerSwitch.State status) {
-        return _status;
+    function getStatus()
+        external
+        view
+        override
+        returns (IPowerSwitch.State status)
+    {
+        if (block.timestamp >= uint256(_startTimestamp)) {
+            return _status;
+        } else {
+            return State.NotStarted;
+        }
     }
 
-    function getPowerController() external view override returns (address controller) {
+    function getPowerController()
+        external
+        view
+        override
+        returns (address controller)
+    {
         return Ownable.owner();
     }
 }
