@@ -112,9 +112,6 @@ contract PowerSwitch is IPowerSwitch, Ownable {
     /* getter functions */
 
     function isOnline() external view override returns (bool status) {
-        // the difference with the original PowerSwitch contract is that
-        // we check if the current timestamp is greater than _startTimestamp
-        // _status is online by default.
         return _status == State.Online;
     }
 
@@ -132,6 +129,7 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         override
         returns (IPowerSwitch.State status)
     {
+        // if the current timestamp is greater than _startTimestamp we return the switch' status
         if (block.timestamp >= uint256(_startTimestamp)) {
             return _status;
         } else {
