@@ -14,7 +14,7 @@ import {IFactory} from "alchemist/factory/IFactory.sol";
 import {IInstanceRegistry} from "alchemist/factory/InstanceRegistry.sol";
 import {IUniversalVault} from "alchemist/crucible/Crucible.sol";
 import {IRewardPool} from "alchemist/aludel/RewardPool.sol";
-import {Powered} from "alchemist/aludel/Powered.sol";
+import {Powered} from "../powerSwitch/Powered.sol";
 
 import { IAludel } from "./IAludel.sol";
 
@@ -697,7 +697,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         address vault,
         uint256 amount,
         bytes calldata permission
-    ) external override onlyOnline {
+    ) external override onlyOnline hasStarted {
         // verify vault is valid
         require(isValidVault(vault), "Aludel: vault is not registered");
 
@@ -755,7 +755,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         address vault,
         uint256 amount,
         bytes calldata permission
-    ) external override onlyOnline {
+    ) external override onlyOnline hasStarted {
         // fetch vault storage reference
         VaultData storage vaultData = _vaults[vault];
 
