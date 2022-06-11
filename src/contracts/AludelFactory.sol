@@ -55,6 +55,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		string memory url,
 		string memory stakingTokenUrl,
 		address vaultFactory,
+		address[] bonusTokens,
+		address ownerAddress,
 		bytes calldata data
 	) public returns (address aludel) {
 
@@ -88,7 +90,15 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 		// register vault factory
 		IAludel(aludel).registerVaultFactory(vaultFactory);
+
+		// register bonus tokens
+		 for (uint256 index = 0; index < bonusTokens.length; index++) {
+			IAludel(aludel).registerBonusToken(bonusTokens[index]);
+		 }
 		
+		// transfer ownership
+		IAludel(aludel).transferOwnership(ownerAddress);
+
 		// explicit return
 		return aludel;
 	}
