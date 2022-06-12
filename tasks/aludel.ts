@@ -120,6 +120,7 @@ task('update-template')
 task("add-template")
   .addParam("aludelFactory", "address of the aludel factory")
   .addParam("template", "address of a template")
+  .addFlag('disable', 'to set the template as disabled')
   .setAction(async (args, { ethers, run, network }) => {
     // log config
 
@@ -141,10 +142,13 @@ task("add-template")
       args.aludelFactory
     );
    
-    // deploy minimal proxy using `params` as init params
     await (
       await factory.addTemplate(args.template)
     ).wait();
+
+    if (args.disable) {
+      await (await factory.updateTemplate(args.template, true)).wait()
+    }
 
   });
 
