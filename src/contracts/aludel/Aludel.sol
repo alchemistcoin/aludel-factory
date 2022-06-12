@@ -73,7 +73,6 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         address powerSwitchFactory;
         address stakingToken;
         address rewardToken;
-        uint64 startTimestamp;
         RewardScaling rewardScaling;
 
     }
@@ -89,7 +88,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
     /// state machine: can only be called once
     /// state scope: set initialization variables
     /// token transfer: none
-    function initialize(bytes calldata data) external override initializer {
+    function initialize(bytes calldata data, uint64 startTime) external override initializer {
 
         (AludelInitializationParams memory params) = abi.decode(
             data, (AludelInitializationParams)
@@ -104,7 +103,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
 
         // deploy power switch
         address powerSwitch = IFactory(params.powerSwitchFactory).create(
-            abi.encode(params.ownerAddress, params.startTimestamp)
+            abi.encode(params.ownerAddress, startTime)
         );
 
         // // deploy reward pool
