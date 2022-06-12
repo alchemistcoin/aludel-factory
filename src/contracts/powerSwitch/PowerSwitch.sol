@@ -37,6 +37,8 @@ interface IPowerSwitch {
 
     function getStatus() external view returns (State status);
 
+    function getStartTime() external view returns (uint64 startTime);
+
     function getPowerController() external view returns (address controller);
 }
 
@@ -135,6 +137,10 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         } else {
             return State.NotStarted;
         }
+    }
+
+    function getStartTime() external view override returns (uint64 startTime) {
+        return _startTimestamp;
     }
 
     function getPowerController()
