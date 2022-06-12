@@ -25,7 +25,10 @@ contract PowerSwitchTest is DSTest {
 		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.NotStarted);
 		cheats.warp(timestamp + 10);
 		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Online);
-
+		powerSwitch.powerOff();
+		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Offline);
+		powerSwitch.emergencyShutdown();
+		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Shutdown);
 	}
 
 }
