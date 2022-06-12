@@ -17,6 +17,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 	struct ProgramData {
 		address template;
 		uint64 creation;
+		uint64 startTime;
 		string name;
 		string stakingTokenUrl;
 	}
@@ -53,6 +54,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		address template,
 		string memory name,
 		string memory stakingTokenUrl,
+		uint64 startTime,
 		bytes calldata data
 	) public returns (address aludel) {
 
@@ -69,12 +71,13 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		// create clone and initialize
 		aludel = ProxyFactory._create(
             template,
-            abi.encodeWithSelector(IAludel.initialize.selector, data)
+            abi.encodeWithSelector(IAludel.initialize.selector, data, startTime)
         );
 		
 		// add program's data to the storage 
 		_programs[aludel] = ProgramData({
 			creation: uint64(block.timestamp),
+			startTime: startTime,
 			template: template,
 			name: name,
 			stakingTokenUrl: stakingTokenUrl
@@ -152,7 +155,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		address program,
 		address template,
 		string memory name,
-		string memory stakingTokenUrl
+		string memory stakingTokenUrl,
+		uint64 startTime
 	) external onlyOwner {
 
 		// register aludel instance
@@ -162,6 +166,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		// add program's data to the storage 
 		_programs[program] = ProgramData({
 			creation: uint64(block.timestamp),
+			startTime: startTime,
 			template: template,
 			name: name,
 			stakingTokenUrl: stakingTokenUrl
