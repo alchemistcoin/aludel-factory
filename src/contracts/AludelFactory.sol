@@ -74,7 +74,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		// create clone and initialize
 		aludel = ProxyFactory._create(
             template,
-            abi.encodeWithSelector(IAludel.initialize.selector, data, startTime)
+            abi.encodeWithSelector(IAludel.initialize.selector, data, startTime, ownerAddress)
         );
 		
 		// add program's data to the storage 

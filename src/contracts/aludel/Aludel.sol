@@ -68,7 +68,6 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
     EnumerableSet.AddressSet internal _vaultFactorySet;
 
     struct AludelInitializationParams {
-        address ownerAddress;
         address rewardPoolFactory;
         address powerSwitchFactory;
         address stakingToken;
@@ -88,7 +87,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
     /// state machine: can only be called once
     /// state scope: set initialization variables
     /// token transfer: none
-    function initialize(bytes calldata data, uint64 startTime) external override initializer {
+    function initialize(bytes calldata data, uint64 startTime, address ownerAddress) external override initializer {
 
         (AludelInitializationParams memory params) = abi.decode(
             data, (AludelInitializationParams)
@@ -103,7 +102,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
 
         // deploy power switch
         address powerSwitch = IFactory(params.powerSwitchFactory).create(
-            abi.encode(params.ownerAddress, startTime)
+            abi.encode(ownerAddress, startTime)
         );
 
         // // deploy reward pool
