@@ -16,7 +16,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 	struct ProgramData {
 		address template;
-		uint64 creation;
 		uint64 startTime;
 		string name;
 		string stakingTokenUrl;
@@ -79,7 +78,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		
 		// add program's data to the storage 
 		_programs[aludel] = ProgramData({
-			creation: uint64(block.timestamp),
 			startTime: startTime,
 			template: template,
 			name: name,
@@ -181,7 +179,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 		// add program's data to the storage 
 		_programs[program] = ProgramData({
-			creation: uint64(block.timestamp),
 			startTime: startTime,
 			template: template,
 			name: name,
