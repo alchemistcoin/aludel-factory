@@ -40,6 +40,7 @@ library EnumerableSet {
     struct TemplateData {
         address template;
         bool disabled;
+        string name;
     }
 
     struct TemplateDataSet {

@@ -82,9 +82,9 @@ contract AludelFactoryTest is DSTest {
 
 		owner = cheats.addr(PRIVATE_KEY);
 
-		factory.addTemplate(address(template));
+		factory.addTemplate(address(template), "test template");
 
-		aludel = IAludel(factory.launch(address(template), "name", "https://url", "https://staking.token", abi.encode(params)));
+		aludel = IAludel(factory.launch(address(template), "name", "https://staking.token", abi.encode(params)));
 		
 		AludelFactory.ProgramData memory program = factory.getProgram(address(aludel));
 		
@@ -111,7 +111,7 @@ contract AludelFactoryTest is DSTest {
 	function test_template_initialization() public {
 		Aludel template = new Aludel();
 		template.initializeLock();
-		factory.addTemplate(address(template));
+		factory.addTemplate(address(template), "bleep");
 	}
 
 	function test_disable_template() public {
@@ -119,14 +119,14 @@ contract AludelFactoryTest is DSTest {
 		// emit log_address(template.owner());
 		template.initializeLock();
 		// expect emit
-		uint256 templateIndex = factory.addTemplate(address(template)) - 1;
+		uint256 templateIndex = factory.addTemplate(address(template), "bloop") - 1;
 
 		EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
 		// template should not be disabled
 		assertTrue(templates[templateIndex].disabled == false);
 
 		// disable template
-		factory.disableTemplate(address(template), true);
+		factory.updateTemplate(address(template), true);
 
 		templates = factory.getTemplates();
 		// now template is disabled
@@ -138,9 +138,9 @@ contract AludelFactoryTest is DSTest {
 		Aludel template = new Aludel();
 		template.initializeLock();
 		// expect emit
-		factory.addTemplate(address(template));
+		factory.addTemplate(address(template), "foo");
 		// disable template
-		factory.disableTemplate(address(template), true);
+		factory.updateTemplate(address(template), true);
 
 		AludelInitializationParams memory params = AludelInitializationParams({
 			ownerAddress: address(this),
@@ -155,7 +155,6 @@ contract AludelFactoryTest is DSTest {
 		factory.launch(
 			address(template),
 			"name",
-			"https://url",
 			"https://staking.token",
 			abi.encode(params)
 		);
