@@ -73,7 +73,6 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         address stakingToken;
         address rewardToken;
         RewardScaling rewardScaling;
-
     }
 
     /* initializer */
@@ -87,7 +86,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
     /// state machine: can only be called once
     /// state scope: set initialization variables
     /// token transfer: none
-    function initialize(bytes calldata data, uint64 startTime, address ownerAddress) external override initializer {
+    function initialize(uint64 startTime, address ownerAddress, bytes calldata data) external override initializer {
 
         (AludelInitializationParams memory params) = abi.decode(
             data, (AludelInitializationParams)
