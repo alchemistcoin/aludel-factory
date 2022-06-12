@@ -55,6 +55,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		string memory name,
 		string memory stakingTokenUrl,
 		uint64 startTime,
+		address vaultFactory,
+		address[] memory bonusTokens,
+		address ownerAddress,
 		bytes calldata data
 	) public returns (address aludel) {
 
@@ -71,7 +74,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 		// create clone and initialize
 		aludel = ProxyFactory._create(
             template,
-            abi.encodeWithSelector(IAludel.initialize.selector, data, startTime)
+            abi.encodeWithSelector(IAludel.initialize.selector, startTime, ownerAddress, data)
         );
 		
 		// add program's data to the storage 
@@ -85,7 +88,20 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 		// register aludel instance
 		_register(aludel);
+
+		// register vault factory
+		IAludel(aludel).registerVaultFactory(vaultFactory);
+
+		uint256 bonusTokenLength = bonusTokens.length;
+
+		// register bonus tokens
+		 for (uint256 index = 0; index < bonusTokenLength; ++index) {
+			IAludel(aludel).registerBonusToken(bonusTokens[index]);
+		 }
 		
+		// transfer ownership
+		Ownable(aludel).transferOwnership(ownerAddress);
+
 		// explicit return
 		return aludel;
 	}
