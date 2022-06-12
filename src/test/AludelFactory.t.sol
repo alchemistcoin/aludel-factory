@@ -46,12 +46,10 @@ contract AludelFactoryTest is DSTest {
 	}
 
 	struct AludelInitializationParams {
-		address ownerAddress;
 		address rewardPoolFactory;
 		address powerSwitchFactory;
 		address stakingToken;
 		address rewardToken;
-		uint64 startTimestamp;
 		RewardScaling rewardScaling;
 	}
 
@@ -70,37 +68,55 @@ contract AludelFactoryTest is DSTest {
 		stakingToken = new MockERC20('', 'STK');
 		rewardToken = new MockERC20('', 'RWD');
 
+		address[] memory bonusTokens = new address[](2);
+		bonusTokens[0] = address(new MockERC20('', 'BonusToken A'));
+		bonusTokens[1] = address(new MockERC20('', 'BonusToken B'));
+
 		rewardScaling = RewardScaling({ floor: 1 ether, ceiling: 10 ether, time: 1 days });
 
 		AludelInitializationParams memory params = AludelInitializationParams({
-			ownerAddress: address(this),
 			rewardPoolFactory: address(rewardPoolFactory),
 			powerSwitchFactory: address(powerSwitchFactory),
 			stakingToken: address(stakingToken),
 			rewardToken: address(rewardToken),
-			rewardScaling: rewardScaling,
-			startTimestamp: uint64(block.timestamp)
+			rewardScaling: rewardScaling
 		});
 
 		owner = cheats.addr(PRIVATE_KEY);
 
 		factory.addTemplate(address(template), "test template");
 
-		aludel = IAludel(factory.launch(address(template), "name", "https://staking.token", abi.encode(params)));
-		
+		uint64 startTime = uint64(block.timestamp);
+
+
+		aludel = IAludel(factory.launch(
+			address(template), 
+			"name",
+			"https://staking.token", 
+			startTime,
+			CRUCIBLE_FACTORY,
+			bonusTokens,
+			owner,
+			abi.encode(params))
+		);
+		assertEq(aludel.getBonusTokenSetLength(), 2);
 		AludelFactory.ProgramData memory program = factory.getProgram(address(aludel));
 		
 		assertEq(program.name, "name");
 		assertEq(program.template, address(template));
-		assertEq(program.creation, block.timestamp);
+		assertEq(program.startTime, block.timestamp);
 
 		IAludel.AludelData memory data = aludel.getAludelData();
-		MockERC20(data.rewardToken).mint(address(this), 1 ether);
+		
+		MockERC20(data.rewardToken).mint(owner, 1 ether);
+		cheats.startPrank(owner);
 		MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
 		aludel.fund(1 ether, 1 days);
-		aludel.registerVaultFactory(address(crucibleFactory));
+		aludel.registerVaultFactory(address(template));
+		cheats.stopPrank();
 
 		MockERC20(data.stakingToken).mint(owner, 1 ether);
+
 		cheats.prank(owner);
 		crucible = crucibleFactory.create('');
 		MockERC20(data.stakingToken).mint(crucible, 1 ether);
@@ -118,7 +134,6 @@ contract AludelFactoryTest is DSTest {
 
 	function test_disable_template() public {
 		Aludel template = new Aludel();
-		// emit log_address(template.owner());
 		template.initializeLock();
 		// expect emit
 		uint256 templateIndex = factory.addTemplate(address(template), "bloop") - 1;
@@ -145,23 +160,26 @@ contract AludelFactoryTest is DSTest {
 		factory.updateTemplate(address(template), true);
 
 		AludelInitializationParams memory params = AludelInitializationParams({
-			ownerAddress: address(this),
 			rewardPoolFactory: address(rewardPoolFactory),
 			powerSwitchFactory: address(powerSwitchFactory),
 			stakingToken: address(stakingToken),
 			rewardToken: address(rewardToken),
-			rewardScaling: rewardScaling,
-			startTimestamp: uint64(block.timestamp)
+			rewardScaling: rewardScaling
 		});
 
 		cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
+		uint64 startTime = uint64(block.timestamp);
+		address[] memory bonusTokens = new address[](0);
 		factory.launch(
 			address(template),
 			"name",
 			"https://staking.token",
+			startTime,
+			CRUCIBLE_FACTORY,
+			bonusTokens,
+			owner,
 			abi.encode(params)
 		);
-
 	}
 
 	function testFail_template_double_initialization() public {
