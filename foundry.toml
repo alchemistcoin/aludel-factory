@@ -1,5 +1,6 @@
 [default]
 src = "src"
+out = "out"
 solc-version = "0.8.13"
 verbosity = 3
 ffi = true

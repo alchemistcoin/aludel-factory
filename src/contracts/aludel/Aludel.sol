@@ -14,7 +14,7 @@ import {IFactory} from "alchemist/factory/IFactory.sol";
 import {IInstanceRegistry} from "alchemist/factory/InstanceRegistry.sol";
 import {IUniversalVault} from "alchemist/crucible/Crucible.sol";
 import {IRewardPool} from "alchemist/aludel/RewardPool.sol";
-import {Powered} from "alchemist/aludel/Powered.sol";
+import {Powered} from "../powerSwitch/Powered.sol";
 
 import { IAludel } from "./IAludel.sol";
 
@@ -74,6 +74,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         address stakingToken;
         address rewardToken;
         RewardScaling rewardScaling;
+
     }
 
     /* initializer */
@@ -87,7 +88,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
     /// state machine: can only be called once
     /// state scope: set initialization variables
     /// token transfer: none
-    function initialize(bytes calldata data) external override initializer {
+    function initialize(bytes calldata data, uint64 startTime) external override initializer {
 
         (AludelInitializationParams memory params) = abi.decode(
             data, (AludelInitializationParams)
@@ -101,7 +102,9 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         require(params.rewardScaling.time != 0, "Aludel: scaling time cannot be zero");
 
         // deploy power switch
-        address powerSwitch = IFactory(params.powerSwitchFactory).create(abi.encode(params.ownerAddress));
+        address powerSwitch = IFactory(params.powerSwitchFactory).create(
+            abi.encode(params.ownerAddress, startTime)
+        );
 
         // // deploy reward pool
         address rewardPool = IFactory(params.rewardPoolFactory).create(abi.encode(powerSwitch));
@@ -693,7 +696,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         address vault,
         uint256 amount,
         bytes calldata permission
-    ) external override onlyOnline {
+    ) external override onlyOnline hasStarted {
         // verify vault is valid
         require(isValidVault(vault), "Aludel: vault is not registered");
 
@@ -751,7 +754,7 @@ contract Aludel is IAludel, Powered, Ownable, Initializable {
         address vault,
         uint256 amount,
         bytes calldata permission
-    ) external override onlyOnline {
+    ) external override onlyOnline hasStarted {
         // fetch vault storage reference
         VaultData storage vaultData = _vaults[vault];
 
