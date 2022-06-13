@@ -12,3 +12,4 @@ artifacts
 bin
 
 deployments
+typechain-types
