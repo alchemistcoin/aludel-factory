@@ -17,7 +17,7 @@ export default async function ({
         from: deployer,
         args: [],
         log: true,
-        contract: 'Aludel',
+        contract: 'src/contracts/aludel/Aludel.sol:Aludel',
         deterministicDeployment: false
     });
 
