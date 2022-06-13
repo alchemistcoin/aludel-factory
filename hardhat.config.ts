@@ -18,6 +18,8 @@ const mnemonic = process.env.DEV_MNEMONIC || ''
 const privateKey = process.env.PRIVATE_KEY || ''
 const rinkebyUrl = process.env.RINKEBY_URL || ''
 const goerliUrl = process.env.GOERLI_URL || ''
+const infuraKey = process.env.ETHERSCAN_API_KEY || ''
+const mumbaiKey = process.env.POLYGON_MUMBAI_API_KEY || ''
 
 const config: HardhatUserConfig = {
   solidity: "0.8.13",
@@ -86,8 +88,9 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      rinkeby: process.env.ETHERSCAN_API_KEY,
-      polygonMumbai: process.env.POLYGON_MUMBAI_API_KEY
+      goerli: infuraKey,
+      rinkeby: infuraKey,
+      polygonMumbai: mumbaiKey
     }
   },
   
