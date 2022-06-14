@@ -43,7 +43,7 @@ import { IAludel } from "./IAludel.sol";
 ///     Users can withdraw their stake through rageQuit()
 ///     Power controller can withdraw from the reward pool
 ///     Should only be used if Proxy Owner role is compromized
-contract Aludel is IAludel, Powered, Ownable, Initializable {
+contract Aludel is IAludel, Ownable, Initializable, Powered {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
