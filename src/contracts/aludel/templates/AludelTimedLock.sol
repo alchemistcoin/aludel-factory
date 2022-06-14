@@ -93,13 +93,12 @@ contract AludelTimedLock is IAludelTimedLock, Powered, Ownable, Initializable {
     uint96 internal minimumLockTime;
 
     struct AludelInitializationParams {
-        address ownerAddress;
+        uint96 minimumLockTime;
         address rewardPoolFactory;
         address powerSwitchFactory;
         address stakingToken;
         address rewardToken;
         RewardScaling rewardScaling;
-        uint96 minimumLockTime;
     }
 
     /* initializer */
@@ -113,7 +112,7 @@ contract AludelTimedLock is IAludelTimedLock, Powered, Ownable, Initializable {
     /// state machine: can only be called once
     /// state scope: set initialization variables
     /// token transfer: none
-    function initialize(bytes calldata data) external override initializer {
+    function initialize(uint64 startTime, address ownerAddress, bytes calldata data) external override initializer {
 
         (AludelInitializationParams memory params) = abi.decode(
             data, (AludelInitializationParams)
@@ -129,13 +128,13 @@ contract AludelTimedLock is IAludelTimedLock, Powered, Ownable, Initializable {
             revert ScalingTimeIsZero();
         }
         // deploy power switch
-        address powerSwitch = IFactory(params.powerSwitchFactory).create(abi.encode(params.ownerAddress));
+        address powerSwitch = IFactory(params.powerSwitchFactory).create(abi.encode(ownerAddress));
 
         // // deploy reward pool
         address rewardPool = IFactory(params.rewardPoolFactory).create(abi.encode(powerSwitch));
 
         // // set internal configs
-        _transferOwnership(params.ownerAddress);
+        _transferOwnership(msg.sender);
         Powered._setPowerSwitch(powerSwitch);
 
         // commit to storage
