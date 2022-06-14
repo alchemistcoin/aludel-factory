@@ -131,7 +131,8 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         override
         returns (IPowerSwitch.State status)
     {
-        // if the current timestamp is greater than _startTimestamp we return the switch' status
+        // if the current timestamp is greater than _startTimestamp 
+        // we return the switch' status
         if (block.timestamp >= uint256(_startTimestamp)) {
             return _status;
         } else {
