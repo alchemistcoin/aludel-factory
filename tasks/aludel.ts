@@ -150,12 +150,8 @@ task("add-template")
     );
    
     await (
-      await factory.addTemplate(args.template, args.name)
+      await factory.addTemplate(args.template, args.name, args.disabled ? true : false)
     ).wait();
-
-    if (args.disable) {
-      await (await factory.updateTemplate(args.template, true)).wait()
-    }
 
   });
 
