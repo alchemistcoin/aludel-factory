@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.6;
 
-import {ProxyFactory} from "alchemist/factory/ProxyFactory.sol";
+import {ProxyFactory} from "alchemist/contracts/factory/ProxyFactory.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IAludel} from "./aludel/IAludel.sol";
 import {InstanceRegistry} from "./libraries/InstanceRegistry.sol";
