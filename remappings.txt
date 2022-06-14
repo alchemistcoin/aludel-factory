@@ -1,7 +1,7 @@
-@openzeppelin/=lib/openzeppelin-contracts/
-@uniswap/lib/=lib/solidity-lib/
-ds-test/=lib/ds-test/src/
-ds-auth/=lib/ds-auth/src/
-ds-math/=lib/ds-math/src/
-solmate/=lib/solmate/src/
-alchemist/=lib/alchemist/contracts
+@openzeppelin/=node_modules/@openzeppelin/
+@uniswap/lib/=node_modules/@uniswap/lib/
+ds-test/=node_modules/ds-test/src/
+ds-auth/=node_modules/ds-auth/src/
+ds-math/=node_modules/ds-math/src/
+solmate/=node_modules/@rari-capital/solmate/src/
+alchemist/=node_modules/alchemist/contracts
