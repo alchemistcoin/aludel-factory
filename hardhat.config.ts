@@ -61,7 +61,8 @@ const config: HardhatUserConfig = {
       url: process.env.MUMBAI_URL || '',
       accounts: {
         mnemonic
-      }
+      },
+      saveDeployments: true
     },
     avalanche: {
       url: 'https://api.avax.network/ext/bc/C/rpc',
