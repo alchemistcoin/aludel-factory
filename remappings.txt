@@ -4,4 +4,4 @@ ds-test/=node_modules/ds-test/src/
 ds-auth/=node_modules/ds-auth/src/
 ds-math/=node_modules/ds-math/src/
 solmate/=node_modules/@rari-capital/solmate/src/
-alchemist/=node_modules/alchemist/contracts
+alchemist/=node_modules/alchemist/
