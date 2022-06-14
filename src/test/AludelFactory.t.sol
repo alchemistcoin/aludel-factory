@@ -88,7 +88,7 @@ contract AludelFactoryTest is DSTest {
 
         owner = cheats.addr(PRIVATE_KEY);
 
-        factory.addTemplate(address(template), "test template");
+        factory.addTemplate(address(template), "test template", false);
 
         uint64 startTime = uint64(block.timestamp);
 
@@ -136,7 +136,7 @@ contract AludelFactoryTest is DSTest {
     function test_template_initialization() public {
         Aludel template = new Aludel();
         template.initializeLock();
-        factory.addTemplate(address(template), "bleep");
+        factory.addTemplate(address(template), "bleep", false);
     }
 
     function test_disable_template() public {
@@ -145,7 +145,8 @@ contract AludelFactoryTest is DSTest {
         // expect emit
         uint256 templateIndex = factory.addTemplate(
             address(template),
-            "bloop"
+            "bloop",
+            false
         ) - 1;
 
         EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
@@ -164,7 +165,7 @@ contract AludelFactoryTest is DSTest {
         Aludel template = new Aludel();
         template.initializeLock();
         // expect emit
-        factory.addTemplate(address(template), "foo");
+        factory.addTemplate(address(template), "foo", false);
         // disable template
         factory.updateTemplate(address(template), true);
 
