@@ -7,6 +7,8 @@ import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-deploy"
 
+import "hardhat-contract-sizer"
+import "hardhat-storage-layout"
 import "./tasks/aludel"
 
 dotenv.config();
@@ -22,7 +24,16 @@ const infuraKey = process.env.ETHERSCAN_API_KEY || ''
 const mumbaiKey = process.env.POLYGON_MUMBAI_API_KEY || ''
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.13",
+  solidity: {
+    version: "0.8.13",
+    settings: {
+      outputSelection: {
+        "*": {
+            "*": ["storageLayout"],
+        },
+      },
+    }
+  },
   networks: {
     hardhat: {
       forking: {
