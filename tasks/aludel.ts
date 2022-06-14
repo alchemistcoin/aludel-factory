@@ -21,6 +21,9 @@ task("launch-program")
   .addParam("rewardScalingTime", "duration of the reward scaling period (in days)")
   .addParam('name', 'the name of the program')
   .addParam('stakingTokenUrl', 'the URL of the staking token')
+  .addParam('startTime', 'the start time for the program in utc timestamp (seconds)')
+  .addParam('vaultFactory', 'the initial vault factory to be whitelisted')
+  .addParam('bonusToken', 'address of one bonus token to be added on launch')
   .setAction(async (args, { ethers, run, network }) => {
     // log config
 
@@ -49,17 +52,15 @@ task("launch-program")
     // encode init params
     const params = new AbiCoder().encode(
       [
-        "address",
-        "address",
-        "address",
-        "address",
-        "address",
-        "uint256",
-        "uint256",
-        "uint256",
+        'address',
+        'address',
+        'address',
+        'address',
+        'uint256',
+        'uint256',
+        'uint256'
       ],
       [
-        args.owner,
         args.rewardPool,
         args.powerSwitch,
         args.stakingToken,
@@ -76,9 +77,14 @@ task("launch-program")
         args.templateId,
         args.name,
         args.stakingTokenUrl, 
+        args.startTime,
+        args.vaultFactory,
+        [args.bonusToken], // only supports single bonus token
+        args.owner,
         params
       )
     ).wait();
+
 
   });
 
@@ -120,6 +126,8 @@ task('update-template')
 task("add-template")
   .addParam("aludelFactory", "address of the aludel factory")
   .addParam("template", "address of a template")
+  .addParam("name", "name of the template based on mapping object")
+  .addFlag('disable', 'to set the template as disabled')
   .setAction(async (args, { ethers, run, network }) => {
     // log config
 
@@ -141,9 +149,8 @@ task("add-template")
       args.aludelFactory
     );
    
-    // deploy minimal proxy using `params` as init params
     await (
-      await factory.addTemplate(args.template)
+      await factory.addTemplate(args.template, args.name, args.disabled ? true : false)
     ).wait();
 
   });
@@ -181,15 +188,13 @@ task("delist-program")
   });
 
 
-
-
 task("add-program")
   .addParam("aludelFactory", "address of the aludel factory")
   .addParam("program", "deployed address of the program")
   .addParam("template", "Optional. deployed address of the program's template", AddressZero)
   .addParam('name', 'the name of the program')
-  .addParam('url', 'the URL of the program')
   .addParam('stakingTokenUrl', 'the URL of the staking token')
+  .addParam('startTime', 'the program start time in utc timestamp format (seconds)')
   .setAction(async (args, { ethers, run, network }) => {
     // log config
 
@@ -217,8 +222,8 @@ task("add-program")
         args.program,
         args.template,
         args.name,
-        args.url,
         args.stakingTokenUrl, 
+        args.startTime
       )
     ).wait();
 
