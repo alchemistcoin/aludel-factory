@@ -8,8 +8,6 @@ import {InstanceRegistry} from "./libraries/InstanceRegistry.sol";
 
 import {EnumerableSet} from "./libraries/EnumerableSet.sol";
 
-import {EnumerableSet} from "./libraries/EnumerableSet.sol";
-
 contract AludelFactory is Ownable, InstanceRegistry {
     using EnumerableSet for EnumerableSet.TemplateDataSet;
 
