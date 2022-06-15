@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.13;
 
-import "ds-test/test.sol";
-import "solmate/tokens/ERC20.sol";
+import {DSTest} from "ds-test/src/test.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Hevm} from "solmate/test/utils/Hevm.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
@@ -22,7 +22,7 @@ import {
 import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol";
 import {ERC721Holder} from
     "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import {MockERC20} from "./mocks/MockERC20.sol";
+import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
 import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
 
