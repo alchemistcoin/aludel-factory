@@ -22,6 +22,9 @@ jobs:
         cmd: install
     - uses: borales/actions-yarn@v3.0.0
       with:
+        cmd: hardhat compile
+    - uses: borales/actions-yarn@v3.0.0
+      with:
         cmd: hardhat test
 
     # - uses: actions/checkout@v3 
