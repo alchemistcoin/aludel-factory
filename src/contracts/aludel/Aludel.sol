@@ -75,6 +75,20 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         RewardScaling rewardScaling;
     }
 
+    error FloorAboveCeiling();
+    error ScalingTimeIsZero();
+    error InvalidDuration();
+    error VaultFactoryNotRegistered();
+    error VaultAlreadyRegistered();
+    error MaxBonusTokensReached();
+    error InvalidAddress(address addr);
+    error InvalidVault();
+    error MaxStakesReached();
+    error NoAmountStaked();
+    error NoAmountUnstaked();
+    error InsufficientVaultStake();
+    error NoStakes();
+
     /* initializer */
 
 
@@ -93,11 +107,15 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         );
 
         // the scaling floor must be smaller than ceiling
-        require(params.rewardScaling.floor <= params.rewardScaling.ceiling, "Aludel: floor above ceiling");
+        if (params.rewardScaling.floor > params.rewardScaling.ceiling) {
+            revert FloorAboveCeiling();
+        }
 
         // setting rewardScalingTime to 0 would cause divide by zero error
         // to disable reward scaling, use rewardScalingFloor == rewardScalingCeiling
-        require(params.rewardScaling.time != 0, "Aludel: scaling time cannot be zero");
+        if (params.rewardScaling.time == 0) {
+            revert ScalingTimeIsZero();
+        }
 
         // deploy power switch
         address powerSwitch = IFactory(params.powerSwitchFactory).create(
@@ -543,7 +561,10 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
     /// @param duration uint256 Duration over which to linearly unlock rewards
     function fund(uint256 amount, uint256 duration) external override onlyOwner onlyOnline {
         // validate duration
-        require(duration != 0, "Aludel: invalid duration");
+        // require(duration != 0, "Aludel: invalid duration");
+        if (duration == 0) {
+            revert InvalidDuration();
+        }
 
         // create new reward shares
         // if existing rewards on this Aludel
@@ -591,8 +612,9 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
     /// @param factory address The address of the vault factory
     function registerVaultFactory(address factory) external virtual override onlyOwner notShutdown {
         // add factory to set
-        require(_vaultFactorySet.add(factory), "Aludel: vault factory already registered");
-
+        if (!_vaultFactorySet.add(factory)) {
+            revert VaultAlreadyRegistered();
+        }
         // emit event
         emit VaultFactoryRegistered(factory);
     }
@@ -611,8 +633,9 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
     /// @param factory address The address of the vault factory
     function removeVaultFactory(address factory) external virtual override onlyOwner notShutdown {
         // remove factory from set
-        require(_vaultFactorySet.remove(factory), "Aludel: vault factory not registered");
-
+        if (!_vaultFactorySet.remove(factory)) {
+            revert VaultFactoryNotRegistered();
+        }
         // emit event
         emit VaultFactoryRemoved(factory);
     }
@@ -632,8 +655,10 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         _validateAddress(bonusToken);
 
         // verify bonus token count
-        require(_bonusTokenSet.length() < MAX_REWARD_TOKENS, "Aludel: max bonus tokens reached ");
-
+        // require(_bonusTokenSet.length() < MAX_REWARD_TOKENS, "Aludel: max bonus tokens reached ");
+        if (_bonusTokenSet.length() >= MAX_REWARD_TOKENS) {
+            revert MaxBonusTokensReached();
+        }
         // add token to set
         assert(_bonusTokenSet.add(bonusToken));
 
@@ -662,10 +687,13 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         _validateAddress(recipient);
 
         // check not attempting to unstake reward token
-        require(token != _aludel.rewardToken, "Aludel: invalid address");
-
+        if (token == _aludel.rewardToken) {
+            revert InvalidAddress(token);
+        }
         // check not attempting to wthdraw bonus token
-        require(!_bonusTokenSet.contains(token), "Aludel: invalid address");
+        if (_bonusTokenSet.contains(token)) {
+            revert InvalidAddress(token);
+        }
 
         // transfer tokens to recipient
         IRewardPool(_aludel.rewardPool).sendERC20(token, recipient, amount);
@@ -696,19 +724,21 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         bytes calldata permission
     ) external override onlyOnline hasStarted {
         // verify vault is valid
-        require(isValidVault(vault), "Aludel: vault is not registered");
-
+        if (!isValidVault(vault)) {
+            revert InvalidVault();
+        }
         // verify non-zero amount
-        require(amount != 0, "Aludel: no amount staked");
+        if (amount == 0) {
+            revert NoAmountStaked();
+        }
 
         // fetch vault storage reference
         VaultData storage vaultData = _vaults[vault];
 
         // verify stakes boundary not reached
-        require(
-            vaultData.stakes.length < MAX_STAKES_PER_VAULT,
-            "Aludel: MAX_STAKES_PER_VAULT reached"
-        );
+        if (vaultData.stakes.length >= MAX_STAKES_PER_VAULT) {
+            revert MaxStakesReached();
+        }
 
         // update cached sum of stake units across all vaults
         _updateTotalStakeUnits();
@@ -757,10 +787,14 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         VaultData storage vaultData = _vaults[vault];
 
         // verify non-zero amount
-        require(amount != 0, "Aludel: no amount unstaked");
+        if (amount == 0) {
+            revert NoAmountUnstaked();
+        }
 
         // check for sufficient vault stake amount
-        require(vaultData.totalStake >= amount, "Aludel: insufficient vault stake");
+        if (vaultData.totalStake < amount) {
+            revert InsufficientVaultStake();
+        }
 
         // check for sufficient Aludel stake amount
         // if this check fails, there is a bug in stake accounting
@@ -878,7 +912,9 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         VaultData storage _vaultData = _vaults[msg.sender];
 
         // revert if no active stakes
-        require(_vaultData.stakes.length != 0, "Aludel: no stake");
+        if (_vaultData.stakes.length == 0) {
+            revert NoStakes();
+        }
 
         // update cached sum of stake units across all vaults
         _updateTotalStakeUnits();
@@ -907,7 +943,9 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
 
     function _validateAddress(address target) internal virtual view {
         // sanity check target for potential input errors
-        require(isValidAddress(target), "Aludel: invalid address");
+        if (!isValidAddress(target)) {
+            revert InvalidAddress(target);
+        }
     }
 
     function _truncateStakesArray(StakeData[] memory array, uint256 newLength)
