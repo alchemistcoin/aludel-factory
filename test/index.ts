@@ -4,7 +4,6 @@ import { Wallet } from "@ethersproject/wallet";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract } from "ethers";
 import { deployments, ethers, getNamedAccounts, network, run } from "hardhat";
-import { beforeEach } from "mocha";
 import { Aludel, AludelFactory, CrucibleFactory, PowerSwitchFactory, RewardPoolFactory } from "../typechain-types";
 import { DAYS, ETHER, revertAfter, signPermission } from "./utils";
 
@@ -28,7 +27,7 @@ describe("Aludel factory", function () {
     return ethers.getContractAt(deployed.abi, deployed.address, signer);
   }
 
-  before(async function() {
+  this.beforeAll(async function() {
 
     await deployments.run()
 
@@ -78,7 +77,7 @@ describe("Aludel factory", function () {
     return deployContract(name, 'MockERC20', [admin.address, parseEther('1')])
   }
 
-  beforeEach(async function() {
+  this.beforeEach(async function() {
   
     factory = await get('AludelFactory') as AludelFactory;
     powerSwitchFactory = await get('PowerSwitchFactory') as PowerSwitchFactory;
