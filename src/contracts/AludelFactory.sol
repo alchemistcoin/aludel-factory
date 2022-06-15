@@ -26,14 +26,15 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
     /// @dev emitted when a new template is added
     event TemplateAdded(address template);
+
     /// @dev emitted when a template is updated
     event TemplateUpdated(address template, bool disabled);
 
     /// @dev emitted when a program's url is changed
     event StakingTokenURLChanged(address program, string url);
+
     /// @dev emitted when a program's name is changed
     event NameChanged(address program, string name);
-
 
     error InvalidTemplate();
     error TemplateNotRegistered();
@@ -56,7 +57,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
         address[] memory bonusTokens,
         address ownerAddress,
         bytes calldata data
-    ) public returns (address aludel) {
+    )
+        public
+        returns (address aludel)
+    {
         // reverts when template address is not registered
         if (!_templates.contains(template)) {
             revert TemplateNotRegistered();
@@ -186,7 +190,10 @@ contract AludelFactory is Ownable, InstanceRegistry {
         string memory name,
         string memory stakingTokenUrl,
         uint64 startTime
-    ) external onlyOwner {
+    )
+        external
+        onlyOwner
+    {
         // register aludel instance
         // if program is already registered this will revert
         _register(program);

@@ -43,8 +43,9 @@ library EnumerableSet {
         string name;
     }
 
-    struct TemplateDataSet {
-        // Storage of set values
+    struct TemplateDataSet
+    // Storage of set values
+    {
         TemplateData[] _values;
         // Position of the value in the `values` array, plus 1 because index 0
         // means a value is not in the set.
@@ -57,7 +58,10 @@ library EnumerableSet {
      * Returns true if the value was added to the set, that is if it was not
      * already present.
      */
-    function add(TemplateDataSet storage set, TemplateData memory value) internal returns (bool) {
+    function add(TemplateDataSet storage set, TemplateData memory value)
+        internal
+        returns (bool)
+    {
         if (!contains(set, value.template)) {
             set._values.push(value);
             // The value is stored at length-1, but we add 1 to all indexes
@@ -75,7 +79,10 @@ library EnumerableSet {
      * Returns true if the value was removed from the set, that is if it was
      * present.
      */
-    function remove(TemplateDataSet storage set, TemplateData memory value) internal returns (bool) {
+    function remove(TemplateDataSet storage set, TemplateData memory value)
+        internal
+        returns (bool)
+    {
         // We read and store the value's index to prevent multiple reads from the same storage slot
         uint256 valueIndex = set._indexes[value.template];
 
@@ -109,7 +116,14 @@ library EnumerableSet {
         }
     }
 
-    function update(TemplateDataSet storage set, address template, bool disabled) internal returns (bool) {
+    function update(
+        TemplateDataSet storage set,
+        address template,
+        bool disabled
+    )
+        internal
+        returns (bool)
+    {
         // check whether `template` is present in the set`
         if (contains(set, template)) {
             // get value's index
@@ -127,14 +141,22 @@ library EnumerableSet {
     /**
      * @dev Returns true if the value is in the set. O(1).
      */
-    function contains(TemplateDataSet storage set, address template) internal view returns (bool) {
+    function contains(TemplateDataSet storage set, address template)
+        internal
+        view
+        returns (bool)
+    {
         return set._indexes[template] != 0;
     }
 
     /**
      * @dev Returns the number of values on the set. O(1).
      */
-    function length(TemplateDataSet storage set) internal view returns (uint256) {
+    function length(TemplateDataSet storage set)
+        internal
+        view
+        returns (uint256)
+    {
         return set._values.length;
     }
 
@@ -148,7 +170,11 @@ library EnumerableSet {
      *
      * - `template` must exist as a key in `_indexes`.
      */
-    function at(TemplateDataSet storage set, address template) internal view returns (TemplateData memory) {
+    function at(TemplateDataSet storage set, address template)
+        internal
+        view
+        returns (TemplateData memory)
+    {
         uint256 index = set._indexes[template];
         return set._values[index-1];
     }
@@ -163,8 +189,11 @@ library EnumerableSet {
      *
      * - `template` must be exist less than {length}.
      */
-    function at(TemplateDataSet storage set, uint256 index) internal view returns (TemplateData memory) {
-        
+    function at(TemplateDataSet storage set, uint256 index)
+        internal
+        view
+        returns (TemplateData memory)
+    {
         return set._values[index];
     }
 
@@ -176,27 +205,11 @@ library EnumerableSet {
      * this function has an unbounded cost, and using it as part of a state-changing function may render the function
      * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
      */
-    function values(TemplateDataSet storage set) internal view returns (TemplateData[] memory) {
+    function values(TemplateDataSet storage set)
+        internal
+        view
+        returns (TemplateData[] memory)
+    {
         return set._values;
     }
-
-    // /**
-    //  * @dev Return the entire set in an array
-    //  *
-    //  * WARNING: This operation will copy the entire storage to memory, which can be quite expensive. This is designed
-    //  * to mostly be used by view accessors that are queried without any gas fees. Developers should keep in mind that
-    //  * this function has an unbounded cost, and using it as part of a state-changing function may render the function
-    //  * uncallable if the set grows to a point where copying to memory consumes too much gas to fit in a block.
-    //  */
-    // function values(AddressSet storage set) internal view returns (address[] memory) {
-    //     bytes32[] memory store = _values(set._inner);
-    //     address[] memory result;
-
-    //     assembly {
-    //         result := store
-    //     }
-
-    //     return result;
-    // }
-
 }

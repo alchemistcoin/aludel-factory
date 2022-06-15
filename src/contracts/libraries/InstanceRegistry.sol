@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.4;
 
-import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableSet} from
+    "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 interface IInstanceRegistry {
     /* events */
@@ -17,11 +18,17 @@ interface IInstanceRegistry {
 
     /* view functions */
 
-    function isInstance(address instance) external view returns (bool validity);
+    function isInstance(address instance)
+        external
+        view
+        returns (bool validity);
 
     function instanceCount() external view returns (uint256 count);
 
-    function instanceAt(uint256 index) external view returns (address instance);
+    function instanceAt(uint256 index)
+        external
+        view
+        returns (address instance);
 }
 
 /// @title InstanceRegistry
@@ -34,7 +41,12 @@ contract InstanceRegistry is IInstanceRegistry {
 
     /* view functions */
 
-    function isInstance(address instance) public view override returns (bool validity) {
+    function isInstance(address instance)
+        public
+        view
+        override
+        returns (bool validity)
+    {
         return _instanceSet.contains(instance);
     }
 
@@ -42,7 +54,12 @@ contract InstanceRegistry is IInstanceRegistry {
         return _instanceSet.length();
     }
 
-    function instanceAt(uint256 index) public view override returns (address instance) {
+    function instanceAt(uint256 index)
+        public
+        view
+        override
+        returns (address instance)
+    {
         return _instanceSet.at(index);
     }
 

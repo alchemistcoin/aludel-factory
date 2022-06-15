@@ -39,7 +39,10 @@ interface IPowerSwitch {
 
     function getStartTime() external view returns (uint64 startTime);
 
-    function getPowerController() external view returns (address controller);
+    function getPowerController()
+        external
+        view
+        returns (address controller);
 }
 
 /// @title PowerSwitch
@@ -131,7 +134,7 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         override
         returns (IPowerSwitch.State status)
     {
-        // if the current timestamp is greater than _startTimestamp 
+        // if the current timestamp is greater than _startTimestamp
         // we return the switch' status
         if (block.timestamp >= uint256(_startTimestamp)) {
             return _status;
@@ -140,7 +143,12 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         }
     }
 
-    function getStartTime() external view override returns (uint64 startTime) {
+    function getStartTime()
+        external
+        view
+        override
+        returns (uint64 startTime)
+    {
         return _startTimestamp;
     }
 
