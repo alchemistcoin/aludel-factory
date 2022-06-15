@@ -1,85 +1,141 @@
 import { AbiCoder } from "@ethersproject/abi";
 import { parseEther } from "@ethersproject/units";
 import { Wallet } from "@ethersproject/wallet";
-import { expect } from "chai";
-import { ethers } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Contract } from "ethers";
+import { deployments, ethers, getNamedAccounts, network } from "hardhat";
 import { beforeEach } from "mocha";
-import { AludelFactory, PowerSwitchFactory, RewardPoolFactory } from "../typechain";
-import { DAYS, ETHER, signPermission } from "./utils";
+import { Aludel, AludelFactory, CrucibleFactory, PowerSwitchFactory, RewardPoolFactory } from "../typechain-types";
+import { DAYS, ETHER, revertAfter, signPermission } from "./utils";
 
 describe("Aludel factory", function () {
-
-  async function deployContract(name: string) {
-    const Factory = await ethers.getContractFactory("name");
-    const instance = await Factory.deploy();
-    await instance.deployed() 
-    return instance
-  }
 
   let factory: AludelFactory
   let rewardPoolFactory: RewardPoolFactory
   let powerSwitchFactory: PowerSwitchFactory
+  
+  let crucibleFactory: CrucibleFactory
+
+  let admin: SignerWithAddress
+  let user: SignerWithAddress
+  let anotherUser: SignerWithAddress
+
+  // revertAfter()
+
+  const get = async (name: string) => {
+    const signer = (await ethers.getSigners())[0]
+    const deployed = await deployments.get(name)
+    return ethers.getContractAt(deployed.abi, deployed.address, signer);
+  }
+
+  before(async function() {
+    const signers = await ethers.getSigners()
+    admin = signers[0]
+    user = signers[1]
+    anotherUser = signers[2]
+
+    const { deployer, dev } = await getNamedAccounts()
+
+    crucibleFactory = await ethers.getContractAt(
+      'alchemist/contracts/crucible/CrucibleFactory.sol:CrucibleFactory',
+      '0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56'
+    ) as CrucibleFactory
+
+    rewardPoolFactory = await deployContract(
+      'RewardPoolFactory',
+      'alchemist/contracts/aludel/RewardPoolFactory.sol:RewardPoolFactory'
+    ) as RewardPoolFactory;
+
+  })
+
+  async function deploy(name: string, args ?: any[]): Promise<Contract> {
+    return deployContract(name, name, args)
+  }
+
+  async function deployContract(name: string, contract: string, args ?: any[]): Promise<Contract> {
+    const { deployer, dev } = await getNamedAccounts()
+    
+    const deployed = await deployments.getOrNull(name)
+
+    if (!deployed) {
+      await deployments.deploy(name, {
+        from: deployer,
+        args: args,
+        log: true,
+        contract,
+        deterministicDeployment: false
+      });
+    }
+
+    return get(name)
+  }
+
+  async function deployMockERC20(name: string): Promise<Contract> {
+    const { deployer, dev } = await getNamedAccounts()
+    return deployContract(name, 'MockERC20', [admin.address, parseEther('1')])
+  }
 
   beforeEach(async function() {
-    const AludelFactory = await ethers.getContractFactory("AludelFactory");
-    factory = await AludelFactory.deploy();
-    await factory.deployed();
+  
+    factory = await get('AludelFactory') as AludelFactory;
+    powerSwitchFactory = await get('PowerSwitchFactory') as PowerSwitchFactory;
 
-    const RewardPoolFactory = await ethers.getContractFactory("RewardPoolFactory");
-    rewardPoolFactory = await RewardPoolFactory.deploy();
-    await rewardPoolFactory.deployed() 
-
-    const PowerSwitchFactory = await ethers.getContractFactory("PowerSwitchFactory");
-    powerSwitchFactory = await PowerSwitchFactory.deploy();
-    await powerSwitchFactory.deployed()
   })
   
   it("test full", async function () {
     
-    const [admin, user, anotherUser] = await ethers.getSigners()
-    
-    const AludelTemplate = await ethers.getContractFactory("Aludel");
-    const aludelTemplate = await AludelTemplate.deploy();
-    await aludelTemplate.deployed() 
+    const aludelTemplate = await get('Aludel') as Aludel 
 
-    const MockERC20Factory = await ethers.getContractFactory("MockERC20");
-    const stakingToken = await MockERC20Factory.deploy(user.address, parseEther('1'));
-    await stakingToken.deployed()
-    const rewardToken = await MockERC20Factory.deploy(admin.address, parseEther('1'));
+    const stakingToken = await deployMockERC20('StakingToken')
+    const rewardToken = await deployMockERC20('RewardToken')
 
-    await rewardToken.deployed()
-
-    await factory.addTemplate(aludelTemplate.address)
+    const bonusTokenA = await deployMockERC20('BonusTokenA')
+    const bonusTokenB = await deployMockERC20('BonusTokenB')
 
     const params = new AbiCoder().encode(
-      ['address', 'address', 'address', 'address', 'address', 'uint256', 'uint256', 'uint256'],
+      ['address', 'address', 'address', 'address', 'uint256', 'uint256', 'uint256'],
       [
-        admin.address,
         rewardPoolFactory.address, powerSwitchFactory.address,
         stakingToken.address, rewardToken.address,
         1, 10, DAYS(1)
       ]
     )
 
-    const tx = await (await factory.launch(0, params)).wait()
+    // // todo : abstract this
+    let tx = await (
+      await factory.launch(
+        aludelTemplate.address,
+        'program test',
+        'https://staking.token',
+        Date.now(),
+        crucibleFactory.address,
+        [bonusTokenA.address, bonusTokenB.address],
+        admin.address,
+        params))
+    .wait()
 
-    const aludelAddress = await factory.callStatic.launch(0, params)
-    const aludel = await ethers.getContractAt('Aludel', aludelAddress)
-
-    await aludel.fund(ETHER(1), DAYS(1))
-		
-    const crucibleFactory = await ethers.getContractAt(
-      "IFactory",
-      "0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56"
+    const aludelAddress = await factory.callStatic.launch(
+      aludelTemplate.address,
+      'program test',
+      'https://staking.token',
+      Date.now(),
+      crucibleFactory.address,
+      [bonusTokenA.address, bonusTokenB.address],
+      admin.address,
+      params
     )
-    // console.log(await (await ethers.getContractAt('InstanceRegistry', "0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56")).instanceCount())
-    await crucibleFactory.connect(admin).create('0x')
-    const crucibleAddress = await crucibleFactory.connect(admin).callStatic.create('0x')
+    
+    // const aludel = await ethers.getContractAt('Aludel', aludelAddress)
+    const aludel = aludelTemplate.attach(aludelAddress)
+    await aludel.connect(admin).fund(ETHER(1), DAYS(1))
+	
+    await (await crucibleFactory.connect(admin)["create()"]()).wait();
+    const crucibleAddress = await crucibleFactory.connect(admin).callStatic["create()"]()
 
     const crucible = await ethers.getContractAt(
-      'ICrucible',
+      'Crucible',
       crucibleAddress
-      )
+    )
     
     const signerWallet = Wallet.fromMnemonic(process.env.DEV_MNEMONIC || '')
     await aludel.stake(
