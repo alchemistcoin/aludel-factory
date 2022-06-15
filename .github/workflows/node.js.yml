@@ -16,21 +16,29 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v3 
-    - name: Use Node.js
-      uses: actions/setup-node@v3
+    - uses: actions/checkout@v2
+    - uses: borales/actions-yarn@v3.0.0
       with:
-        node-version: '16.x'
-    # solves issue https://github.com/actions/setup-node/issues/214
-    - name: Reconfigure git to use HTTP authentication
-      run: >
-        git config --global url."https://".insteadOf git://
-        git config --global url."https://github.com/".insteadOf git@github.com:
+        cmd: install
+    - uses: borales/actions-yarn@v3.0.0
+      with:
+        cmd: hardhat test
 
-    - name: Install dependencies
-      run: npm install
-    - name: run tests
-      run: npx hardhat test
+    # - uses: actions/checkout@v3 
+    # - name: Use Node.js
+    #   uses: actions/setup-node@v3
+    #   with:
+    #     node-version: '16.x'
+    # # solves issue https://github.com/actions/setup-node/issues/214
+    # - name: Reconfigure git to use HTTP authentication
+    #   run: >
+    #     git config --global url."https://".insteadOf git://
+    #     git config --global url."https://github.com/".insteadOf git@github.com:
+
+    # - name: Install dependencies
+    #   run: npm install
+    # - name: run tests
+    #   run: npx hardhat test
 
       env: 
         FORK_URL: ${{ secrets.FORK_URL }}
