@@ -3,7 +3,7 @@ import { parseEther } from "@ethersproject/units";
 import { Wallet } from "@ethersproject/wallet";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Contract } from "ethers";
-import { deployments, ethers, getNamedAccounts, network } from "hardhat";
+import { deployments, ethers, getNamedAccounts, network, run } from "hardhat";
 import { beforeEach } from "mocha";
 import { Aludel, AludelFactory, CrucibleFactory, PowerSwitchFactory, RewardPoolFactory } from "../typechain-types";
 import { DAYS, ETHER, revertAfter, signPermission } from "./utils";
@@ -29,6 +29,9 @@ describe("Aludel factory", function () {
   }
 
   before(async function() {
+
+    await deployments.run()
+
     const signers = await ethers.getSigners()
     admin = signers[0]
     user = signers[1]
@@ -101,7 +104,7 @@ describe("Aludel factory", function () {
       ]
     )
 
-    // // todo : abstract this
+    // todo : abstract this
     let tx = await (
       await factory.launch(
         aludelTemplate.address,
