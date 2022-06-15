@@ -30,7 +30,7 @@
     "hardhat": "^2.9.9",
     "hardhat-contract-sizer": "^2.5.1",
     "hardhat-deploy": "0.11.1",
-    "hardhat-gas-reporter": "^1.0.4",
+    "hardhat-gas-reporter": "^1.0.8",
     "hardhat-storage-layout": "^0.1.6",
     "prettier": "^2.3.2",
     "prettier-plugin-solidity": "^1.0.0-beta.13",
