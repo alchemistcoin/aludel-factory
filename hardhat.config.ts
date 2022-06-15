@@ -40,6 +40,9 @@ const config: HardhatUserConfig = {
         url: forkingUrl,
         blockNumber: 14169000
       },
+      accounts: {
+        mnemonic
+      }
     },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
@@ -81,15 +84,21 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic
       }
+    },
+    localhost: {
+      url: 'http://127.0.0.1:8545',
+      accounts: {
+        mnemonic
+      },
     }
   },
   gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
+    enabled: process.env.REPORT_GAS ? true : false,
     currency: "USD",
   },
   namedAccounts: {
     deployer: {
-      default: 0,
+      default: 0
     },
     dev: {
       // Default to 1
@@ -108,7 +117,7 @@ const config: HardhatUserConfig = {
   
   paths: {
     artifacts: "./out",
-    sources: "./src/contracts"
+      sources: "./src/contracts"
   },
 };
 
