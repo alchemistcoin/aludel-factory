@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
+
 pragma abicoder v2;
 
 interface IRageQuit {
@@ -66,68 +67,94 @@ interface IAludel is IRageQuit {
 
     function initializeLock() external;
 
-    function initialize(
-        uint64 startTime,
-        address ownerAddress,
-        bytes calldata
-    ) external;
+    function initialize(uint64 startTime, address ownerAddress, bytes calldata)
+        external;
 
     /* user functions */
 
-    function stake(
-        address vault,
-        uint256 amount,
-        bytes calldata permission
-    ) external;
+    function stake(address vault, uint256 amount, bytes calldata permission)
+        external;
 
     function unstakeAndClaim(
         address vault,
         uint256 amount,
         bytes calldata permission
-    ) external;
+    )
+        external;
 
     /* admin functions */
 
     function fund(uint256 amount, uint256 duration) external;
-    
+
     function registerVaultFactory(address factory) external;
-    
+
     function removeVaultFactory(address factory) external;
-    
+
     function registerBonusToken(address bonusToken) external;
 
     function rescueTokensFromRewardPool(
         address token,
         address recipient,
         uint256 amount
-    ) external;
+    )
+        external;
 
     /* getter functions */
 
-    function getAludelData() external view returns (AludelData memory aludel);
+    function getAludelData()
+        external
+        view
+        returns (AludelData memory aludel);
 
-    function getBonusTokenSetLength() external view returns (uint256 length);
+    function getBonusTokenSetLength()
+        external
+        view
+        returns (uint256 length);
 
-    function getBonusTokenAtIndex(uint256 index) external view returns (address bonusToken);
+    function getBonusTokenAtIndex(uint256 index)
+        external
+        view
+        returns (address bonusToken);
 
-    function getVaultFactorySetLength() external view returns (uint256 length);
+    function getVaultFactorySetLength()
+        external
+        view
+        returns (uint256 length);
 
-    function getVaultFactoryAtIndex(uint256 index) external view returns (address factory);
+    function getVaultFactoryAtIndex(uint256 index)
+        external
+        view
+        returns (address factory);
 
-    function getVaultData(address vault) external view returns (VaultData memory vaultData);
+    function getVaultData(address vault)
+        external
+        view
+        returns (VaultData memory vaultData);
 
-    function isValidAddress(address target) external view returns (bool validity);
+    function isValidAddress(address target)
+        external
+        view
+        returns (bool validity);
 
-    function isValidVault(address target) external view returns (bool validity);
+    function isValidVault(address target)
+        external
+        view
+        returns (bool validity);
 
-    function getCurrentUnlockedRewards() external view returns (uint256 unlockedRewards);
+    function getCurrentUnlockedRewards()
+        external
+        view
+        returns (uint256 unlockedRewards);
 
     function getFutureUnlockedRewards(uint256 timestamp)
         external
         view
         returns (uint256 unlockedRewards);
 
-    function getCurrentVaultReward(address vault) external view returns (uint256 reward);
+    function getCurrentVaultReward(address vault)
+        external
+        view
+        returns (uint256 reward);
 
     function getCurrentStakeReward(address vault, uint256 stakeAmount)
         external
@@ -143,16 +170,25 @@ interface IAludel is IRageQuit {
         address vault,
         uint256 stakeAmount,
         uint256 timestamp
-    ) external view returns (uint256 reward);
+    )
+        external
+        view
+        returns (uint256 reward);
 
-    function getCurrentVaultStakeUnits(address vault) external view returns (uint256 stakeUnits);
+    function getCurrentVaultStakeUnits(address vault)
+        external
+        view
+        returns (uint256 stakeUnits);
 
     function getFutureVaultStakeUnits(address vault, uint256 timestamp)
         external
         view
         returns (uint256 stakeUnits);
 
-    function getCurrentTotalStakeUnits() external view returns (uint256 totalStakeUnits);
+    function getCurrentTotalStakeUnits()
+        external
+        view
+        returns (uint256 totalStakeUnits);
 
     function getFutureTotalStakeUnits(uint256 timestamp)
         external
@@ -161,23 +197,28 @@ interface IAludel is IRageQuit {
 
     /* pure functions */
 
-    function calculateTotalStakeUnits(StakeData[] memory stakes, uint256 timestamp)
+    function calculateTotalStakeUnits(
+        StakeData[] memory stakes,
+        uint256 timestamp
+    )
         external
         pure
         returns (uint256 totalStakeUnits);
 
-    function calculateStakeUnits(
-        uint256 amount,
-        uint256 start,
-        uint256 end
-    ) external pure returns (uint256 stakeUnits);
+    function calculateStakeUnits(uint256 amount, uint256 start, uint256 end)
+        external
+        pure
+        returns (uint256 stakeUnits);
 
     function calculateUnlockedRewards(
         RewardSchedule[] memory rewardSchedules,
         uint256 rewardBalance,
         uint256 sharesOutstanding,
         uint256 timestamp
-    ) external pure returns (uint256 unlockedRewards);
+    )
+        external
+        pure
+        returns (uint256 unlockedRewards);
 
     function calculateRewardFromStakes(
         StakeData[] memory stakes,
@@ -186,7 +227,10 @@ interface IAludel is IRageQuit {
         uint256 totalStakeUnits,
         uint256 timestamp,
         RewardScaling memory rewardScaling
-    ) external pure returns (RewardOutput memory out);
+    )
+        external
+        pure
+        returns (RewardOutput memory out);
 
     function calculateReward(
         uint256 unlockedRewards,
@@ -194,6 +238,8 @@ interface IAludel is IRageQuit {
         uint256 stakeDuration,
         uint256 totalStakeUnits,
         RewardScaling memory rewardScaling
-    ) external pure returns (uint256 reward);
+    )
+        external
+        pure
+        returns (uint256 reward);
 }
-
