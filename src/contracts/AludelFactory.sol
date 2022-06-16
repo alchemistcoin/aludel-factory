@@ -24,6 +24,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @notice address => ProgramData mapping
     mapping(address => ProgramData) private _programs;
 
+    /// @notice fee's recipient.
+    address private _feeRecipient;
+
     /// @dev emitted when a new template is added
     event TemplateAdded(address template);
 
@@ -36,11 +39,22 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @dev emitted when a program's name is changed
     event NameChanged(address program, string name);
 
+    error InvalidAddress();
     error InvalidTemplate();
     error TemplateNotRegistered();
     error TemplateDisabled();
     error TemplateAlreadyAdded();
     error ProgramAlreadyRegistered();
+
+
+    constructor(address feeRecipient) {
+        
+        if (feeRecipient == address(0)) {
+            revert InvalidAddress();
+        }
+
+        _feeRecipient = _feeRecipient;
+    }
 
     /// @notice perform a minimal proxy deploy of a predefined aludel template
     /// @param template the number of the template to launch
@@ -250,5 +264,13 @@ contract AludelFactory is Ownable, InstanceRegistry {
         returns (EnumerableSet.TemplateData memory)
     {
         return _templates.at(template);
+    }
+
+    function feeRecipient() external view returns (address) {
+        return _feeRecipient;
+    }
+
+    function setFeeRecipient(address newRecipient) external {
+        _feeRecipient = newRecipient;
     }
 }
