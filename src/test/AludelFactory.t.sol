@@ -45,6 +45,9 @@ contract AludelFactoryTest is DSTest {
     PowerSwitchFactory powerSwitchFactory;
     RewardScaling rewardScaling;
 
+    address recipient;
+    uint16 bps;
+
     struct RewardScaling {
         uint256 floor;
         uint256 ceiling;
@@ -60,8 +63,14 @@ contract AludelFactoryTest is DSTest {
     }
 
     function setUp() public {
+
         cheats = Hevm(HEVM_ADDRESS);
-        factory = new AludelFactory();
+        owner = cheats.addr(PRIVATE_KEY);
+
+        recipient = owner;
+        // 100 / 10000 => 1% 
+        bps = 100;
+        factory = new AludelFactory(recipient, bps);
 
         Aludel template = new Aludel();
         template.initializeLock();
@@ -91,8 +100,6 @@ contract AludelFactoryTest is DSTest {
             rewardToken: address(rewardToken),
             rewardScaling: rewardScaling
         });
-
-        owner = cheats.addr(PRIVATE_KEY);
 
         factory.addTemplate(address(template), "test template", false);
 
