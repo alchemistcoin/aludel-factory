@@ -111,6 +111,7 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         uint64 startTime,
         address ownerAddress,
         address feeRecipient,
+        uint16 feeBps,
         bytes calldata data
     )
         external
@@ -123,7 +124,7 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         );
 
         _feeRecipient = feeRecipient;
-        _feeBps = 100;
+        _feeBps = feeBps;
 
         // the scaling floor must be smaller than ceiling
         if (params.rewardScaling.floor > params.rewardScaling.ceiling) {
