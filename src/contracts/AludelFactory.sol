@@ -26,6 +26,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
     /// @notice fee's recipient.
     address private _feeRecipient;
+    /// @notice fee's basis point
+    uint16 private _feeBps;
 
     /// @dev emitted when a new template is added
     event TemplateAdded(address template);
@@ -47,13 +49,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
     error ProgramAlreadyRegistered();
 
 
-    constructor(address feeRecipient) {
-        
-        if (feeRecipient == address(0)) {
-            revert InvalidAddress();
-        }
-
-        _feeRecipient = _feeRecipient;
+    constructor(address recipient, uint16 bps) {
+        _feeRecipient = recipient;
+        _feeBps = bps;
     }
 
     /// @notice perform a minimal proxy deploy of a predefined aludel template
@@ -270,7 +268,15 @@ contract AludelFactory is Ownable, InstanceRegistry {
         return _feeRecipient;
     }
 
-    function setFeeRecipient(address newRecipient) external {
+    function setFeeRecipient(address newRecipient) external onlyOwner {
         _feeRecipient = newRecipient;
+    }
+
+    function feeBps() external view returns (address) {
+        return _feeRecipient;
+    }
+
+    function setFeeBps(uint16 bps) external onlyOwner {
+        _feeBps = bps;
     }
 }

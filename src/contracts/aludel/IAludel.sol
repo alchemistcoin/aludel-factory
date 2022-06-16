@@ -71,6 +71,7 @@ interface IAludel is IRageQuit {
         uint64 startTime,
         address ownerAddress,
         address feeRecipient,
+        uint16 feeBps,
         bytes calldata
     ) external;
 
