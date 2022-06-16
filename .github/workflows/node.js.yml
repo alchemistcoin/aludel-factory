@@ -15,12 +15,15 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: borales/actions-yarn@v3.0.0
+      name: install
       with:
         cmd: install
     - uses: borales/actions-yarn@v3.0.0
+      name: compile
       with:
         cmd: hardhat compile
     - uses: borales/actions-yarn@v3.0.0
+      name: tests
       with:
         cmd: hardhat test --network hardhat
       env: 
@@ -28,6 +31,7 @@ jobs:
         DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
 
     - uses: borales/actions-yarn@v3.0.0
+      name: deploy
       with:
         cmd: hardhat deploy --network mumbai --write true 
       env:
