@@ -72,6 +72,10 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
     EnumerableSet.AddressSet internal _bonusTokenSet;
     EnumerableSet.AddressSet internal _vaultFactorySet;
 
+
+    address _feeRecipient;
+    uint16 _feeBps;
+
     struct AludelInitializationParams {
         address rewardPoolFactory;
         address powerSwitchFactory;
@@ -106,15 +110,20 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
     function initialize(
         uint64 startTime,
         address ownerAddress,
+        address feeRecipient,
         bytes calldata data
     )
         external
         override
         initializer
     {
+      
         (AludelInitializationParams memory params) = abi.decode(
             data, (AludelInitializationParams)
         );
+
+        _feeRecipient = feeRecipient;
+        _feeBps = 100;
 
         // the scaling floor must be smaller than ceiling
         if (params.rewardScaling.floor > params.rewardScaling.ceiling) {
@@ -655,6 +664,17 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
             revert InvalidDuration();
         }
 
+        uint256 fee = amount.mul(_feeBps).div(10000);
+        amount = amount.sub(fee);
+
+        // transfer reward tokens to `_feeRecipient` 
+        TransferHelper.safeTransferFrom(
+            _aludel.rewardToken,
+            msg.sender,
+            _feeRecipient,
+            fee
+        );
+        
         // create new reward shares
         // if existing rewards on this Aludel
         //   mint new shares proportional to % change in rewards remaining
@@ -976,6 +996,7 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
 
         // only perform on non-zero reward
         if (out.reward > 0) {
+
             // calculate shares to burn
             // sharesToBurn = sharesOutstanding * reward / remainingRewards
             uint256 sharesToBurn =

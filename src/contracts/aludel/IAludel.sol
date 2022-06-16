@@ -67,8 +67,12 @@ interface IAludel is IRageQuit {
 
     function initializeLock() external;
 
-    function initialize(uint64 startTime, address ownerAddress, bytes calldata)
-        external;
+    function initialize(
+        uint64 startTime,
+        address ownerAddress,
+        address feeRecipient,
+        bytes calldata
+    ) external;
 
     /* user functions */
 
