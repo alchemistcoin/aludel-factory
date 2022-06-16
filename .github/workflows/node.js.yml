@@ -23,10 +23,14 @@ jobs:
     - uses: borales/actions-yarn@v3.0.0
       with:
         cmd: hardhat test --network hardhat
-    - uses: borales/actions-yarn@v3.0.0
-      with:
-        cmd: hardhat deploy --network mumbai --write true 
       env: 
         FORK_URL: ${{ secrets.FORK_URL }}
         DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
+
+    - uses: borales/actions-yarn@v3.0.0
+      with:
+        cmd: hardhat deploy --network mumbai --write true 
+      env:
+        DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
+        MUMBAI_URL: ${{secrets.MUMBAI_URL}}
         DEPLOY_CHAIN: mumbai
