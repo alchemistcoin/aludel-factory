@@ -90,6 +90,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
                 IAludel.initialize.selector,
                 startTime,
                 ownerAddress,
+                _feeRecipient,
+                _feeBps,
                 data
             )
         );
