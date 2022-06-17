@@ -13,23 +13,28 @@ import {
 contract PowerSwitchTest is DSTest {
     Hevm cheats;
 
-    PowerSwitchFactory powerSwitchFactory;
+	PowerSwitchFactory powerSwitchFactory;
 
-    function setUp() public {
-        cheats = Hevm(HEVM_ADDRESS);
-    }
+	function setUp() public {
+		cheats = Hevm(HEVM_ADDRESS);
+	}
 
-    function test_getStatus() public {
-        uint64 timestamp = uint64(block.timestamp);
-        PowerSwitch powerSwitch = new PowerSwitch(address(this), timestamp + 10);
-        assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.NotStarted);
-        cheats.warp(timestamp + 9);
-        assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.NotStarted);
-        cheats.warp(timestamp + 10);
-        assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Online);
-        powerSwitch.powerOff();
-        assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Offline);
-        powerSwitch.emergencyShutdown();
-        assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Shutdown);
-    }
+	function test_getStatus() public {
+		uint64 timestamp = uint64(block.timestamp);
+		PowerSwitch powerSwitch = new PowerSwitch(address(this), timestamp + 10);
+		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.NotStarted);
+		cheats.warp(timestamp + 9);
+		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.NotStarted);
+		cheats.warp(timestamp + 10);
+		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Online);
+		powerSwitch.powerOff();
+		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Offline);
+		cheats.warp(timestamp);	
+		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Offline);
+		powerSwitch.powerOn();
+		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.NotStarted);
+		powerSwitch.emergencyShutdown();
+		assertTrue(powerSwitch.getStatus() == IPowerSwitch.State.Shutdown);
+	}
+
 }
