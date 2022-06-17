@@ -7,6 +7,8 @@ import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-deploy"
 
+import "hardhat-contract-sizer"
+import "hardhat-storage-layout"
 import "./tasks/aludel"
 
 dotenv.config();
@@ -19,16 +21,28 @@ const privateKey = process.env.PRIVATE_KEY || ''
 const rinkebyUrl = process.env.RINKEBY_URL || ''
 const goerliUrl = process.env.GOERLI_URL || ''
 const infuraKey = process.env.ETHERSCAN_API_KEY || ''
-const mumbaiKey = process.env.POLYGON_MUMBAI_API_KEY || ''
+const polyscanApiKey = process.env.POLYGON_MUMBAI_API_KEY || ''
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.13",
+  solidity: {
+    version: "0.8.6",
+    settings: {
+      outputSelection: {
+        "*": {
+            "*": ["storageLayout"],
+        },
+      },
+    }
+  },
   networks: {
     hardhat: {
       forking: {
         url: forkingUrl,
         blockNumber: 14169000
       },
+      accounts: {
+        mnemonic
+      }
     },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
@@ -70,15 +84,21 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic
       }
+    },
+    localhost: {
+      url: 'http://127.0.0.1:8545',
+      accounts: {
+        mnemonic
+      },
     }
   },
   gasReporter: {
-    enabled: process.env.REPORT_GAS !== undefined,
+    enabled: process.env.REPORT_GAS ? true : false,
     currency: "USD",
   },
   namedAccounts: {
     deployer: {
-      default: 0,
+      default: 0
     },
     dev: {
       // Default to 1
@@ -91,13 +111,13 @@ const config: HardhatUserConfig = {
     apiKey: {
       goerli: infuraKey,
       rinkeby: infuraKey,
-      polygonMumbai: mumbaiKey
+      polygonMumbai: polyscanApiKey
     }
   },
   
   paths: {
     artifacts: "./out",
-    sources: "./src/contracts"
+      sources: "./src/contracts"
   },
 };
 

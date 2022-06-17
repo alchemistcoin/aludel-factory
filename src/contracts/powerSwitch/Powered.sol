@@ -14,7 +14,10 @@ interface IPowered {
 
     function getPowerSwitch() external view returns (address powerSwitch);
 
-    function getPowerController() external view returns (address controller);
+    function getPowerController()
+        external
+        view
+        returns (address controller);
 }
 
 /// @title Powered
@@ -23,6 +26,14 @@ contract Powered is IPowered {
     /* storage */
 
     address private _powerSwitch;
+
+    /* errors */
+
+    error Powered_NotOnline();
+    error Powered_NotOffline();
+    error Powered_IsShutdown();
+    error Powered_NotShutdown();
+    error Powered_NotStarted();
 
     /* modifiers */
 
@@ -75,33 +86,53 @@ contract Powered is IPowered {
         return IPowerSwitch(_powerSwitch).getStatus() != IPowerSwitch.State.NotStarted;
     }
 
-    function getPowerSwitch() public view override returns (address powerSwitch) {
+    function getPowerSwitch()
+        public
+        view
+        override
+        returns (address powerSwitch)
+    {
         return _powerSwitch;
     }
 
-    function getPowerController() public view override returns (address controller) {
+    function getPowerController()
+        public
+        view
+        override
+        returns (address controller)
+    {
         return IPowerSwitch(_powerSwitch).getPowerController();
     }
 
     /* convenience functions */
 
     function _onlyOnline() private view {
-        require(isOnline(), "Powered: is not online");
+        if (!isOnline()) {
+            revert Powered_NotOnline();
+        }
     }
 
     function _onlyOffline() private view {
-        require(isOffline(), "Powered: is not offline");
+        if (!isOffline()) {
+            revert Powered_NotOffline();
+        }
     }
 
     function _notShutdown() private view {
-        require(!isShutdown(), "Powered: is shutdown");
+        if (isShutdown()) {
+            revert Powered_IsShutdown();
+        }
     }
 
     function _onlyShutdown() private view {
-        require(isShutdown(), "Powered: is not shutdown");
+        if (!isShutdown()) {
+            revert Powered_NotShutdown();
+        }
     }
 
     function _hasStarted() private view {
-        require(isStarted(), "Powered: not started");
+        if (!isStarted()) {
+            revert Powered_NotStarted();
+        }
     }
 }

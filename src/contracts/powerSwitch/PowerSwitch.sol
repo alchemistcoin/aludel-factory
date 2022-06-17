@@ -39,7 +39,10 @@ interface IPowerSwitch {
 
     function getStartTime() external view returns (uint64 startTime);
 
-    function getPowerController() external view returns (address controller);
+    function getPowerController()
+        external
+        view
+        returns (address controller);
 }
 
 /// @title PowerSwitch
@@ -140,7 +143,12 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         }
     }
 
-    function getStartTime() external view override returns (uint64 startTime) {
+    function getStartTime()
+        external
+        view
+        override
+        returns (uint64 startTime)
+    {
         return _startTimestamp;
     }
 

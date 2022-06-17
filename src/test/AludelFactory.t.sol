@@ -1,22 +1,28 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.13;
 
-import "ds-test/test.sol";
-import "solmate/tokens/ERC20.sol";
+import {DSTest} from "ds-test/src/test.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Hevm} from "solmate/test/utils/Hevm.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
-import {RewardPoolFactory} from "alchemist/aludel/RewardPoolFactory.sol";
-import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
+import {RewardPoolFactory} from
+    "alchemist/contracts/aludel/RewardPoolFactory.sol";
+import {PowerSwitchFactory} from
+    "../contracts/powerSwitch/PowerSwitchFactory.sol";
 
-import {IFactory} from "alchemist/factory/IFactory.sol";
+import {IFactory} from "alchemist/contracts/factory/IFactory.sol";
 
-import {IUniversalVault, Crucible} from "alchemist/crucible/Crucible.sol";
-import {CrucibleFactory} from "alchemist/crucible/CrucibleFactory.sol";
-import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import {MockERC20} from "./mocks/MockERC20.sol";
+import {
+    IUniversalVault,
+    Crucible
+} from "alchemist/contracts/crucible/Crucible.sol";
+import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol";
+import {ERC721Holder} from
+    "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
 import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
 
@@ -39,6 +45,9 @@ contract AludelFactoryTest is DSTest {
     PowerSwitchFactory powerSwitchFactory;
     RewardScaling rewardScaling;
 
+    address recipient;
+    uint16 bps;
+
     struct RewardScaling {
         uint256 floor;
         uint256 ceiling;
@@ -54,8 +63,14 @@ contract AludelFactoryTest is DSTest {
     }
 
     function setUp() public {
+
         cheats = Hevm(HEVM_ADDRESS);
-        factory = new AludelFactory();
+        owner = cheats.addr(PRIVATE_KEY);
+
+        recipient = cheats.addr(PRIVATE_KEY + 1);
+        // 100 / 10000 => 1% 
+        bps = 100;
+        factory = new AludelFactory(recipient, bps);
 
         Aludel template = new Aludel();
         template.initializeLock();
@@ -86,8 +101,6 @@ contract AludelFactoryTest is DSTest {
             rewardScaling: rewardScaling
         });
 
-        owner = cheats.addr(PRIVATE_KEY);
-
         factory.addTemplate(address(template), "test template", false);
 
         uint64 startTime = uint64(block.timestamp);
@@ -116,11 +129,18 @@ contract AludelFactoryTest is DSTest {
         IAludel.AludelData memory data = aludel.getAludelData();
 
         MockERC20(data.rewardToken).mint(owner, 1 ether);
+
+        assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0);
+
         cheats.startPrank(owner);
         MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
         aludel.fund(1 ether, 1 days);
         aludel.registerVaultFactory(address(template));
         cheats.stopPrank();
+
+        assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0.01 ether);
+        assertEq(MockERC20(data.rewardToken).balanceOf(address(rewardPoolFactory)), 0.99 ether);
+
 
         MockERC20(data.stakingToken).mint(owner, 1 ether);
 
@@ -143,11 +163,13 @@ contract AludelFactoryTest is DSTest {
         Aludel template = new Aludel();
         template.initializeLock();
         // expect emit
-        uint256 templateIndex = factory.addTemplate(
-            address(template),
-            "bloop",
-            false
-        ) - 1;
+        uint256 templateIndex =
+            factory.addTemplate(
+                    address(template),
+                    "bloop",
+                    false
+                )
+            - 1;
 
         EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
         // template should not be disabled
@@ -242,7 +264,10 @@ contract AludelFactoryTest is DSTest {
         address delegate,
         address token,
         uint256 amount
-    ) public returns (bytes memory) {
+    )
+        public
+        returns (bytes memory)
+    {
         uint256 nonce = IUniversalVault(crucible).getNonce();
 
         bytes32 domainSeparator = keccak256(
@@ -280,19 +305,16 @@ contract AludelFactoryTest is DSTest {
         return joinSignature(r, s, v);
     }
 
-    ///
-
-    function getChainId() internal view returns (uint chainId) {
+    function getChainId() internal view returns (uint256 chainId) {
         assembly {
             chainId := chainid()
         }
     }
 
-    function joinSignature(
-        bytes32 r,
-        bytes32 s,
-        uint8 v
-    ) internal returns (bytes memory) {
+    function joinSignature(bytes32 r, bytes32 s, uint8 v)
+        internal
+        returns (bytes memory)
+    {
         bytes memory sig = new bytes(65);
         assembly {
             mstore(add(sig, 0x20), r)
