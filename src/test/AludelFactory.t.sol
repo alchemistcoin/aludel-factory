@@ -67,7 +67,7 @@ contract AludelFactoryTest is DSTest {
         cheats = Hevm(HEVM_ADDRESS);
         owner = cheats.addr(PRIVATE_KEY);
 
-        recipient = owner;
+        recipient = cheats.addr(PRIVATE_KEY + 1);
         // 100 / 10000 => 1% 
         bps = 100;
         factory = new AludelFactory(recipient, bps);
@@ -129,11 +129,18 @@ contract AludelFactoryTest is DSTest {
         IAludel.AludelData memory data = aludel.getAludelData();
 
         MockERC20(data.rewardToken).mint(owner, 1 ether);
+
+        assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0);
+
         cheats.startPrank(owner);
         MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
         aludel.fund(1 ether, 1 days);
         aludel.registerVaultFactory(address(template));
         cheats.stopPrank();
+
+        assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0.01 ether);
+        assertEq(MockERC20(data.rewardToken).balanceOf(address(rewardPoolFactory)), 0.99 ether);
+
 
         MockERC20(data.stakingToken).mint(owner, 1 ether);
 
