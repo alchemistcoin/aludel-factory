@@ -13,10 +13,13 @@ export default async function ({
     const { deploy } = deployments;
     const { deployer, dev } = await getNamedAccounts();
 
+    const recipient = deployer
+    const bps = 100
+
     // deploy factory 
     const deployedFactory = await deploy("AludelFactory", {
         from: deployer,
-        args: [],
+        args: [recipient, bps],
         log: true,
         contract: 'AludelFactory',
         deterministicDeployment: false,

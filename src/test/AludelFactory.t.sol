@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.13;
 
-import "ds-test/test.sol";
-import "solmate/tokens/ERC20.sol";
+import {DSTest} from "ds-test/src/test.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Hevm} from "solmate/test/utils/Hevm.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
@@ -22,7 +22,7 @@ import {
 import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol";
 import {ERC721Holder} from
     "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
-import {MockERC20} from "./mocks/MockERC20.sol";
+import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
 import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
 
@@ -45,6 +45,9 @@ contract AludelFactoryTest is DSTest {
     PowerSwitchFactory powerSwitchFactory;
     RewardScaling rewardScaling;
 
+    address recipient;
+    uint16 bps;
+
     struct RewardScaling {
         uint256 floor;
         uint256 ceiling;
@@ -60,8 +63,14 @@ contract AludelFactoryTest is DSTest {
     }
 
     function setUp() public {
+
         cheats = Hevm(HEVM_ADDRESS);
-        factory = new AludelFactory();
+        owner = cheats.addr(PRIVATE_KEY);
+
+        recipient = cheats.addr(PRIVATE_KEY + 1);
+        // 100 / 10000 => 1% 
+        bps = 100;
+        factory = new AludelFactory(recipient, bps);
 
         Aludel template = new Aludel();
         template.initializeLock();
@@ -92,8 +101,6 @@ contract AludelFactoryTest is DSTest {
             rewardScaling: rewardScaling
         });
 
-        owner = cheats.addr(PRIVATE_KEY);
-
         factory.addTemplate(address(template), "test template", false);
 
         uint64 startTime = uint64(block.timestamp);
@@ -122,11 +129,18 @@ contract AludelFactoryTest is DSTest {
         IAludel.AludelData memory data = aludel.getAludelData();
 
         MockERC20(data.rewardToken).mint(owner, 1 ether);
+
+        assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0);
+
         cheats.startPrank(owner);
         MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
         aludel.fund(1 ether, 1 days);
         aludel.registerVaultFactory(address(template));
         cheats.stopPrank();
+
+        assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0.01 ether);
+        assertEq(MockERC20(data.rewardToken).balanceOf(address(rewardPoolFactory)), 0.99 ether);
+
 
         MockERC20(data.stakingToken).mint(owner, 1 ether);
 

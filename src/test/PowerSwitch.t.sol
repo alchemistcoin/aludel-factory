@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.13;
 
-import "ds-test/test.sol";
+import {DSTest} from "ds-test/src/test.sol";
 import {Hevm} from "solmate/test/utils/Hevm.sol";
 
 import {PowerSwitchFactory} from
