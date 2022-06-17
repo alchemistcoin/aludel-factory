@@ -8,7 +8,6 @@
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "2.0.5",
     "@nomiclabs/hardhat-etherscan": "3.0.3",
-    "@openzeppelin/contracts": "^4.4.1",
     "@typechain/ethers-v5": "^7.0.1",
     "@typechain/hardhat": "^5.0.0",
     "@types/chai": "^4.2.21",
@@ -16,10 +15,7 @@
     "@types/node": "^12.0.0",
     "@typescript-eslint/eslint-plugin": "^4.29.1",
     "@typescript-eslint/parser": "^4.29.1",
-    "@uniswap/lib": "^4.0.1-alpha",
     "@uniswap/v2-core": "^1.0.1",
-    "@uniswap/v2-periphery": "^1.1.0-beta.0",
-    "alchemist": "https://github.com/alchemistcoin/alchemist",
     "chai": "^4.2.0",
     "dotenv": "^10.0.0",
     "eslint": "^7.29.0",
@@ -31,9 +27,11 @@
     "eslint-plugin-promise": "^5.1.0",
     "ethereum-waffle": "^3.0.0",
     "ethers": "^5.0.0",
-    "hardhat": "^2.9.1",
+    "hardhat": "^2.9.9",
+    "hardhat-contract-sizer": "^2.5.1",
     "hardhat-deploy": "0.11.1",
     "hardhat-gas-reporter": "^1.0.4",
+    "hardhat-storage-layout": "^0.1.6",
     "prettier": "^2.3.2",
     "prettier-plugin-solidity": "^1.0.0-beta.13",
     "solhint": "^3.3.6",
@@ -43,5 +41,17 @@
     "typescript": "^4.5.2",
     "uniswap-v2-helper": "^1.1.0"
   },
-  "packageManager": "yarn@1.22.1"
+  "packageManager": "yarn@1.22.1",
+  "dependencies": {
+    "@openzeppelin/contracts": "^4.6.0",
+    "@rari-capital/solmate": "^6.4.0",
+    "@uniswap/lib": "https://github.com/Uniswap/solidity-lib",
+    "@uniswap/v2-periphery": "https://github.com/Uniswap/v2-periphery",
+    "alchemist": "https://github.com/itirabasso/alchemist",
+    "ds-auth": "https://github.com/dapphub/ds-auth",
+    "ds-math": "https://github.com/dapphub/ds-math",
+    "ds-test": "https://github.com/dapphub/ds-test",
+    "ds-token": "https://github.com/dapphub/ds-token",
+    "forge-std": "https://github.com/foundry-rs/forge-std"
+  }
 }

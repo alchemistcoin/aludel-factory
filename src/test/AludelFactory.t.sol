@@ -8,13 +8,13 @@ import {Hevm} from "solmate/test/utils/Hevm.sol";
 import {AludelFactory} from "../contracts/AludelFactory.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
-import {RewardPoolFactory} from "alchemist/aludel/RewardPoolFactory.sol";
+import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
 
-import {IFactory} from "alchemist/factory/IFactory.sol";
+import {IFactory} from "alchemist/contracts/factory/IFactory.sol";
 
-import {IUniversalVault, Crucible} from "alchemist/crucible/Crucible.sol";
-import {CrucibleFactory} from "alchemist/crucible/CrucibleFactory.sol";
+import {IUniversalVault, Crucible} from "alchemist/contracts/crucible/Crucible.sol";
+import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol";
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from "./mocks/MockERC20.sol";
 

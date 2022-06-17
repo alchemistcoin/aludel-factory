@@ -10,10 +10,10 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {TransferHelper} from "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
-import {IFactory} from "alchemist/factory/IFactory.sol";
-import {IInstanceRegistry} from "alchemist/factory/InstanceRegistry.sol";
-import {IUniversalVault} from "alchemist/crucible/Crucible.sol";
-import {IRewardPool} from "alchemist/aludel/RewardPool.sol";
+import {IFactory} from "alchemist/contracts/factory/IFactory.sol";
+import {IInstanceRegistry} from "alchemist/contracts/factory/InstanceRegistry.sol";
+import {IUniversalVault} from "alchemist/contracts/crucible/Crucible.sol";
+import {IRewardPool} from "alchemist/contracts/aludel/RewardPool.sol";
 import {Powered} from "../powerSwitch/Powered.sol";
 
 import { IAludel } from "./IAludel.sol";
@@ -43,7 +43,7 @@ import { IAludel } from "./IAludel.sol";
 ///     Users can withdraw their stake through rageQuit()
 ///     Power controller can withdraw from the reward pool
 ///     Should only be used if Proxy Owner role is compromized
-contract Aludel is IAludel, Powered, Ownable, Initializable {
+contract Aludel is IAludel, Ownable, Initializable, Powered {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
