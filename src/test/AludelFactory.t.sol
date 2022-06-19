@@ -62,6 +62,10 @@ contract AludelFactoryTest is DSTest {
         RewardScaling rewardScaling;
     }
 
+    // todo : how can i use Aludel.BASE_SHARES_PER_WEI?
+    uint256 public constant BASE_SHARES_PER_WEI = 1000000;
+
+
     function setUp() public {
 
         cheats = Hevm(HEVM_ADDRESS);
@@ -130,7 +134,7 @@ contract AludelFactoryTest is DSTest {
 
         MockERC20(data.rewardToken).mint(owner, 1 ether);
 
-        assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0);
+        // assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0);
 
         cheats.startPrank(owner);
         MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
@@ -138,8 +142,13 @@ contract AludelFactoryTest is DSTest {
         aludel.registerVaultFactory(address(template));
         cheats.stopPrank();
 
+        data = aludel.getAludelData();
+        IAludel.RewardSchedule[] memory rewardSchedules = data.rewardSchedules;
+        assertEq(rewardSchedules[0].shares, 0.99 ether * BASE_SHARES_PER_WEI);
+
+
         assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0.01 ether);
-        assertEq(MockERC20(data.rewardToken).balanceOf(address(rewardPoolFactory)), 0.99 ether);
+        // assertEq(MockERC20(data.rewardToken).balanceOf(address(rewardPoolFactory)), 0.99 ether);
 
 
         MockERC20(data.stakingToken).mint(owner, 1 ether);
@@ -147,6 +156,7 @@ contract AludelFactoryTest is DSTest {
         cheats.prank(owner);
         crucible = crucibleFactory.create("");
         MockERC20(data.stakingToken).mint(crucible, 1 ether);
+
     }
 
     function test_ownership() public {
@@ -245,6 +255,27 @@ contract AludelFactoryTest is DSTest {
         );
         cheats.prank(owner);
         aludel.stake(crucible, 1 ether, lockPermission);
+
+        IAludel.AludelData memory data = aludel.getAludelData();
+
+        assertEq(data.rewardSharesOutstanding, 0.99 ether * BASE_SHARES_PER_WEI);
+        assertEq(data.totalStake, 1 ether);
+        assertEq(data.totalStakeUnits, 0);
+
+        cheats.warp(block.timestamp + 1);
+        data = aludel.getAludelData();
+        assertEq(data.rewardSharesOutstanding, 0.99 ether * BASE_SHARES_PER_WEI);
+        assertEq(data.totalStake, 1 ether);
+        assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 1);
+
+        cheats.warp(block.timestamp + 4);
+        data = aludel.getAludelData();
+        assertEq(data.rewardSharesOutstanding, 0.99 ether * BASE_SHARES_PER_WEI);
+        assertEq(data.totalStake, 1 ether);
+        assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 5);
+
+
+        cheats.warp(block.timestamp + 1 days - 5);
         bytes memory unlockPermission = getPermission(
             PRIVATE_KEY,
             "Unlock",
@@ -255,7 +286,12 @@ contract AludelFactoryTest is DSTest {
         );
         cheats.prank(owner);
         aludel.unstakeAndClaim(crucible, 1 ether, unlockPermission);
-    }
+
+        data = aludel.getAludelData();
+        assertEq(data.rewardSharesOutstanding, 0);
+        assertEq(data.totalStake, 0 ether);
+        assertEq(aludel.getCurrentTotalStakeUnits(), 0);
+     }
 
     function getPermission(
         uint256 privateKey,
