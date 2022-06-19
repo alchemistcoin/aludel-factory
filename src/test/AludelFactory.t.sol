@@ -245,6 +245,11 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_unstake() public {
+
+        IAludel.VaultData memory vault = aludel.getVaultData(crucible);
+        assertEq(vault.totalStake, 0);
+        assertEq(vault.stakes.length, 0);
+
         bytes memory lockPermission = getPermission(
             PRIVATE_KEY,
             "Lock",
@@ -256,6 +261,12 @@ contract AludelFactoryTest is DSTest {
         cheats.prank(owner);
         aludel.stake(crucible, 1 ether, lockPermission);
 
+        vault = aludel.getVaultData(crucible);
+        assertEq(vault.totalStake, 1 ether);
+        assertEq(vault.stakes.length, 1);
+        assertEq(vault.stakes[0].amount, 1 ether);
+        assertEq(vault.stakes[0].timestamp, block.timestamp);
+
         IAludel.AludelData memory data = aludel.getAludelData();
 
         assertEq(data.rewardSharesOutstanding, 0.99 ether * BASE_SHARES_PER_WEI);
@@ -264,7 +275,6 @@ contract AludelFactoryTest is DSTest {
 
         cheats.warp(block.timestamp + 1);
         data = aludel.getAludelData();
-        assertEq(data.rewardSharesOutstanding, 0.99 ether * BASE_SHARES_PER_WEI);
         assertEq(data.totalStake, 1 ether);
         assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 1);
 
@@ -273,7 +283,6 @@ contract AludelFactoryTest is DSTest {
         assertEq(data.rewardSharesOutstanding, 0.99 ether * BASE_SHARES_PER_WEI);
         assertEq(data.totalStake, 1 ether);
         assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 5);
-
 
         cheats.warp(block.timestamp + 1 days - 5);
         bytes memory unlockPermission = getPermission(
@@ -284,6 +293,7 @@ contract AludelFactoryTest is DSTest {
             address(stakingToken),
             1 ether
         );
+
         cheats.prank(owner);
         aludel.unstakeAndClaim(crucible, 1 ether, unlockPermission);
 
@@ -291,7 +301,11 @@ contract AludelFactoryTest is DSTest {
         assertEq(data.rewardSharesOutstanding, 0);
         assertEq(data.totalStake, 0 ether);
         assertEq(aludel.getCurrentTotalStakeUnits(), 0);
-     }
+
+        vault = aludel.getVaultData(crucible);
+        assertEq(vault.totalStake, 0);
+        assertEq(vault.stakes.length, 0);
+    }
 
     function getPermission(
         uint256 privateKey,
