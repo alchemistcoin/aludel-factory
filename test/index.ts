@@ -4,9 +4,10 @@ import { Wallet } from "@ethersproject/wallet";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber, Contract } from "ethers";
+import { getAddress } from "ethers/lib/utils";
 import { deployments, ethers, getNamedAccounts, network, run } from "hardhat";
 import { DeployedContract } from "hardhat-deploy/dist/types";
-import { Aludel, AludelFactory, Crucible, CrucibleFactory, ERC20, MockERC20, PowerSwitchFactory, RewardPoolFactory } from "../typechain-types";
+import { Aludel, AludelFactory, Crucible, CrucibleFactory, ERC20, MockERC20, PowerSwitchFactory, PowerSwitchFactory__factory, PowerSwitch__factory, RewardPoolFactory } from "../typechain-types";
 import { DAYS, ETHER, revertAfter, signPermission } from "./utils";
 
 describe("Aludel factory", function () {
@@ -82,9 +83,11 @@ describe("Aludel factory", function () {
   }
 
   this.beforeEach(async function() {
-  
-    factory = await get('AludelFactory') as AludelFactory;
-    powerSwitchFactory = await get('PowerSwitchFactory') as PowerSwitchFactory;
+
+    factory = (await deploy('AludelFactory', [admin.address, 100])) as AludelFactory
+    powerSwitchFactory = (await deploy('PowerSwitchFactory')) as PowerSwitchFactory
+    // factory = await get('AludelFactory') as AludelFactory;
+    // powerSwitchFactory = await get('PowerSwitchFactory') as PowerSwitchFactory;
 
   })
 
@@ -101,6 +104,10 @@ describe("Aludel factory", function () {
 
     let aludel: Aludel
     let aludelAddress: string
+
+    async function launchAludel(): Promise<Aludel> {
+
+    }
 
     this.beforeEach(async function() {
       signer = (await ethers.getSigners())[0]
@@ -201,30 +208,56 @@ describe("Aludel factory", function () {
         )
       )
     });
+
+
+    describe("admin functions", async function () {
+      it("templates", async function() {
+        const template2 = await deployContract('Aludel2', 'src/contracts/aludel/Aludel.sol:Aludel')
+        await factory.addTemplate(template2.address, 'aludel 2', false)
+        let templateData = await factory.getTemplate(template2.address)
+        expect(templateData.disabled).to.be.false
+        expect(templateData.name).equals('aludel 2')
+        await factory.updateTemplate(template2.address, true)
+        templateData = await factory.getTemplate(template2.address)
+        expect(templateData.disabled).to.be.true
+
+        let templates = await factory.getTemplates()
+      })
+      it("programs", async function() {
+        let program = await factory.getProgram(aludel.address)
+        expect(program.name, 'program test')
+        expect(program.stakingTokenUrl, 'https://staking.token')
+        expect(program.stakingTokenUrl, await factory.getStakingTokenUrl(aludel.address))
+        await factory.updateName(aludel.address, 'changed')
+        await factory.updateStakingTokenUrl(aludel.address, 'https://invalid.url')
+        program = await factory.getProgram(aludel.address)
+        expect(program.name, 'changed')
+        expect(program.stakingTokenUrl, 'https://invalid.url')
+        expect(program.stakingTokenUrl, await factory.getStakingTokenUrl(aludel.address))
+      })
+
+      it("add program", async function() {
+
+        factory.addProgram(aludel.address)
+      })
+      it("funding fee", async function() {
+        let bps = await factory.feeBps()
+        let receiver = await factory.feeRecipient()
+        expect(bps.toNumber()).eq(100)
+        expect(receiver).equals(admin.address)
+        await factory.setFeeBps(200)
+        await factory.setFeeRecipient(await getAddress('0x0'))
+        bps = await factory.feeBps()
+        receiver = await factory.feeRecipient()
+        expect(bps.toNumber()).eq(200)
+        expect(receiver).equals(0x0)
+      })
+
+    })
+
   }) 
 
   it("")
 
-  describe("admin functions", async function () {
-    it("templates", async function() {
-      const template2 = await deployContract('Aludel2', 'src/contracts/aludel/Aludel.sol:Aludel')
-      await factory.addTemplate(template2.address, 'aludel 2', false)
-      let templateData = await factory.getTemplate(template2.address)
-      expect(templateData.disabled).to.be.false
-      expect(templateData.name).equals('aludel 2')
-      await factory.updateTemplate(template2.address, true)
-      templateData = await factory.getTemplate(template2.address)
-      expect(templateData.disabled).to.be.true
-    })
-    it("templates", async function() {
-      const template2 = await deployContract('Aludel2', 'src/contracts/aludel/Aludel.sol:Aludel')
-      await factory.addTemplate(template2.address, 'aludel 2', false)
-      let templateData = await factory.getTemplate(template2.address)
-      expect(templateData.disabled).to.be.false
-      expect(templateData.name).equals('aludel 2')
-      await factory.updateTemplate(template2.address, true)
-      templateData = await factory.getTemplate(template2.address)
-      expect(templateData.disabled).to.be.true
-    })
-  })
+
 });
