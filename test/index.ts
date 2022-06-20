@@ -140,7 +140,7 @@ describe("Aludel factory", function () {
 
     await aludel.connect(admin).fund(ETHER(1), DAYS(1))
 
-    expect(await aludel.isStarted()).to.be.true
+    // expect(await aludel.isStarted()).to.be.true
 
     receipt = await (await crucibleFactory.connect(admin)["create()"]()).wait();
     event = receipt.events?.find(
