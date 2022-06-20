@@ -5,6 +5,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber, Contract } from "ethers";
 import { deployments, ethers, getNamedAccounts, network, run } from "hardhat";
+import { DeployedContract } from "hardhat-deploy/dist/types";
 import { Aludel, AludelFactory, Crucible, CrucibleFactory, ERC20, MockERC20, PowerSwitchFactory, RewardPoolFactory } from "../typechain-types";
 import { DAYS, ETHER, revertAfter, signPermission } from "./utils";
 
@@ -73,9 +74,11 @@ describe("Aludel factory", function () {
     return get(name)
   }
 
-  async function deployMockERC20(name: string): Promise<Contract> {
+  async function deployMockERC20(name: string): Promise<MockERC20> {
     const { deployer, dev } = await getNamedAccounts()
-    return deployContract(name, 'MockERC20', [admin.address, parseEther('1')])
+    return await (
+      deployContract(name, 'MockERC20', [admin.address, parseEther('1')])
+    ) as MockERC20
   }
 
   this.beforeEach(async function() {
@@ -85,103 +88,143 @@ describe("Aludel factory", function () {
 
   })
 
-  it("test full", async function () {
-    
-    // const aludelTemplate = await get('Aludel') as Aludel 
+  describe("aludel launch", async function () {
 
-    const signer = (await ethers.getSigners())[0]
-    const deployed = await deployments.get('Aludel')
-    const aludelTemplate = await ethers.getContractAt(
-      'src/contracts/aludel/Aludel.sol:Aludel',
-      deployed.address,
-      signer
-    );
+    let signer: SignerWithAddress
+    let deployed: DeployedContract
+    let aludelTemplate: Aludel;
 
-    const stakingToken = await deployMockERC20('StakingToken')
-    const rewardToken = await deployMockERC20('RewardToken') as MockERC20
+    let stakingToken: MockERC20
+    let rewardToken: MockERC20
+    let bonusTokenA: MockERC20
+    let bonusTokenB: MockERC20
 
-    const bonusTokenA = await deployMockERC20('BonusTokenA')
-    const bonusTokenB = await deployMockERC20('BonusTokenB')
+    let aludel: Aludel
+    let aludelAddress: string
 
-    await rewardToken.mint(admin.address, ETHER(1))
-
-    const params = new AbiCoder().encode(
-      ['address', 'address', 'address', 'address', 'uint256', 'uint256', 'uint256'],
-      [
-        rewardPoolFactory.address, powerSwitchFactory.address,
-        stakingToken.address, rewardToken.address,
-        1, 10, DAYS(1)
-      ]
-    )
-
-    // const startTime = BigNumber.from(Date.now()).div(1000)
-    const startTime = 0
-
-    let tx = await factory.launch(
-      aludelTemplate.address,
-      'program test',
-      'https://staking.token',
-      startTime,
-      crucibleFactory.address,
-      [bonusTokenA.address, bonusTokenB.address],
-      admin.address,
-      params
-    )
-    let receipt = await tx.wait()
-
-    let event = receipt.events?.find(
-      event => event.address == factory.address && event.event == 'InstanceAdded'
-    )
-    const aludelAddress = event?.args!.instance
- 
-    const aludel = aludelTemplate.attach(aludelAddress) as Aludel
-    
-    await rewardToken.connect(admin).approve(aludel.address, ETHER(1))
-
-    await aludel.connect(admin).fund(ETHER(1), DAYS(1))
-
-    // expect(await aludel.isStarted()).to.be.true
-
-    receipt = await (await crucibleFactory.connect(admin)["create()"]()).wait();
-    event = receipt.events?.find(
-      event => event.address == crucibleFactory.address && event.event == 'InstanceAdded'
-    )
-    const crucibleAddress = event?.args!.instance
-
-    const crucible = await ethers.getContractAt('Crucible', crucibleAddress) as Crucible
-
-    await stakingToken.connect(admin).mint(crucible.address, ETHER(1))
-
-    const signerWallet = Wallet.fromMnemonic(process.env.DEV_MNEMONIC || '')
-    tx = await aludel.stake(
-      crucible.address,
-      ETHER(1),
-      await signPermission(
-        'Lock',
-        crucible,
-        signerWallet,
-        aludel.address,
-        stakingToken.address,
-        ETHER(1),
-        0
+    this.beforeEach(async function() {
+      signer = (await ethers.getSigners())[0]
+      const deployed = await deployments.get('Aludel')
+      const aludelTemplate = await ethers.getContractAt(
+        'src/contracts/aludel/Aludel.sol:Aludel',
+        deployed.address,
+        signer
+      );
+  
+      stakingToken = await deployMockERC20('StakingToken')
+      rewardToken = await deployMockERC20('RewardToken')
+  
+      bonusTokenA = await deployMockERC20('BonusTokenA')
+      bonusTokenB = await deployMockERC20('BonusTokenB')
+  
+      await rewardToken.mint(admin.address, ETHER(1))
+  
+      const params = new AbiCoder().encode(
+        ['address', 'address', 'address', 'address', 'uint256', 'uint256', 'uint256'],
+        [
+          rewardPoolFactory.address, powerSwitchFactory.address,
+          stakingToken.address, rewardToken.address,
+          1, 10, DAYS(1)
+        ]
       )
-    )
-    await tx.wait()
-
-    await network.provider.send("evm_increaseTime", [DAYS(1)])
-
-    await aludel.unstakeAndClaim(
-      crucible.address,
-      ETHER(1),
-      await signPermission(
-        'Unlock',
-        crucible,
-        signerWallet,
-        aludel.address,
-        stakingToken.address,
-        ETHER(1),
-        1
+  
+      // const startTime = BigNumber.from(Date.now()).div(1000)
+      const startTime = 0
+  
+      let tx = await factory.launch(
+        aludelTemplate.address,
+        'program test',
+        'https://staking.token',
+        startTime,
+        crucibleFactory.address,
+        [bonusTokenA.address, bonusTokenB.address],
+        admin.address,
+        params
       )
-    )
-  });
+      let receipt = await tx.wait()
+  
+      let event = receipt.events?.find(
+        event => event.address == factory.address && event.event == 'InstanceAdded'
+      )
+      aludelAddress = event?.args!.instance
+      aludel = aludelTemplate.attach(aludelAddress) as Aludel
+      
+      await rewardToken.connect(admin).approve(aludel.address, ETHER(1))
+  
+      await aludel.connect(admin).fund(ETHER(1), DAYS(1))
+    })
+    it("test full", async function () {
+      
+      // const aludelTemplate = await get('Aludel') as Aludel 
+    
+      // expect(await aludel.isStarted()).to.be.true
+  
+      let receipt = await (await crucibleFactory.connect(admin)["create()"]()).wait();
+      let event = receipt.events?.find(
+        event => event.address == crucibleFactory.address && event.event == 'InstanceAdded'
+      )
+      const crucibleAddress = event?.args!.instance
+  
+      const crucible = await ethers.getContractAt('Crucible', crucibleAddress) as Crucible
+  
+      await stakingToken.connect(admin).mint(crucible.address, ETHER(1))
+  
+      const signerWallet = Wallet.fromMnemonic(process.env.DEV_MNEMONIC || '')
+      let tx = await aludel.stake(
+        crucible.address,
+        ETHER(1),
+        await signPermission(
+          'Lock',
+          crucible,
+          signerWallet,
+          aludel.address,
+          stakingToken.address,
+          ETHER(1),
+          0
+        )
+      )
+      await tx.wait()
+  
+      await network.provider.send("evm_increaseTime", [DAYS(1)])
+  
+      await aludel.unstakeAndClaim(
+        crucible.address,
+        ETHER(1),
+        await signPermission(
+          'Unlock',
+          crucible,
+          signerWallet,
+          aludel.address,
+          stakingToken.address,
+          ETHER(1),
+          1
+        )
+      )
+    });
+  }) 
+
+  it("")
+
+  describe("admin functions", async function () {
+    it("templates", async function() {
+      const template2 = await deployContract('Aludel2', 'src/contracts/aludel/Aludel.sol:Aludel')
+      await factory.addTemplate(template2.address, 'aludel 2', false)
+      let templateData = await factory.getTemplate(template2.address)
+      expect(templateData.disabled).to.be.false
+      expect(templateData.name).equals('aludel 2')
+      await factory.updateTemplate(template2.address, true)
+      templateData = await factory.getTemplate(template2.address)
+      expect(templateData.disabled).to.be.true
+    })
+    it("templates", async function() {
+      const template2 = await deployContract('Aludel2', 'src/contracts/aludel/Aludel.sol:Aludel')
+      await factory.addTemplate(template2.address, 'aludel 2', false)
+      let templateData = await factory.getTemplate(template2.address)
+      expect(templateData.disabled).to.be.false
+      expect(templateData.name).equals('aludel 2')
+      await factory.updateTemplate(template2.address, true)
+      templateData = await factory.getTemplate(template2.address)
+      expect(templateData.disabled).to.be.true
+    })
+  })
 });
