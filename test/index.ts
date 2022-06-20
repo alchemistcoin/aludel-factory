@@ -4,11 +4,18 @@ import { Wallet } from "@ethersproject/wallet";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber, Contract } from "ethers";
-import { getAddress } from "ethers/lib/utils";
+import { getAddress, keccak256 } from "ethers/lib/utils";
 import { deployments, ethers, getNamedAccounts, network, run } from "hardhat";
 import { DeployedContract } from "hardhat-deploy/dist/types";
-import { Aludel, AludelFactory, Crucible, CrucibleFactory, ERC20, MockERC20, PowerSwitchFactory, PowerSwitchFactory__factory, PowerSwitch__factory, RewardPoolFactory } from "../typechain-types";
+import { Aludel, AludelFactory, AludelFactory__factory, Crucible, CrucibleFactory, ERC20, InstanceRegistry__factory, MockERC20, PowerSwitchFactory, PowerSwitchFactory__factory, PowerSwitch__factory, RewardPoolFactory } from "../typechain-types";
 import { DAYS, ETHER, revertAfter, signPermission } from "./utils";
+import {AddressZero} from "@ethersproject/constants"
+import { instanceRegistrySol } from "../typechain-types/src/contracts/libraries";
+import { IInstanceRegistry__factory } from "../typechain-types/factories/src/contracts/libraries/InstanceRegistry.sol";
+import { Aludel__factory } from "../typechain-types/factories/src/contracts/aludel";
+
+
+const { expectRevert } = require('@openzeppelin/test-helpers');
 
 describe("Aludel factory", function () {
 
@@ -105,18 +112,55 @@ describe("Aludel factory", function () {
     let aludel: Aludel
     let aludelAddress: string
 
-    async function launchAludel(): Promise<Aludel> {
+    async function launchAludel(
+      template: string,
+      name: string,
+      url: string,
+      startTime: number,
+      vaultFactory: string,
+      bonusTokens: string[],
+      owner: string,
+      params: any
+    ): Promise<Aludel> {
+      let tx = await factory.launch(
+        template, name, url,
+        startTime, vaultFactory,
+        bonusTokens,
+        owner, params
+      )
+      let receipt = await tx.wait()
+  
+      let event = receipt.events?.find(
+        event => event.address == factory.address && event.event == 'InstanceAdded'
+      )
+      const aludelAddress = event?.args!.instance
+      const aludel = aludelTemplate.attach(aludelAddress) as Aludel
 
+      return aludel
+    }
+
+    function getAludelInitParams(
+      floor: number, ceiling: number, duration: number
+    ) {
+      const params = new AbiCoder().encode(
+        ['address', 'address', 'address', 'address', 'uint256', 'uint256', 'uint256'],
+        [
+          rewardPoolFactory.address, powerSwitchFactory.address,
+          stakingToken.address, rewardToken.address,
+          floor, ceiling, duration
+        ]
+      )
+      return params
     }
 
     this.beforeEach(async function() {
       signer = (await ethers.getSigners())[0]
       const deployed = await deployments.get('Aludel')
-      const aludelTemplate = await ethers.getContractAt(
+      aludelTemplate = await ethers.getContractAt(
         'src/contracts/aludel/Aludel.sol:Aludel',
         deployed.address,
         signer
-      );
+      ) as Aludel;
   
       stakingToken = await deployMockERC20('StakingToken')
       rewardToken = await deployMockERC20('RewardToken')
@@ -126,35 +170,21 @@ describe("Aludel factory", function () {
   
       await rewardToken.mint(admin.address, ETHER(1))
   
-      const params = new AbiCoder().encode(
-        ['address', 'address', 'address', 'address', 'uint256', 'uint256', 'uint256'],
-        [
-          rewardPoolFactory.address, powerSwitchFactory.address,
-          stakingToken.address, rewardToken.address,
-          1, 10, DAYS(1)
-        ]
-      )
+      const params = getAludelInitParams(1, 10, DAYS(1))
   
       // const startTime = BigNumber.from(Date.now()).div(1000)
       const startTime = 0
   
-      let tx = await factory.launch(
+      aludel = await launchAludel(
         aludelTemplate.address,
-        'program test',
-        'https://staking.token',
+        "program test",
+        "https://staking.token",
         startTime,
         crucibleFactory.address,
         [bonusTokenA.address, bonusTokenB.address],
         admin.address,
         params
       )
-      let receipt = await tx.wait()
-  
-      let event = receipt.events?.find(
-        event => event.address == factory.address && event.event == 'InstanceAdded'
-      )
-      aludelAddress = event?.args!.instance
-      aludel = aludelTemplate.attach(aludelAddress) as Aludel
       
       await rewardToken.connect(admin).approve(aludel.address, ETHER(1))
   
@@ -237,20 +267,42 @@ describe("Aludel factory", function () {
       })
 
       it("add program", async function() {
+        const template2 = await deployContract('Aludel2', 'src/contracts/aludel/Aludel.sol:Aludel')
 
-        factory.addProgram(aludel.address)
+        await factory.addProgram(
+          AddressZero, template2.address, "program added manually", "https://new.url", 0
+        )
+        let program = await factory.getProgram(AddressZero)
+        expect(program.name, 'program added manually')
+        expect(program.stakingTokenUrl, 'https://new.url')
       })
+
+      it("delist program", async function() {
+
+        await factory.delistProgram(aludel.address)
+        await expectRevert(
+          factory.delistProgram(aludel.address),
+          'InstanceNotRegistered()'
+        )  
+        await factory.addProgram(
+          aludel.address, aludelTemplate.address, "program added manually", "https://new.url", 0
+        )
+        let program = await factory.getProgram(aludel.address)
+        expect(program.name, 'program added manually')
+        expect(program.stakingTokenUrl, 'https://new.url')
+      })
+
       it("funding fee", async function() {
         let bps = await factory.feeBps()
         let receiver = await factory.feeRecipient()
         expect(bps.toNumber()).eq(100)
         expect(receiver).equals(admin.address)
         await factory.setFeeBps(200)
-        await factory.setFeeRecipient(await getAddress('0x0'))
+        await factory.setFeeRecipient(AddressZero)
         bps = await factory.feeBps()
         receiver = await factory.feeRecipient()
         expect(bps.toNumber()).eq(200)
-        expect(receiver).equals(0x0)
+        expect(receiver).equals(AddressZero)
       })
 
     })
