@@ -41,7 +41,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @dev emitted when a program's name is changed
     event NameChanged(address program, string name);
 
-    error InvalidAddress();
     error InvalidTemplate();
     error TemplateNotRegistered();
     error TemplateDisabled();
@@ -274,8 +273,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
         _feeRecipient = newRecipient;
     }
 
-    function feeBps() external view returns (address) {
-        return _feeRecipient;
+    function feeBps() external view returns (uint256) {
+        return _feeBps;
     }
 
     function setFeeBps(uint16 bps) external onlyOwner {
