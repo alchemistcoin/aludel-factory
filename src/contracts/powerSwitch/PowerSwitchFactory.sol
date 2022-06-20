@@ -1,12 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.4;
 
-import {EnumerableSet} from
-    "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 
 import {IFactory} from "alchemist/contracts/factory/IFactory.sol";
-import {InstanceRegistry} from
-    "alchemist/contracts/factory/InstanceRegistry.sol";
+import {InstanceRegistry} from "alchemist/contracts/factory/InstanceRegistry.sol";
 import {PowerSwitch} from "./PowerSwitch.sol";
 
 /// @title Power Switch Factory

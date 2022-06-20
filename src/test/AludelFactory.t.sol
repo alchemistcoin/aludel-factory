@@ -8,10 +8,8 @@ import {Hevm} from "solmate/test/utils/Hevm.sol";
 import {AludelFactory} from "../contracts/AludelFactory.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
-import {RewardPoolFactory} from
-    "alchemist/contracts/aludel/RewardPoolFactory.sol";
-import {PowerSwitchFactory} from
-    "../contracts/powerSwitch/PowerSwitchFactory.sol";
+import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
+import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
 
 import {IFactory} from "alchemist/contracts/factory/IFactory.sol";
 
@@ -20,8 +18,7 @@ import {
     Crucible
 } from "alchemist/contracts/crucible/Crucible.sol";
 import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol";
-import {ERC721Holder} from
-    "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {ERC721Holder} from"@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
 import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
@@ -36,8 +33,7 @@ contract AludelFactoryTest is DSTest {
     address owner;
     address crucible;
 
-    address public constant CRUCIBLE_FACTORY =
-        0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56;
+    address public constant CRUCIBLE_FACTORY = 0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56;
 
     uint248 public constant PRIVATE_KEY = type(uint248).max >> 7;
 

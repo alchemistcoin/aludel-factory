@@ -3,25 +3,22 @@ pragma solidity ^0.8.0;
 
 pragma abicoder v2;
 
-import {Initializable} from
-    "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import {Initializable} from "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 
 import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import {EnumerableSet} from
-    "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
-import {TransferHelper} from
-    "@uniswap/lib/contracts/libraries/TransferHelper.sol";
+import {TransferHelper} from "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 import {IFactory} from "alchemist/contracts/factory/IFactory.sol";
-import {IInstanceRegistry} from
-    "alchemist/contracts/factory/InstanceRegistry.sol";
+import {IInstanceRegistry} from "alchemist/contracts/factory/InstanceRegistry.sol";
 import {IUniversalVault} from "alchemist/contracts/crucible/Crucible.sol";
 import {IRewardPool} from "alchemist/contracts/aludel/RewardPool.sol";
 import {Powered} from "../powerSwitch/Powered.sol";
 
 import {IAludel} from "./IAludel.sol";
+import "hardhat/console.sol";
 
 /// @title Aludel
 /// @notice Reward distribution contract with time multiplier
@@ -660,7 +657,6 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         onlyOnline
     {
         // validate duration
-        // require(duration != 0, "Aludel: invalid duration");
         if (duration == 0) {
             revert InvalidDuration();
         }
@@ -786,7 +782,6 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
         _validateAddress(bonusToken);
 
         // verify bonus token count
-        // require(_bonusTokenSet.length() < MAX_REWARD_TOKENS, "Aludel: max bonus tokens reached ");
         if (_bonusTokenSet.length() >= MAX_REWARD_TOKENS) {
             revert MaxBonusTokensReached();
         }
