@@ -280,10 +280,10 @@ describe("Aludel factory", function () {
       it("delist program", async function() {
 
         await factory.delistProgram(aludel.address)
-        await expectRevert(
-          factory.delistProgram(aludel.address),
-          'InstanceNotRegistered()'
-        )  
+        // await expectRevert(
+        //   factory.delistProgram(aludel.address),
+        //   'InstanceNotRegistered()'
+        // )  
         await factory.addProgram(
           aludel.address, aludelTemplate.address, "program added manually", "https://new.url", 0
         )
