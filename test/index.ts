@@ -4,15 +4,11 @@ import { Wallet } from "@ethersproject/wallet";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { BigNumber, Contract } from "ethers";
-import { getAddress, keccak256 } from "ethers/lib/utils";
 import { deployments, ethers, getNamedAccounts, network, run } from "hardhat";
 import { DeployedContract } from "hardhat-deploy/dist/types";
 import { Aludel, AludelFactory, AludelFactory__factory, Crucible, CrucibleFactory, ERC20, InstanceRegistry__factory, MockERC20, PowerSwitchFactory, PowerSwitchFactory__factory, PowerSwitch__factory, RewardPoolFactory } from "../typechain-types";
 import { DAYS, ETHER, revertAfter, signPermission } from "./utils";
 import {AddressZero} from "@ethersproject/constants"
-import { instanceRegistrySol } from "../typechain-types/src/contracts/libraries";
-import { IInstanceRegistry__factory } from "../typechain-types/factories/src/contracts/libraries/InstanceRegistry.sol";
-import { Aludel__factory } from "../typechain-types/factories/src/contracts/aludel";
 
 
 const { expectRevert } = require('@openzeppelin/test-helpers');
