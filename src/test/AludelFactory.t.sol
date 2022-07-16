@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.6;
 
 import {DSTest} from "ds-test/src/test.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
@@ -22,6 +22,7 @@ import {ERC721Holder} from"@openzeppelin/contracts/token/ERC721/utils/ERC721Hold
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
 import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
+import "forge-std/src/console2.sol";
 
 contract AludelFactoryTest is DSTest {
     AludelFactory factory;
@@ -33,6 +34,8 @@ contract AludelFactoryTest is DSTest {
     address owner;
     address crucible;
 
+    address[] bonusTokens;
+
     address public constant CRUCIBLE_FACTORY = 0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56;
 
     uint248 public constant PRIVATE_KEY = type(uint248).max >> 7;
@@ -40,6 +43,8 @@ contract AludelFactoryTest is DSTest {
     RewardPoolFactory rewardPoolFactory;
     PowerSwitchFactory powerSwitchFactory;
     RewardScaling rewardScaling;
+
+    CrucibleFactory crucibleFactory;
 
     address recipient;
     uint16 bps;
@@ -58,9 +63,7 @@ contract AludelFactoryTest is DSTest {
         RewardScaling rewardScaling;
     }
 
-    // todo : how can i use Aludel.BASE_SHARES_PER_WEI?
     uint256 public constant BASE_SHARES_PER_WEI = 1000000;
-
 
     function setUp() public {
 
@@ -76,14 +79,16 @@ contract AludelFactoryTest is DSTest {
         template.initializeLock();
         rewardPoolFactory = new RewardPoolFactory();
         powerSwitchFactory = new PowerSwitchFactory();
-        // Crucible crucibleTemplate = new Crucible();
-        // crucibleTemplate.initializeLock();
-        // CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
-        IFactory crucibleFactory = IFactory(address(CRUCIBLE_FACTORY));
+
+        Crucible crucibleTemplate = new Crucible();
+        crucibleTemplate.initializeLock();
+        crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
+        // IFactory crucibleFactory = IFactory(address(CRUCIBLE_FACTORY));
+
         stakingToken = new MockERC20("", "STK");
         rewardToken = new MockERC20("", "RWD");
 
-        address[] memory bonusTokens = new address[](2);
+        bonusTokens = new address[](2);
         bonusTokens[0] = address(new MockERC20("", "BonusToken A"));
         bonusTokens[1] = address(new MockERC20("", "BonusToken B"));
 
@@ -111,20 +116,20 @@ contract AludelFactoryTest is DSTest {
                 "name",
                 "https://staking.token",
                 startTime,
-                CRUCIBLE_FACTORY,
+                address(crucibleFactory),
                 bonusTokens,
                 owner,
                 abi.encode(params)
             )
         );
-        assertEq(aludel.getBonusTokenSetLength(), 2);
-        AludelFactory.ProgramData memory program = factory.getProgram(
-            address(aludel)
-        );
+        // assertEq(aludel.getBonusTokenSetLength(), 2);
+        // AludelFactory.ProgramData memory program = factory.getProgram(
+        //     address(aludel)
+        // );
 
-        assertEq(program.name, "name");
-        assertEq(program.template, address(template));
-        assertEq(program.startTime, block.timestamp);
+        // assertEq(program.name, "name");
+        // assertEq(program.template, address(template));
+        // assertEq(program.startTime, block.timestamp);
 
         IAludel.AludelData memory data = aludel.getAludelData();
 
@@ -139,11 +144,11 @@ contract AludelFactoryTest is DSTest {
         cheats.stopPrank();
 
         data = aludel.getAludelData();
-        IAludel.RewardSchedule[] memory rewardSchedules = data.rewardSchedules;
-        assertEq(rewardSchedules[0].shares, 0.99 ether * BASE_SHARES_PER_WEI);
+        // IAludel.RewardSchedule[] memory rewardSchedules = data.rewardSchedules;
+        // assertEq(rewardSchedules[0].shares, 0.99 ether * BASE_SHARES_PER_WEI);
 
 
-        assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0.01 ether);
+        // assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0.01 ether);
         // assertEq(MockERC20(data.rewardToken).balanceOf(address(rewardPoolFactory)), 0.99 ether);
 
 
@@ -157,6 +162,60 @@ contract AludelFactoryTest is DSTest {
 
     function test_ownership() public {
         assertEq(factory.owner(), address(this));
+    }
+
+    function test_aludelLaunchKeepsData() public {
+
+        
+        EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
+        assertEq(templates.length, 1);
+        
+        EnumerableSet.TemplateData memory data = templates[0];
+        address template = data.template;
+
+        AludelInitializationParams memory params = AludelInitializationParams({
+            rewardPoolFactory: address(rewardPoolFactory),
+            powerSwitchFactory: address(powerSwitchFactory),
+            stakingToken: address(stakingToken),
+            rewardToken: address(rewardToken),
+            rewardScaling: rewardScaling
+        });
+
+        aludel = IAludel(
+            factory.launch(
+                address(template),
+                "name",
+                "https://staking.token",
+                uint64(block.timestamp),
+                address(crucibleFactory),
+                bonusTokens,
+                owner,
+                abi.encode(params)
+            )
+        );
+        assertEq(aludel.getBonusTokenSetLength(), 2);
+        AludelFactory.ProgramData memory program = factory.getProgram(
+            address(aludel)
+        );
+
+        assertEq(program.name, "name");
+        assertEq(program.template, address(template));
+        assertEq(program.startTime, block.timestamp);
+
+        IAludel.AludelData memory aludelData = aludel.getAludelData();
+
+        MockERC20(aludelData.rewardToken).mint(owner, 1 ether);
+
+
+        cheats.startPrank(owner);
+        MockERC20(aludelData.rewardToken).approve(address(aludel), 1 ether);
+        aludel.fund(1 ether, 1 days);
+        aludel.registerVaultFactory(address(template));
+        cheats.stopPrank();
+
+        aludelData = aludel.getAludelData();
+        IAludel.RewardSchedule[] memory rewardSchedules = aludelData.rewardSchedules;
+        assertEq(rewardSchedules[0].shares, 0.99 ether * BASE_SHARES_PER_WEI);
     }
 
     function test_template_initialization() public {
@@ -213,7 +272,7 @@ contract AludelFactoryTest is DSTest {
             "name",
             "https://staking.token",
             startTime,
-            CRUCIBLE_FACTORY,
+            address(crucibleFactory),
             bonusTokens,
             owner,
             abi.encode(params)
@@ -302,6 +361,42 @@ contract AludelFactoryTest is DSTest {
         assertEq(vault.totalStake, 0);
         assertEq(vault.stakes.length, 0);
     }
+
+    function test_unstake_with_bonus_rewards() public {
+        IAludel.AludelData memory data = aludel.getAludelData();
+        MockERC20(bonusTokens[0]).mint(data.rewardPool, 1 ether);
+        MockERC20(bonusTokens[1]).mint(data.rewardPool, 1 ether);
+
+        bytes memory lockPermission = getPermission(
+            PRIVATE_KEY,
+            "Lock",
+            crucible,
+            address(aludel),
+            address(stakingToken),
+            1 ether
+        );
+
+        cheats.prank(owner);
+        aludel.stake(crucible, 1 ether, lockPermission);
+
+        cheats.warp(block.timestamp + 1 days);
+        bytes memory unlockPermission = getPermission(
+            PRIVATE_KEY,
+            "Unlock",
+            crucible,
+            address(aludel),
+            address(stakingToken),
+            1 ether
+        );
+
+        cheats.startPrank(owner);
+        aludel.unstakeAndClaim(crucible, 1 ether, unlockPermission);
+
+        assertEq(ERC20(data.rewardToken).balanceOf(crucible), 0.99 ether);
+        assertEq(ERC20(bonusTokens[0]).balanceOf(crucible), 0.99 ether);
+        assertEq(ERC20(bonusTokens[1]).balanceOf(crucible), 0.99 ether);
+    }
+
 
     function getPermission(
         uint256 privateKey,
