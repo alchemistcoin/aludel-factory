@@ -362,10 +362,14 @@ contract AludelFactoryTest is DSTest {
         assertEq(vault.stakes.length, 0);
     }
 
+    function getTokensAfterFunding(uint256 amount) view internal returns (uint256) {
+        return amount - ((amount * bps) / 10000);
+    }
+
     function test_unstake_with_bonus_rewards() public {
         IAludel.AludelData memory data = aludel.getAludelData();
-        MockERC20(bonusTokens[0]).mint(data.rewardPool, 1 ether);
-        MockERC20(bonusTokens[1]).mint(data.rewardPool, 1 ether);
+        MockERC20(bonusTokens[0]).mint(data.rewardPool, getTokensAfterFunding(1 ether));
+        MockERC20(bonusTokens[1]).mint(data.rewardPool, getTokensAfterFunding(1 ether));
 
         bytes memory lockPermission = getPermission(
             PRIVATE_KEY,
