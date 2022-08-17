@@ -224,6 +224,35 @@ contract AludelFactoryTest is DSTest {
         factory.addTemplate(address(template), "bleep", false);
     }
 
+    function test_templateNotRegistered() public {
+        Aludel template = new Aludel();
+        template.initializeLock();
+
+        uint32 startTime = 123;
+        // address[] memory bonusTokens = new address[](0);
+    
+        AludelInitializationParams memory params = AludelInitializationParams({
+            rewardPoolFactory: address(rewardPoolFactory),
+            powerSwitchFactory: address(powerSwitchFactory),
+            stakingToken: address(stakingToken),
+            rewardToken: address(rewardToken),
+            rewardScaling: rewardScaling
+        });
+        cheats.expectRevert(AludelFactory.TemplateNotRegistered.selector);
+        factory.launch(
+            address(template),
+            "name",
+            "https://staking.token",
+            startTime,
+            address(crucibleFactory),
+            bonusTokens,
+            owner,
+            abi.encode(params)
+        );
+
+        factory.addTemplate(address(template), "bleep", false);
+    }
+
     function test_disable_template() public {
         Aludel template = new Aludel();
         template.initializeLock();
@@ -264,9 +293,9 @@ contract AludelFactoryTest is DSTest {
             rewardScaling: rewardScaling
         });
 
-        cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
+        // cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
         uint64 startTime = uint64(block.timestamp);
-        address[] memory bonusTokens = new address[](0);
+        cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
         factory.launch(
             address(template),
             "name",
