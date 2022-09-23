@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+// solhint-disable func-name-mixedcase
 pragma solidity ^0.8.6;
 
 import {DSTest} from "ds-test/src/test.sol";
@@ -13,41 +14,36 @@ import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.so
 
 import {IFactory} from "alchemist/contracts/factory/IFactory.sol";
 
-import {
-    IUniversalVault,
-    Crucible
-} from "alchemist/contracts/crucible/Crucible.sol";
+import {IUniversalVault, Crucible} from "alchemist/contracts/crucible/Crucible.sol";
 import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol";
-import {ERC721Holder} from"@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
+import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
 import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
 import "forge-std/src/console2.sol";
 
 contract AludelFactoryTest is DSTest {
-    AludelFactory factory;
-    Hevm cheats;
-    IAludel aludel;
+    AludelFactory private factory;
+    Hevm private cheats;
+    IAludel private aludel;
 
-    MockERC20 stakingToken;
-    MockERC20 rewardToken;
-    address owner;
-    address crucible;
+    MockERC20 private stakingToken;
+    MockERC20 private rewardToken;
+    address private owner;
+    address private crucible;
 
-    address[] bonusTokens;
-
-    address public constant CRUCIBLE_FACTORY = 0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56;
+    address[] private bonusTokens;
 
     uint248 public constant PRIVATE_KEY = type(uint248).max >> 7;
 
-    RewardPoolFactory rewardPoolFactory;
-    PowerSwitchFactory powerSwitchFactory;
-    RewardScaling rewardScaling;
+    RewardPoolFactory private rewardPoolFactory;
+    PowerSwitchFactory private powerSwitchFactory;
+    RewardScaling private rewardScaling;
 
-    CrucibleFactory crucibleFactory;
+    CrucibleFactory private crucibleFactory;
 
-    address recipient;
-    uint16 bps;
+    address private recipient;
+    uint16 private bps;
 
     struct RewardScaling {
         uint256 floor;
@@ -65,13 +61,14 @@ contract AludelFactoryTest is DSTest {
 
     uint256 public constant BASE_SHARES_PER_WEI = 1000000;
 
-    function setUp() public {
+    AludelInitializationParams private defaultParams;
 
+    function setUp() public {
         cheats = Hevm(HEVM_ADDRESS);
         owner = cheats.addr(PRIVATE_KEY);
 
         recipient = cheats.addr(PRIVATE_KEY + 1);
-        // 100 / 10000 => 1% 
+        // 100 / 10000 => 1%
         bps = 100;
         factory = new AludelFactory(recipient, bps);
 
@@ -83,7 +80,6 @@ contract AludelFactoryTest is DSTest {
         Crucible crucibleTemplate = new Crucible();
         crucibleTemplate.initializeLock();
         crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
-        // IFactory crucibleFactory = IFactory(address(CRUCIBLE_FACTORY));
 
         stakingToken = new MockERC20("", "STK");
         rewardToken = new MockERC20("", "RWD");
@@ -98,7 +94,7 @@ contract AludelFactoryTest is DSTest {
             time: 1 days
         });
 
-        AludelInitializationParams memory params = AludelInitializationParams({
+        defaultParams = AludelInitializationParams({
             rewardPoolFactory: address(rewardPoolFactory),
             powerSwitchFactory: address(powerSwitchFactory),
             stakingToken: address(stakingToken),
@@ -119,23 +115,13 @@ contract AludelFactoryTest is DSTest {
                 address(crucibleFactory),
                 bonusTokens,
                 owner,
-                abi.encode(params)
+                abi.encode(defaultParams)
             )
         );
-        // assertEq(aludel.getBonusTokenSetLength(), 2);
-        // AludelFactory.ProgramData memory program = factory.getProgram(
-        //     address(aludel)
-        // );
-
-        // assertEq(program.name, "name");
-        // assertEq(program.template, address(template));
-        // assertEq(program.startTime, block.timestamp);
 
         IAludel.AludelData memory data = aludel.getAludelData();
 
         MockERC20(data.rewardToken).mint(owner, 1 ether);
-
-        // assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0);
 
         cheats.startPrank(owner);
         MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
@@ -144,20 +130,11 @@ contract AludelFactoryTest is DSTest {
         cheats.stopPrank();
 
         data = aludel.getAludelData();
-        // IAludel.RewardSchedule[] memory rewardSchedules = data.rewardSchedules;
-        // assertEq(rewardSchedules[0].shares, 0.99 ether * BASE_SHARES_PER_WEI);
-
-
-        // assertEq(MockERC20(data.rewardToken).balanceOf(recipient), 0.01 ether);
-        // assertEq(MockERC20(data.rewardToken).balanceOf(address(rewardPoolFactory)), 0.99 ether);
-
-
         MockERC20(data.stakingToken).mint(owner, 1 ether);
 
         cheats.prank(owner);
         crucible = crucibleFactory.create("");
         MockERC20(data.stakingToken).mint(crucible, 1 ether);
-
     }
 
     function test_ownership() public {
@@ -165,21 +142,11 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_aludelLaunchKeepsData() public {
-
-        
         EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
         assertEq(templates.length, 1);
-        
+
         EnumerableSet.TemplateData memory data = templates[0];
         address template = data.template;
-
-        AludelInitializationParams memory params = AludelInitializationParams({
-            rewardPoolFactory: address(rewardPoolFactory),
-            powerSwitchFactory: address(powerSwitchFactory),
-            stakingToken: address(stakingToken),
-            rewardToken: address(rewardToken),
-            rewardScaling: rewardScaling
-        });
 
         aludel = IAludel(
             factory.launch(
@@ -190,7 +157,7 @@ contract AludelFactoryTest is DSTest {
                 address(crucibleFactory),
                 bonusTokens,
                 owner,
-                abi.encode(params)
+                abi.encode(defaultParams)
             )
         );
         assertEq(aludel.getBonusTokenSetLength(), 2);
@@ -206,7 +173,6 @@ contract AludelFactoryTest is DSTest {
 
         MockERC20(aludelData.rewardToken).mint(owner, 1 ether);
 
-
         cheats.startPrank(owner);
         MockERC20(aludelData.rewardToken).approve(address(aludel), 1 ether);
         aludel.fund(1 ether, 1 days);
@@ -214,7 +180,8 @@ contract AludelFactoryTest is DSTest {
         cheats.stopPrank();
 
         aludelData = aludel.getAludelData();
-        IAludel.RewardSchedule[] memory rewardSchedules = aludelData.rewardSchedules;
+        IAludel.RewardSchedule[] memory rewardSchedules = aludelData
+            .rewardSchedules;
         assertEq(rewardSchedules[0].shares, 0.99 ether * BASE_SHARES_PER_WEI);
     }
 
@@ -229,15 +196,7 @@ contract AludelFactoryTest is DSTest {
         template.initializeLock();
 
         uint32 startTime = 123;
-        // address[] memory bonusTokens = new address[](0);
-    
-        AludelInitializationParams memory params = AludelInitializationParams({
-            rewardPoolFactory: address(rewardPoolFactory),
-            powerSwitchFactory: address(powerSwitchFactory),
-            stakingToken: address(stakingToken),
-            rewardToken: address(rewardToken),
-            rewardScaling: rewardScaling
-        });
+
         cheats.expectRevert(AludelFactory.TemplateNotRegistered.selector);
         factory.launch(
             address(template),
@@ -247,7 +206,7 @@ contract AludelFactoryTest is DSTest {
             address(crucibleFactory),
             bonusTokens,
             owner,
-            abi.encode(params)
+            abi.encode(defaultParams)
         );
 
         factory.addTemplate(address(template), "bleep", false);
@@ -257,13 +216,11 @@ contract AludelFactoryTest is DSTest {
         Aludel template = new Aludel();
         template.initializeLock();
         // expect emit
-        uint256 templateIndex =
-            factory.addTemplate(
-                    address(template),
-                    "bloop",
-                    false
-                )
-            - 1;
+        uint256 templateIndex = factory.addTemplate(
+            address(template),
+            "bloop",
+            false
+        ) - 1;
 
         EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
         // template should not be disabled
@@ -285,15 +242,6 @@ contract AludelFactoryTest is DSTest {
         // disable template
         factory.updateTemplate(address(template), true);
 
-        AludelInitializationParams memory params = AludelInitializationParams({
-            rewardPoolFactory: address(rewardPoolFactory),
-            powerSwitchFactory: address(powerSwitchFactory),
-            stakingToken: address(stakingToken),
-            rewardToken: address(rewardToken),
-            rewardScaling: rewardScaling
-        });
-
-        // cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
         uint64 startTime = uint64(block.timestamp);
         cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
         factory.launch(
@@ -304,10 +252,11 @@ contract AludelFactoryTest is DSTest {
             address(crucibleFactory),
             bonusTokens,
             owner,
-            abi.encode(params)
+            abi.encode(defaultParams)
         );
     }
 
+    // FIXME: this tests aludel logic, shouldn't be here
     function testFail_template_double_initialization() public {
         Aludel template = new Aludel();
         template.initializeLock();
@@ -329,7 +278,6 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_unstake() public {
-
         IAludel.VaultData memory vault = aludel.getVaultData(crucible);
         assertEq(vault.totalStake, 0);
         assertEq(vault.stakes.length, 0);
@@ -353,7 +301,10 @@ contract AludelFactoryTest is DSTest {
 
         IAludel.AludelData memory data = aludel.getAludelData();
 
-        assertEq(data.rewardSharesOutstanding, 0.99 ether * BASE_SHARES_PER_WEI);
+        assertEq(
+            data.rewardSharesOutstanding,
+            0.99 ether * BASE_SHARES_PER_WEI
+        );
         assertEq(data.totalStake, 1 ether);
         assertEq(data.totalStakeUnits, 0);
 
@@ -364,7 +315,10 @@ contract AludelFactoryTest is DSTest {
 
         cheats.warp(block.timestamp + 4);
         data = aludel.getAludelData();
-        assertEq(data.rewardSharesOutstanding, 0.99 ether * BASE_SHARES_PER_WEI);
+        assertEq(
+            data.rewardSharesOutstanding,
+            0.99 ether * BASE_SHARES_PER_WEI
+        );
         assertEq(data.totalStake, 1 ether);
         assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 5);
 
@@ -391,14 +345,24 @@ contract AludelFactoryTest is DSTest {
         assertEq(vault.stakes.length, 0);
     }
 
-    function getTokensAfterFunding(uint256 amount) view internal returns (uint256) {
+    function getTokensAfterFunding(uint256 amount)
+        internal
+        view
+        returns (uint256)
+    {
         return amount - ((amount * bps) / 10000);
     }
 
     function test_unstake_with_bonus_rewards() public {
         IAludel.AludelData memory data = aludel.getAludelData();
-        MockERC20(bonusTokens[0]).mint(data.rewardPool, getTokensAfterFunding(1 ether));
-        MockERC20(bonusTokens[1]).mint(data.rewardPool, getTokensAfterFunding(1 ether));
+        MockERC20(bonusTokens[0]).mint(
+            data.rewardPool,
+            getTokensAfterFunding(1 ether)
+        );
+        MockERC20(bonusTokens[1]).mint(
+            data.rewardPool,
+            getTokensAfterFunding(1 ether)
+        );
 
         bytes memory lockPermission = getPermission(
             PRIVATE_KEY,
@@ -430,7 +394,6 @@ contract AludelFactoryTest is DSTest {
         assertEq(ERC20(bonusTokens[1]).balanceOf(crucible), 0.99 ether);
     }
 
-
     function getPermission(
         uint256 privateKey,
         string memory method,
@@ -438,10 +401,7 @@ contract AludelFactoryTest is DSTest {
         address delegate,
         address token,
         uint256 amount
-    )
-        public
-        returns (bytes memory)
-    {
+    ) public returns (bytes memory) {
         uint256 nonce = IUniversalVault(crucible).getNonce();
 
         bytes32 domainSeparator = keccak256(
@@ -485,10 +445,11 @@ contract AludelFactoryTest is DSTest {
         }
     }
 
-    function joinSignature(bytes32 r, bytes32 s, uint8 v)
-        internal
-        returns (bytes memory)
-    {
+    function joinSignature(
+        bytes32 r,
+        bytes32 s,
+        uint8 v
+    ) internal returns (bytes memory) {
         bytes memory sig = new bytes(65);
         assembly {
             mstore(add(sig, 0x20), r)
