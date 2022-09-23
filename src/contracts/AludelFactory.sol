@@ -46,6 +46,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
     error TemplateDisabled();
     error TemplateAlreadyAdded();
     error ProgramAlreadyRegistered();
+    error AludelNotRegistered();
 
 
     constructor(address recipient, uint16 bps) {
@@ -175,7 +176,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
         onlyOwner
     {
         // check if the address is already registered
-        require(isInstance(program));
+        if(!isInstance(program)){
+          revert AludelNotRegistered();
+        }
         // update storage
         _programs[program].stakingTokenUrl = newUrl;
         // emit event
@@ -188,7 +191,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
         onlyOwner
     {
         // check if the address is already registered
-        require(isInstance(program));
+        if(!isInstance(program)){
+          revert AludelNotRegistered();
+        }
         // update storage
         _programs[program].name = newName;
         // emit event

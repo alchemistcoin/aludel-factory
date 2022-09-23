@@ -137,6 +137,60 @@ contract AludelFactoryTest is DSTest {
         MockERC20(data.stakingToken).mint(crucible, 1 ether);
     }
 
+    function test_WHEN_launching_an_aludel_THEN_the_instance_is_registered() public {
+        assertTrue(factory.isInstance(address(aludel)));
+    }
+
+    function test_WHEN_adding_a_program_manually_THEN_the_instance_is_registered_AND_a_program_AND_metadata_can_be_set() public {
+        Aludel otherAludel = new Aludel();
+        factory.addProgram(
+            address(otherAludel),
+            address(otherAludel),
+            "name",
+            "http://stake.me",
+            123
+        );
+        assertTrue(factory.isInstance(address(otherAludel)));
+        assertEq(factory.getProgram(address(otherAludel)).name, "name");
+        factory.updateName(address(otherAludel), "othername");
+        factory.updateStakingTokenUrl(address(otherAludel), "http://stake.other");
+        assertEq(factory.getProgram(address(otherAludel)).name, "othername");
+        assertEq(factory.getProgram(address(otherAludel)).stakingTokenUrl, "http://stake.other");
+    }
+
+    function test_GIVEN_a_program_wasnt_added_THEN_metadata_for_it_CANNOT_be_set() public {
+        Aludel otherAludel = new Aludel();
+        cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
+        factory.updateName(address(otherAludel), "othername");
+        cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
+        factory.updateStakingTokenUrl(address(otherAludel), "http://stake.other");
+    }
+
+    // TODO perhaps we actually want this?
+    function test_WHEN_adding_a_program_manually_THEN_it_CANNOT_be_used_as_a_template() public {
+        Aludel otherAludel = new Aludel();
+        factory.addProgram(
+            address(otherAludel),
+            address(otherAludel),
+            "name",
+            "http://stake.me",
+            123
+        );
+        cheats.expectRevert(AludelFactory.TemplateNotRegistered.selector);
+        aludel = IAludel(
+            factory.launch(
+                address(otherAludel),
+                "name",
+                "https://staking.token",
+                uint64(block.timestamp),
+                address(crucibleFactory),
+                bonusTokens,
+                owner,
+                abi.encode(defaultParams)
+            )
+        );
+    }
+
     function test_ownership() public {
         assertEq(factory.owner(), address(this));
     }
