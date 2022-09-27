@@ -250,16 +250,15 @@ describe("Aludel factory", function () {
         let templates = await factory.getTemplates()
       })
       it("programs", async function() {
-        let program = await factory.getProgram(aludel.address)
+        let program = await factory.programs(aludel.address)
         expect(program.name, 'program test')
         expect(program.stakingTokenUrl, 'https://staking.token')
-        expect(program.stakingTokenUrl, await factory.getStakingTokenUrl(aludel.address))
-        await factory.updateName(aludel.address, 'changed')
-        await factory.updateStakingTokenUrl(aludel.address, 'https://invalid.url')
-        program = await factory.getProgram(aludel.address)
+        expect(program.stakingTokenUrl, (await factory.programs(aludel.address)).stakingTokenUrl)
+        await factory.updateProgram(aludel.address, 'changed', 'https://invalid.url')
+        program = await factory.programs(aludel.address)
         expect(program.name, 'changed')
         expect(program.stakingTokenUrl, 'https://invalid.url')
-        expect(program.stakingTokenUrl, await factory.getStakingTokenUrl(aludel.address))
+        expect(program.stakingTokenUrl, (await factory.programs(aludel.address)).stakingTokenUrl)
       })
 
       it("add program", async function() {
@@ -268,7 +267,7 @@ describe("Aludel factory", function () {
         await factory.addProgram(
           AddressZero, template2.address, "program added manually", "https://new.url", 0
         )
-        let program = await factory.getProgram(AddressZero)
+        let program = await factory.programs(AddressZero)
         expect(program.name, 'program added manually')
         expect(program.stakingTokenUrl, 'https://new.url')
       })
@@ -283,7 +282,7 @@ describe("Aludel factory", function () {
         await factory.addProgram(
           aludel.address, aludelTemplate.address, "program added manually", "https://new.url", 0
         )
-        let program = await factory.getProgram(aludel.address)
+        let program = await factory.programs(aludel.address)
         expect(program.name, 'program added manually')
         expect(program.stakingTokenUrl, 'https://new.url')
       })
@@ -291,13 +290,13 @@ describe("Aludel factory", function () {
       it("funding fee", async function() {
         let bps = await factory.feeBps()
         let receiver = await factory.feeRecipient()
-        expect(bps.toNumber()).eq(100)
+        expect(bps).eq(100)
         expect(receiver).equals(admin.address)
         await factory.setFeeBps(200)
         await factory.setFeeRecipient(AddressZero)
         bps = await factory.feeBps()
         receiver = await factory.feeRecipient()
-        expect(bps.toNumber()).eq(200)
+        expect(bps).eq(200)
         expect(receiver).equals(AddressZero)
       })
 
