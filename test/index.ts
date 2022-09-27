@@ -127,9 +127,9 @@ describe("Aludel factory", function () {
       let receipt = await tx.wait()
   
       let event = receipt.events?.find(
-        event => event.address == factory.address && event.event == 'InstanceAdded'
+        event => event.address == factory.address && event.event == 'ProgramAdded'
       )
-      const aludelAddress = event?.args!.instance
+      const aludelAddress = event?.args!.program
       const aludel = aludelTemplate.attach(aludelAddress) as Aludel
 
       return aludel

@@ -4,11 +4,10 @@ pragma solidity ^0.8.6;
 import {ProxyFactory} from "alchemist/contracts/factory/ProxyFactory.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IAludel} from "./aludel/IAludel.sol";
-import {InstanceRegistry} from "./libraries/InstanceRegistry.sol";
 
 import {EnumerableSet} from "./libraries/EnumerableSet.sol";
 
-contract AludelFactory is Ownable, InstanceRegistry {
+contract AludelFactory is Ownable {
     using EnumerableSet for EnumerableSet.TemplateDataSet;
 
     struct ProgramData {
@@ -38,6 +37,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @dev emitted when a program's (deployed via the factory or preexisting)
     // url or name is changed
     event ProgramChanged(address program, string name, string url);
+    /// @dev emitted when a program's (deployed via the factory or preexisting)
+    /// is created
+    event ProgramAdded(address program, string name, string url);
 
     error InvalidTemplate();
     error TemplateNotRegistered();
@@ -45,6 +47,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
     error TemplateAlreadyAdded();
     error ProgramAlreadyRegistered();
     error AludelNotRegistered();
+    error AludelAlreadyRegistered();
 
 
     constructor(address recipient, uint16 bps) {
@@ -102,9 +105,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
             stakingTokenUrl: stakingTokenUrl
         });
 
-        // register aludel instance
-        _register(aludel);
-
         // register vault factory
         IAludel(aludel).registerVaultFactory(vaultFactory);
 
@@ -117,6 +117,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
         // transfer ownership
         Ownable(aludel).transferOwnership(ownerAddress);
+        emit ProgramAdded(address(aludel), name, stakingTokenUrl);
 
         // explicit return
         return aludel;
@@ -153,6 +154,13 @@ contract AludelFactory is Ownable, InstanceRegistry {
         return _templates.length();
     }
 
+    // @dev function to check if an arbitrary address is a registered program
+    // @notice programs cant have a null template, so this should be enough to
+    // know if storage is occupied or not
+    function isAludel(address who) public view returns(bool){
+      return _programs[who].template != address(0);
+    }
+
     /// @notice sets a template as disable or enabled
     function updateTemplate(address template, bool disabled)
         external
@@ -173,7 +181,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// and then you'll save some gas
     function updateProgram(address program, string memory newName,string memory newUrl) external onlyOwner {
         // check if the address is already registered
-        if(!isInstance(program)){
+        if(!isAludel(program)){
           revert AludelNotRegistered();
         }
         // update storage
@@ -199,9 +207,12 @@ contract AludelFactory is Ownable, InstanceRegistry {
         external
         onlyOwner
     {
-        // register aludel instance
-        // if program is already registered this will revert
-        _register(program);
+        if(isAludel(program)){
+          revert AludelAlreadyRegistered();
+        }
+        if (template == address(0)) {
+            revert InvalidTemplate();
+        }
 
         // add program's data to the storage
         _programs[program] = ProgramData({
@@ -215,7 +226,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @notice delist a program
     /// @dev removes `program` as a registered instance of the factory
     function delistProgram(address program) external onlyOwner {
-        _unregister(program);
+        if(!isAludel(program)){
+          revert AludelNotRegistered();
+        }
         delete _programs[program];
     }
 
