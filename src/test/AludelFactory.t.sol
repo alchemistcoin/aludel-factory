@@ -7,6 +7,7 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Hevm} from "solmate/test/utils/Hevm.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
+import {IInstanceRegistry} from "../contracts/libraries/InstanceRegistry.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
@@ -169,6 +170,35 @@ contract AludelFactoryTest is DSTest {
         cheats.expectRevert(bytes("Ownable: caller is not the owner"));
         factory.setFeeRecipient(recipient);
         cheats.stopPrank();
+    }
+
+    function test_WHEN_delisting_a_non_listed_program_THEN_it_reverts() public{
+        cheats.expectRevert(IInstanceRegistry.InstanceNotRegistered.selector);
+        factory.delistProgram(address(otherAludel));
+    }
+    function test_WHEN_delisting_a_listed_program_THEN_data_for_it_isnt_available() public{
+        factory.delistProgram(address(aludel));
+        AludelFactory.ProgramData memory program = factory.programs(address(aludel));
+        assertEq(program.name, "");
+        assertEq(program.stakingTokenUrl, "");
+        assertEq(program.template, address(0));
+        assertEq(program.startTime, 0);
+    }
+    function test_GIVEN_a_delisted_program_THEN_it_CANNOT_be_updated() public{
+        factory.delistProgram(address(aludel));
+        cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
+        factory.updateProgram(address(aludel), "othername", "http://stake.other");
+    }
+    function test_GIVEN_a_delisted_program_THEN_it_CAN_be_added_again() public{
+        factory.delistProgram(address(aludel));
+        factory.addProgram(
+            address(aludel),
+            address(template),
+            "namerino",
+            "http://stake.me",
+            123
+        );
+        assertEq(factory.programs(address(aludel)).name, "namerino");
     }
 
     function test_WHEN_launching_an_aludel_THEN_the_instance_is_registered() public {

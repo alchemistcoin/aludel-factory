@@ -216,6 +216,7 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @dev removes `program` as a registered instance of the factory
     function delistProgram(address program) external onlyOwner {
         _unregister(program);
+        delete _programs[program];
     }
 
     /// @notice retrieves the full list of templates
