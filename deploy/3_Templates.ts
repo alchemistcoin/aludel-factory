@@ -44,7 +44,7 @@ export default async function ({
     console.log('Adding templates to', factory.address)
 
     // add templates in factory
-    if (!(await factory.isInstance(aludel.address))) {
+    if (!(await factory.isAludel(aludel.address))) {
         console.log("adding template")
         await factory.addTemplate(aludel.address, "AludelV2", false)
     } else {

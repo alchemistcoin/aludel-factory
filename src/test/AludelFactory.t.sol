@@ -7,7 +7,6 @@ import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Hevm} from "solmate/test/utils/Hevm.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
-import {IInstanceRegistry} from "../contracts/libraries/InstanceRegistry.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
@@ -173,7 +172,7 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_WHEN_delisting_a_non_listed_program_THEN_it_reverts() public{
-        cheats.expectRevert(IInstanceRegistry.InstanceNotRegistered.selector);
+        cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
         factory.delistProgram(address(otherAludel));
     }
     function test_WHEN_delisting_a_listed_program_THEN_data_for_it_isnt_available() public{
@@ -202,7 +201,18 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_WHEN_launching_an_aludel_THEN_the_instance_is_registered() public {
-        assertTrue(factory.isInstance(address(aludel)));
+        assertTrue(factory.isAludel(address(aludel)));
+    }
+
+    function test_WHEN_adding_a_program_manually_AND_using_template_zero_THEN_it_reverts() public {
+        cheats.expectRevert(AludelFactory.InvalidTemplate.selector);
+        factory.addProgram(
+            address(otherAludel),
+            address(0),
+            "name",
+            "http://stake.me",
+            123
+        );
     }
 
     function test_WHEN_adding_a_program_manually_THEN_the_instance_is_registered_AND_a_program_AND_metadata_can_be_set() public {
@@ -213,7 +223,7 @@ contract AludelFactoryTest is DSTest {
             "http://stake.me",
             123
         );
-        assertTrue(factory.isInstance(address(otherAludel)));
+        assertTrue(factory.isAludel(address(otherAludel)));
         assertEq(factory.programs(address(otherAludel)).name, "name");
         factory.updateProgram(address(otherAludel), "othername", "http://stake.other");
         assertEq(factory.programs(address(otherAludel)).name, "othername");
@@ -298,6 +308,10 @@ contract AludelFactoryTest is DSTest {
         Aludel template = new Aludel();
         template.initializeLock();
         factory.addTemplate(address(template), "bleep", false);
+    }
+    function test_WHEN_adding_address_zero_as_template_THEN_it_reverts() public {
+        cheats.expectRevert(AludelFactory.InvalidTemplate.selector);
+        factory.addTemplate(address(0), "idk", true);
     }
 
     function test_templateNotRegistered() public {
