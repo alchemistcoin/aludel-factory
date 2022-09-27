@@ -25,9 +25,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
     mapping(address => ProgramData) private _programs;
 
     /// @notice fee's recipient.
-    address private _feeRecipient;
+    address public feeRecipient;
     /// @notice fee's basis point
-    uint16 private _feeBps;
+    uint16 public feeBps;
 
     /// @dev emitted when a new template is added
     event TemplateAdded(address template);
@@ -35,11 +35,9 @@ contract AludelFactory is Ownable, InstanceRegistry {
     /// @dev emitted when a template is updated
     event TemplateUpdated(address template, bool disabled);
 
-    /// @dev emitted when a program's url is changed
-    event StakingTokenURLChanged(address program, string url);
-
-    /// @dev emitted when a program's name is changed
-    event NameChanged(address program, string name);
+    /// @dev emitted when a program's (deployed via the factory or preexisting)
+    // url or name is changed
+    event ProgramChanged(address program, string name, string url);
 
     error InvalidTemplate();
     error TemplateNotRegistered();
@@ -50,8 +48,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
 
 
     constructor(address recipient, uint16 bps) {
-        _feeRecipient = recipient;
-        _feeBps = bps;
+        feeRecipient = recipient;
+        feeBps = bps;
     }
 
     /// @notice perform a minimal proxy deploy of a predefined aludel template
@@ -90,8 +88,8 @@ contract AludelFactory is Ownable, InstanceRegistry {
                 IAludel.initialize.selector,
                 startTime,
                 ownerAddress,
-                _feeRecipient,
-                _feeBps,
+                feeRecipient,
+                feeBps,
                 data
             )
         );
@@ -170,34 +168,23 @@ contract AludelFactory is Ownable, InstanceRegistry {
         emit TemplateUpdated(template, disabled);
     }
 
-    /// @notice updates the stakingTokenUrl for a given program
-    function updateStakingTokenUrl(address program, string memory newUrl)
-        external
-        onlyOwner
-    {
+    /// @notice updates both name and url of a program at once
+    /// @dev to set only one of them, you can pass an empty string as the other
+    /// and then you'll save some gas
+    function updateProgram(address program, string memory newName,string memory newUrl) external onlyOwner {
         // check if the address is already registered
         if(!isInstance(program)){
           revert AludelNotRegistered();
         }
         // update storage
-        _programs[program].stakingTokenUrl = newUrl;
-        // emit event
-        emit StakingTokenURLChanged(program, newUrl);
-    }
-
-    /// @notice updates the name for a given program
-    function updateName(address program, string memory newName)
-        external
-        onlyOwner
-    {
-        // check if the address is already registered
-        if(!isInstance(program)){
-          revert AludelNotRegistered();
+        if(bytes(newName).length != 0){
+            _programs[program].name = newName;
         }
-        // update storage
-        _programs[program].name = newName;
+        if(bytes(newUrl).length != 0){
+            _programs[program].stakingTokenUrl = newUrl;
+        }
         // emit event
-        emit NameChanged(program, newName);
+        emit ProgramChanged(program, newName, newUrl);
     }
 
     /// @notice manually adds a program
@@ -231,26 +218,6 @@ contract AludelFactory is Ownable, InstanceRegistry {
         _unregister(program);
     }
 
-    /* getters */
-
-    /// @notice retrieves the program's url
-    function getStakingTokenUrl(address program)
-        external
-        view
-        returns (string memory)
-    {
-        return _programs[program].stakingTokenUrl;
-    }
-
-    /// @notice retrieves a program's data
-    function getProgram(address program)
-        external
-        view
-        returns (ProgramData memory)
-    {
-        return _programs[program];
-    }
-
     /// @notice retrieves the full list of templates
     /// @dev template values is an unbounded array
     function getTemplates()
@@ -270,19 +237,19 @@ contract AludelFactory is Ownable, InstanceRegistry {
         return _templates.at(template);
     }
 
-    function feeRecipient() external view returns (address) {
-        return _feeRecipient;
+    // @dev the automatically generated getter doesn't return a struct, but
+    // instead a tuple. I didn't research the gas cost implications of this,
+    // but it's more readable to access fields by name, so this is used to
+    // force returning a struct
+    function programs(address program) external view returns (ProgramData memory) {
+      return _programs[program];
     }
 
     function setFeeRecipient(address newRecipient) external onlyOwner {
-        _feeRecipient = newRecipient;
-    }
-
-    function feeBps() external view returns (uint256) {
-        return _feeBps;
+        feeRecipient = newRecipient;
     }
 
     function setFeeBps(uint16 bps) external onlyOwner {
-        _feeBps = bps;
+        feeBps = bps;
     }
 }

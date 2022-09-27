@@ -136,6 +136,14 @@ contract AludelFactoryTest is DSTest {
         crucible = crucibleFactory.create("");
         MockERC20(data.stakingToken).mint(crucible, 1 ether);
     }
+    function test_WHEN_updating_a_program_with_empty_fields_THEN_it_isnt_updated() public {
+        factory.updateProgram(address(aludel), "", "otherurl");
+        assertEq(factory.programs(address(aludel)).name, "name");
+        assertEq(factory.programs(address(aludel)).stakingTokenUrl, "otherurl");
+        factory.updateProgram(address(aludel), "othername", "");
+        assertEq(factory.programs(address(aludel)).name, "othername");
+        assertEq(factory.programs(address(aludel)).stakingTokenUrl, "otherurl");
+    }
 
     function test_WHEN_launching_an_aludel_THEN_the_instance_is_registered() public {
         assertTrue(factory.isInstance(address(aludel)));
@@ -151,19 +159,16 @@ contract AludelFactoryTest is DSTest {
             123
         );
         assertTrue(factory.isInstance(address(otherAludel)));
-        assertEq(factory.getProgram(address(otherAludel)).name, "name");
-        factory.updateName(address(otherAludel), "othername");
-        factory.updateStakingTokenUrl(address(otherAludel), "http://stake.other");
-        assertEq(factory.getProgram(address(otherAludel)).name, "othername");
-        assertEq(factory.getProgram(address(otherAludel)).stakingTokenUrl, "http://stake.other");
+        assertEq(factory.programs(address(otherAludel)).name, "name");
+        factory.updateProgram(address(otherAludel), "othername", "http://stake.other");
+        assertEq(factory.programs(address(otherAludel)).name, "othername");
+        assertEq(factory.programs(address(otherAludel)).stakingTokenUrl, "http://stake.other");
     }
 
     function test_GIVEN_a_program_wasnt_added_THEN_metadata_for_it_CANNOT_be_set() public {
         Aludel otherAludel = new Aludel();
         cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
-        factory.updateName(address(otherAludel), "othername");
-        cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
-        factory.updateStakingTokenUrl(address(otherAludel), "http://stake.other");
+        factory.updateProgram(address(otherAludel), "othername", "http://stake.other");
     }
 
     // TODO perhaps we actually want this?
@@ -215,13 +220,10 @@ contract AludelFactoryTest is DSTest {
             )
         );
         assertEq(aludel.getBonusTokenSetLength(), 2);
-        AludelFactory.ProgramData memory program = factory.getProgram(
-            address(aludel)
-        );
 
-        assertEq(program.name, "name");
-        assertEq(program.template, address(template));
-        assertEq(program.startTime, block.timestamp);
+        assertEq(factory.programs(address(aludel)).template, address(template));
+        assertEq(factory.programs(address(aludel)).name, "name");
+        assertEq(factory.programs(address(aludel)).startTime, block.timestamp);
 
         IAludel.AludelData memory aludelData = aludel.getAludelData();
 
