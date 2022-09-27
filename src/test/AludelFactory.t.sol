@@ -39,6 +39,8 @@ contract AludelFactoryTest is DSTest {
     RewardPoolFactory private rewardPoolFactory;
     PowerSwitchFactory private powerSwitchFactory;
     RewardScaling private rewardScaling;
+    Aludel private otherAludel;
+    Aludel private template;
 
     CrucibleFactory private crucibleFactory;
 
@@ -72,7 +74,8 @@ contract AludelFactoryTest is DSTest {
         bps = 100;
         factory = new AludelFactory(recipient, bps);
 
-        Aludel template = new Aludel();
+        template = new Aludel();
+        otherAludel = new Aludel();
         template.initializeLock();
         rewardPoolFactory = new RewardPoolFactory();
         powerSwitchFactory = new PowerSwitchFactory();
@@ -145,12 +148,34 @@ contract AludelFactoryTest is DSTest {
         assertEq(factory.programs(address(aludel)).stakingTokenUrl, "otherurl");
     }
 
+    function test_WHEN_calling_permissioned_methods_with_a_non_owner_account_THEN_it_reverts() public{
+        cheats.startPrank(recipient);
+        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        factory.updateProgram(address(aludel), "othername", "http://stake.other");
+        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        factory.addProgram(
+            address(otherAludel),
+            address(otherAludel),
+            "name",
+            "http://stake.me",
+            123
+        );
+        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        factory.addTemplate(address(otherAludel), "test template", false);
+        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        factory.updateTemplate(address(template), true);
+        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        factory.setFeeBps(69);
+        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        factory.setFeeRecipient(recipient);
+        cheats.stopPrank();
+    }
+
     function test_WHEN_launching_an_aludel_THEN_the_instance_is_registered() public {
         assertTrue(factory.isInstance(address(aludel)));
     }
 
     function test_WHEN_adding_a_program_manually_THEN_the_instance_is_registered_AND_a_program_AND_metadata_can_be_set() public {
-        Aludel otherAludel = new Aludel();
         factory.addProgram(
             address(otherAludel),
             address(otherAludel),
@@ -166,14 +191,12 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_GIVEN_a_program_wasnt_added_THEN_metadata_for_it_CANNOT_be_set() public {
-        Aludel otherAludel = new Aludel();
         cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
         factory.updateProgram(address(otherAludel), "othername", "http://stake.other");
     }
 
     // TODO perhaps we actually want this?
     function test_WHEN_adding_a_program_manually_THEN_it_CANNOT_be_used_as_a_template() public {
-        Aludel otherAludel = new Aludel();
         factory.addProgram(
             address(otherAludel),
             address(otherAludel),
