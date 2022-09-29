@@ -14,15 +14,13 @@ import "./tasks/aludel"
 
 dotenv.config();
 
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
 const forkingUrl = process.env.FORK_URL || ''
 const mnemonic = process.env.DEV_MNEMONIC || ''
 const privateKey = process.env.PRIVATE_KEY || ''
-const rinkebyUrl = process.env.RINKEBY_URL || ''
-const goerliUrl = process.env.GOERLI_URL || ''
+const goerliUrl = process.env.GOERLI_RPC || ''
 const infuraKey = process.env.ETHERSCAN_API_KEY || ''
 const polyscanApiKey = process.env.POLYGON_MUMBAI_API_KEY || ''
+const mumbaiUrl = process.env.MUMBAI_RPC || ''
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -45,15 +43,6 @@ const config: HardhatUserConfig = {
         mnemonic
       }
     },
-    ropsten: {
-      url: process.env.ROPSTEN_URL || "",
-      accounts: {
-        mnemonic
-      },
-      live: true,
-      saveDeployments: true,
-      tags: ['staging']
-    },
     goerli: {
       url: goerliUrl,
       accounts: {
@@ -63,17 +52,8 @@ const config: HardhatUserConfig = {
       saveDeployments: true,
       tags: ['staging']
     },
-    rinkeby: {
-      url: rinkebyUrl,
-      accounts: {
-        mnemonic
-      },
-      live: true,
-      saveDeployments: true,
-      tags: ['staging']
-    },
     mumbai: {
-      url: process.env.MUMBAI_URL || '',
+      url: mumbaiUrl,
       accounts: {
         mnemonic
       },
