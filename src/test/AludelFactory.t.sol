@@ -5,6 +5,7 @@ pragma solidity ^0.8.6;
 import {DSTest} from "ds-test/src/test.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Hevm} from "solmate/test/utils/Hevm.sol";
+import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
@@ -19,6 +20,8 @@ import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol"
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
+import {Spy} from "./Spy.sol";
+
 import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
 import "forge-std/src/console2.sol";
 
@@ -26,6 +29,7 @@ contract AludelFactoryTest is DSTest {
     AludelFactory private factory;
     Hevm private cheats;
     IAludel private aludel;
+    Spy private spyTemplate;
 
     MockERC20 private stakingToken;
     MockERC20 private rewardToken;
@@ -75,6 +79,7 @@ contract AludelFactoryTest is DSTest {
         factory = new AludelFactory(recipient, bps);
 
         template = new Aludel();
+        spyTemplate = new Spy();
         otherAludel = new Aludel();
         template.initializeLock();
         rewardPoolFactory = new RewardPoolFactory();
@@ -106,6 +111,7 @@ contract AludelFactoryTest is DSTest {
         });
 
         factory.addTemplate(address(template), "test template", false);
+        factory.addTemplate(address(spyTemplate), "spy template", false);
 
         uint64 startTime = uint64(block.timestamp);
 
@@ -146,6 +152,58 @@ contract AludelFactoryTest is DSTest {
         factory.updateProgram(address(aludel), "othername", "");
         assertEq(factory.programs(address(aludel)).name, "othername");
         assertEq(factory.programs(address(aludel)).stakingTokenUrl, "otherurl");
+    }
+
+    function test_WHEN_launching_an_aludel_THEN_ownership_is_transferred_AND_the_vault_factory_AND_bonusTokens_are_registered() public{
+        Spy spiedAludel = Spy(
+            factory.launch(
+                address(spyTemplate),
+                "name",
+                "https://staking.token",
+                uint64(block.timestamp),
+                address(420),
+                bonusTokens,
+                address(69),
+                abi.encode(defaultParams)
+            )
+        );
+        assertTrue(spiedAludel.spyWasCalled(
+            abi.encodeWithSelector(Ownable.transferOwnership.selector, address(69))
+        ));
+        assertTrue(spiedAludel.spyWasCalled(
+            abi.encodeWithSelector(IAludel.registerVaultFactory.selector, address(420))
+        ));
+        assertTrue(spiedAludel.spyWasCalled(
+            abi.encodeWithSelector(IAludel.registerBonusToken.selector, address(bonusTokens[0]))
+        ));
+        assertTrue(spiedAludel.spyWasCalled(
+            abi.encodeWithSelector(IAludel.registerBonusToken.selector, address(bonusTokens[1]))
+        ));
+    }
+
+    function test_WHEN_launching_an_aludel_THEN_its_initialized() public{
+        Spy spiedAludel = Spy(
+            factory.launch(
+                address(spyTemplate),
+                "coolname",
+                "https://staking.url",
+                420,
+                address(crucibleFactory),
+                bonusTokens,
+                address(69),
+                abi.encode("some data, idk")
+            )
+        );
+        assertTrue(spiedAludel.spyWasCalled(
+            abi.encodeWithSelector(
+                IAludel.initialize.selector,
+                420, // startTime
+                address(69), //owner
+                recipient, // configured at the AludelFactory level
+                bps, // configured at the AludelFactory level
+                abi.encode("some data, idk") //arbitrary initialization data
+        )
+        ));
     }
 
     function test_WHEN_calling_permissioned_methods_with_a_non_owner_account_THEN_it_reverts() public{
@@ -265,7 +323,7 @@ contract AludelFactoryTest is DSTest {
 
     function test_aludelLaunchKeepsData() public {
         EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
-        assertEq(templates.length, 1);
+        assertEq(templates.length, 2);
 
         EnumerableSet.TemplateData memory data = templates[0];
         address template = data.template;
