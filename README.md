@@ -6,6 +6,21 @@
 * Compile the contracts: ```forge build```
 * Run tests: ```forge test``` (you need to setup a RPC url in `foundry.toml`)
 
+# how to deploy using foundry
+
+```
+source .env
+
+forge script src/scripts/Deploy.sol:DeployFactory -vvvvvv \
+  --rpc-url $GOERLI_RPC \
+  --private-key $PRIVATE_KEY \
+  --broadcast \
+  --etherscan-api-key $ETHERSCAN_API_KEY \
+  --verifier etherscan \
+  --verify
+```
+
+
 # aludel factory
 
 This factory allows you to launch pre-deployed Aludels
