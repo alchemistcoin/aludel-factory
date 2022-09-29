@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
+// solhint-disable func-name-mixedcase
 pragma solidity ^0.8.6;
 
 import {DSTest} from "ds-test/src/test.sol";
@@ -72,8 +73,6 @@ contract EnumerableSetTest is DSTest {
         assertEq(value.name, 'template');
     }
 
-    // function 
-
     function test_contains(uint256 length) public {
         cheats.assume(length < 50);
 
@@ -91,22 +90,6 @@ contract EnumerableSetTest is DSTest {
         assertTrue(!templates.contains(address(uint160(1337+length))));
         
     }
-
-
-    // function test_contains(uint256 length) public {
-    //     cheats.assume(length < 50);
-
-    //     for (uint i = 0; i < length; i++) {
-    //         bool v = templates.add(EnumerableSet.TemplateData({
-    //             template: address(uint160(1337+i)),
-    //             name: string(abi.encode('template', i)),
-    //             disabled: false
-    //         }));
-    //         assertTrue(v);
-    //     }
-
-    //     assertEq(templates.length(), length);
-    // }
 
     function _buildTemplateData(
         address template,
@@ -161,18 +144,13 @@ contract EnumerableSetTest is DSTest {
     }
 
     function test_update_nonexistent() public {
-        EnumerableSet.TemplateData memory data;
-
+        SetWrapper set = new SetWrapper();
         // this reverts as expected but i dont know how to test it
-        // cheats.expectRevert(bytes4(abi.encodeWithSignature("Panic(uint256)", 0x11)));
-        // try templates.at(address(0)) {
-        //     assertTrue(false);
-        // } catch Panic(uint256 code) {
-        //     assertEq(code, 0x11);
-        // }
+        cheats.expectRevert(abi.encodeWithSignature("Panic(uint256)", 0x11));
+        set.at(address(0));
         // update nonexistent entry
-        assertTrue(!templates.update(address(0), true));
-        assertTrue(!templates.contains(address(0)));
+        assertTrue(!set.update(address(0), true));
+        assertTrue(!set.contains(address(0)));
     }
 
     function test_remove() public {
@@ -256,5 +234,22 @@ contract EnumerableSetTest is DSTest {
         EnumerableSet.TemplateData[] memory values = templates.values();
         assertEq(values.length, 10000);
     }
+}
 
+contract SetWrapper {
+    using EnumerableSet for EnumerableSet.TemplateDataSet;
+    EnumerableSet.TemplateDataSet private set;
+
+    function at(address where) public returns(EnumerableSet.TemplateData memory){
+        return set.at(where);
+    }
+    function update(address what, bool disabled) public returns(bool){
+        return set.update(what, disabled);
+    }
+    function contains(address template)
+        public
+        returns (bool)
+    {
+        return set.contains(template);
+    }
 }
