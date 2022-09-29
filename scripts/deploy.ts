@@ -13,8 +13,8 @@ async function main() {
   await factory.deployed()
   console.log("AludelFactory deployed to:", factory.address);
   
-  // await factory.deployTransaction.wait(1)
-  await sleep(150000)  
+  await factory.deployTransaction.wait(2)
+
   // verify source
   console.log('Verifying source on etherscan')
   await run('verify:verify', {
@@ -27,8 +27,7 @@ async function main() {
   await template.deployed()
   console.log("AludelTemplate deployed to:", template.address);
   
-  // await template.deployTransaction.wait(1)
-  await sleep(150000)  
+  await template.deployTransaction.wait(2)
   
   // verify source
   console.log('Verifying source on etherscan')
