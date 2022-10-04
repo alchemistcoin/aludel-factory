@@ -20,8 +20,6 @@ import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol"
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
-import {Spy} from "./Spy.sol";
-
 import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
 import "forge-std/src/console2.sol";
 
@@ -29,7 +27,6 @@ contract AludelFactoryIntegrationTest is DSTest {
     AludelFactory private factory;
     Hevm private cheats;
     IAludel private aludel;
-    Spy private spyTemplate;
 
     MockERC20 private stakingToken;
     MockERC20 private rewardToken;
@@ -43,7 +40,6 @@ contract AludelFactoryIntegrationTest is DSTest {
     RewardPoolFactory private rewardPoolFactory;
     PowerSwitchFactory private powerSwitchFactory;
     RewardScaling private rewardScaling;
-    Aludel private otherAludel;
     Aludel private template;
 
     CrucibleFactory private crucibleFactory;
@@ -79,8 +75,6 @@ contract AludelFactoryIntegrationTest is DSTest {
         factory = new AludelFactory(recipient, bps);
 
         template = new Aludel();
-        spyTemplate = new Spy();
-        otherAludel = new Aludel();
         template.initializeLock();
         rewardPoolFactory = new RewardPoolFactory();
         powerSwitchFactory = new PowerSwitchFactory();
@@ -111,7 +105,6 @@ contract AludelFactoryIntegrationTest is DSTest {
         });
 
         factory.addTemplate(address(template), "test template", false);
-        factory.addTemplate(address(spyTemplate), "spy template", false);
 
         uint64 startTime = uint64(block.timestamp);
 
@@ -148,7 +141,7 @@ contract AludelFactoryIntegrationTest is DSTest {
 
     function test_aludelLaunchKeepsData() public {
         EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
-        assertEq(templates.length, 2);
+        assertEq(templates.length, 1);
 
         EnumerableSet.TemplateData memory data = templates[0];
         address template = data.template;
@@ -193,7 +186,6 @@ contract AludelFactoryIntegrationTest is DSTest {
         factory.addTemplate(address(template), "bleep", false);
     }
 
-    // FIXME: this tests aludel logic, shouldn't be here
     function testFail_template_double_initialization() public {
         Aludel template = new Aludel();
         template.initializeLock();
