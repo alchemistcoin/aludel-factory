@@ -269,6 +269,25 @@ contract AludelFactoryTest is DSTest {
         );
     }
 
+    function test_WHEN_adding_a_template_THEN_it_is_NOT_listed_as_a_program() public {
+        factory.addTemplate(address(unlistedTemplate), "foo", false);
+        assertTrue(!factory.isAludel(address(unlistedTemplate)));
+    }
+
+    function test_WHEN_adding_a_program_THEN_it_is_NOT_listed_as_a_template() public {
+        factory.addProgram(
+            address(preexistingAludel),
+            address(preexistingAludel),
+            "name",
+            "http://stake.me",
+            123
+        );
+        // the EnumerableSet (implementation detail) reverts when being asked
+        // for an item that isn't there
+        cheats.expectRevert(abi.encodeWithSignature("Panic(uint256)", 0x11));
+        factory.getTemplate(address(preexistingAludel));
+    }
+
     function test_WHEN_disabling_a_template_THEN_its_listed_as_disabled() public {
         uint256 templateIndex = factory.addTemplate(
             address(unlistedTemplate),
