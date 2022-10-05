@@ -13,7 +13,6 @@ import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 import {Spy} from "./Spy.sol";
 
-import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
 import "forge-std/src/console2.sol";
 
 contract AludelFactoryTest is DSTest {
@@ -282,29 +281,24 @@ contract AludelFactoryTest is DSTest {
             "http://stake.me",
             123
         );
-        // the EnumerableSet (implementation detail) reverts when being asked
-        // for an item that isn't there
-        cheats.expectRevert(abi.encodeWithSignature("Panic(uint256)", 0x11));
-        factory.getTemplate(address(preexistingAludel));
+        assertEq(factory.getTemplate(address(preexistingAludel)).template, address(0));
     }
 
     function test_WHEN_disabling_a_template_THEN_its_listed_as_disabled() public {
-        uint256 templateIndex = factory.addTemplate(
+        factory.addTemplate(
             address(unlistedTemplate),
             "bloop",
             false
-        ) - 1;
+        );
 
-        EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
         // template should not be disabled
-        assertTrue(templates[templateIndex].disabled == false);
+        assertTrue(factory.getTemplate(address(unlistedTemplate)).disabled == false);
 
         // disable template
         factory.updateTemplate(address(unlistedTemplate), true);
 
-        templates = factory.getTemplates();
         // now template is disabled
-        assertTrue(templates[templateIndex].disabled == true);
+        assertTrue(factory.getTemplate(address(unlistedTemplate)).disabled == true);
     }
 
     function test_WHEN_launching_with_a_disabled_template_THEN_it_reverts() public {

@@ -5,20 +5,21 @@ import {ProxyFactory} from "alchemist/contracts/factory/ProxyFactory.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IAludel} from "./aludel/IAludel.sol";
 
-import {EnumerableSet} from "./libraries/EnumerableSet.sol";
-
 contract AludelFactory is Ownable {
-    using EnumerableSet for EnumerableSet.TemplateDataSet;
-
     struct ProgramData {
         address template;
         uint64 startTime;
         string name;
         string stakingTokenUrl;
     }
+    struct TemplateData {
+        address template;
+        bool disabled;
+        string name;
+    }
 
     /// @notice set of template data
-    EnumerableSet.TemplateDataSet private _templates;
+    mapping(address => TemplateData) private _templates;
 
     /// @notice address => ProgramData mapping
     mapping(address => ProgramData) private _programs;
@@ -75,12 +76,12 @@ contract AludelFactory is Ownable {
         returns (address aludel)
     {
         // reverts when template address is not registered
-        if (!_templates.contains(template)) {
+        if (!templateExists(template)) {
             revert TemplateNotRegistered();
         }
 
         // reverts when template is disabled
-        if (_templates.at(template).disabled) {
+        if (_templates[template].disabled) {
             revert TemplateDisabled();
         }
 
@@ -129,29 +130,25 @@ contract AludelFactory is Ownable {
     function addTemplate(address template, string memory name, bool disabled)
         public
         onlyOwner
-        returns (uint256 templateIndex)
     {
         // cannot add address(0) as template
         if (template == address(0)) {
             revert InvalidTemplate();
         }
 
-        // create template data
-        EnumerableSet.TemplateData memory data = EnumerableSet.TemplateData({
-            template: template,
-            disabled: disabled,
-            name: name
-        });
-
         // add template to the storage
-        if (!_templates.add(data)) {
+        if (templateExists(template)) {
             revert TemplateAlreadyAdded();
+        } else {
+            _templates[template] = TemplateData({
+                template: template,
+                disabled: disabled,
+                name: name
+            });
         }
 
         // emit event
         emit TemplateAdded(template);
-
-        return _templates.length();
     }
 
     // @dev function to check if an arbitrary address is a registered program
@@ -166,13 +163,11 @@ contract AludelFactory is Ownable {
         external
         onlyOwner
     {
-        if (!_templates.contains(template)) {
+        if (!templateExists(template)) {
             revert InvalidTemplate();
         }
 
-        // update disable value for the given template
-        require(_templates.update(template, disabled));
-        // emit event
+        _templates[template].disabled = disabled;
         emit TemplateUpdated(template, disabled);
     }
 
@@ -232,23 +227,13 @@ contract AludelFactory is Ownable {
         delete _programs[program];
     }
 
-    /// @notice retrieves the full list of templates
-    /// @dev template values is an unbounded array
-    function getTemplates()
-        external
-        view
-        returns (EnumerableSet.TemplateData[] memory)
-    {
-        return _templates.values();
-    }
-
     /// @notice retrieves a template's data
     function getTemplate(address template)
         external
         view
-        returns (EnumerableSet.TemplateData memory)
+        returns (TemplateData memory)
     {
-        return _templates.at(template);
+        return _templates[template];
     }
 
     // @dev the automatically generated getter doesn't return a struct, but
@@ -265,5 +250,9 @@ contract AludelFactory is Ownable {
 
     function setFeeBps(uint16 bps) external onlyOwner {
         feeBps = bps;
+    }
+
+    function templateExists(address template) private view returns(bool){
+        return _templates[template].template != address(0);
     }
 }

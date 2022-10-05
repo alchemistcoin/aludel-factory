@@ -246,8 +246,6 @@ describe("Aludel factory", function () {
         await factory.updateTemplate(template2.address, true)
         templateData = await factory.getTemplate(template2.address)
         expect(templateData.disabled).to.be.true
-
-        let templates = await factory.getTemplates()
       })
       it("programs", async function() {
         let program = await factory.programs(aludel.address)
