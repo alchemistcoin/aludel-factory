@@ -13,7 +13,7 @@ contract AludelFactory is Ownable {
         string stakingTokenUrl;
     }
     struct TemplateData {
-        address template;
+        bool listed;
         bool disabled;
         string name;
     }
@@ -76,7 +76,7 @@ contract AludelFactory is Ownable {
         returns (address aludel)
     {
         // reverts when template address is not registered
-        if (!templateExists(template)) {
+        if (!_templates[template].listed) {
             revert TemplateNotRegistered();
         }
 
@@ -137,11 +137,11 @@ contract AludelFactory is Ownable {
         }
 
         // add template to the storage
-        if (templateExists(template)) {
+        if (_templates[template].listed) {
             revert TemplateAlreadyAdded();
         } else {
             _templates[template] = TemplateData({
-                template: template,
+                listed: true,
                 disabled: disabled,
                 name: name
             });
@@ -163,7 +163,7 @@ contract AludelFactory is Ownable {
         external
         onlyOwner
     {
-        if (!templateExists(template)) {
+        if (!_templates[template].listed) {
             revert InvalidTemplate();
         }
 
@@ -250,9 +250,5 @@ contract AludelFactory is Ownable {
 
     function setFeeBps(uint16 bps) external onlyOwner {
         feeBps = bps;
-    }
-
-    function templateExists(address template) private view returns(bool){
-        return _templates[template].template != address(0);
     }
 }

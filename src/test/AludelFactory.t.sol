@@ -281,7 +281,7 @@ contract AludelFactoryTest is DSTest {
             "http://stake.me",
             123
         );
-        assertEq(factory.getTemplate(address(preexistingAludel)).template, address(0));
+        assertTrue(!factory.getTemplate(address(preexistingAludel)).listed);
     }
 
     function test_WHEN_disabling_a_template_THEN_its_listed_as_disabled() public {
