@@ -231,7 +231,18 @@ contract AludelFactoryTest is DSTest {
         );
     }
 
-    function test_WHEN_adding_a_program_manually_THEN_the_instance_is_registered_AND_a_program_AND_metadata_can_be_set() public {
+    function test_GIVEN_an_already_added_program_WHEN_adding_it_manually_THEN_it_reverts() public {
+        cheats.expectRevert(AludelFactory.AludelAlreadyRegistered.selector);
+        factory.addProgram(
+            address(aludel),
+            address(listedTemplate),
+            "name",
+            "http://stake.me",
+            123
+        );
+    }
+
+    function test_WHEN_adding_a_program_manually_THEN_the_instance_is_registered_AND_a_program_AND_metadata_can_be_set_AND_it_CANNOT_be_added_again() public {
         factory.addProgram(
             address(preexistingAludel),
             address(preexistingAludel),
@@ -244,6 +255,14 @@ contract AludelFactoryTest is DSTest {
         factory.updateProgram(address(preexistingAludel), "othername", "http://stake.other");
         assertEq(factory.programs(address(preexistingAludel)).name, "othername");
         assertEq(factory.programs(address(preexistingAludel)).stakingTokenUrl, "http://stake.other");
+        cheats.expectRevert(AludelFactory.AludelAlreadyRegistered.selector);
+        factory.addProgram(
+            address(preexistingAludel),
+            address(preexistingAludel),
+            "name",
+            "http://stake.me",
+            123
+        );
     }
 
     function test_GIVEN_a_program_wasnt_added_THEN_metadata_for_it_CANNOT_be_set() public {
