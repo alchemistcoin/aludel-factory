@@ -73,6 +73,36 @@ contract AludelFactoryTest is DSTest {
         );
     }
 
+    function test_WHEN_setting_a_different_fee_bps_and_recipient_THEN_its_passed_to_new_aludels() public {
+        factory.setFeeBps(69);
+        factory.setFeeRecipient(address(69));
+        Spy newAludel = Spy(
+            factory.launch(
+                address(listedTemplate),
+                "name",
+                "https://staking.token",
+                START_TIME,
+                CRUCIBLE_FACTORY,
+                bonusTokens,
+                owner,
+                abi.encode(bytes(""))
+            )
+        );
+        assertTrue(newAludel.spyWasCalled(
+            abi.encodeWithSelector(
+                IAludel.initialize.selector,
+                START_TIME,
+                owner,
+                address(69),
+                69,
+                abi.encode(bytes(""))
+            )
+        ));
+        // also use the getters, but this doesn't merit its own testcase
+        assertEq(factory.feeRecipient(), address(69));
+        assertEq(factory.feeBps(), 69);
+    }
+
     function test_WHEN_updating_a_program_with_empty_fields_THEN_it_isnt_updated() public {
         factory.updateProgram(address(aludel), "", "otherurl");
         assertEq(factory.programs(address(aludel)).name, "name");
@@ -109,7 +139,7 @@ contract AludelFactoryTest is DSTest {
         ));
     }
 
-    function test_WHEN_launching_an_aludel_THEN_its_initialized() public{
+    function test_WHEN_launching_an_aludel_THEN_its_initialized_AND_bps_and_recipient_set_at_construction_time_are_used() public{
         Spy spiedAludel = Spy(
             factory.launch(
                 address(spyTemplate),
@@ -130,7 +160,7 @@ contract AludelFactoryTest is DSTest {
                 recipient, // configured at the AludelFactory level
                 bps, // configured at the AludelFactory level
                 abi.encode("some data, idk") //arbitrary initialization data
-        )
+            )
         ));
     }
 
