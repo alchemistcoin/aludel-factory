@@ -357,6 +357,15 @@ contract AludelFactoryTest is DSTest {
         factory.updateTemplate(address(preexistingAludel), true);
     }
 
+    function test_WHEN_adding_an_already_added_tempalte_THEN_it_reverts() public {
+        cheats.expectRevert(AludelFactory.TemplateAlreadyAdded.selector);
+        factory.addTemplate(
+            address(listedTemplate),
+            "bloop",
+            false
+        );
+    }
+
     function test_WHEN_launching_with_a_disabled_template_THEN_it_reverts() public {
         factory.addTemplate(address(unlistedTemplate), "foo", false);
         // disable template
