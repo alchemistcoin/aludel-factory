@@ -25,8 +25,6 @@ describe("Aludel factory", function () {
   let user: SignerWithAddress
   let anotherUser: SignerWithAddress
 
-  // revertAfter()
-
   const get = async (name: string) => {
     const signer = (await ethers.getSigners())[0]
     const deployed = await deployments.get(name)
@@ -89,9 +87,6 @@ describe("Aludel factory", function () {
 
     factory = (await deploy('AludelFactory', [admin.address, 100])) as AludelFactory
     powerSwitchFactory = (await deploy('PowerSwitchFactory')) as PowerSwitchFactory
-    // factory = await get('AludelFactory') as AludelFactory;
-    // powerSwitchFactory = await get('PowerSwitchFactory') as PowerSwitchFactory;
-
   })
 
   describe("aludel launch", async function () {
@@ -165,10 +160,7 @@ describe("Aludel factory", function () {
       bonusTokenB = await deployMockERC20('BonusTokenB')
   
       await rewardToken.mint(admin.address, ETHER(1))
-  
       const params = getAludelInitParams(1, 10, DAYS(1))
-  
-      // const startTime = BigNumber.from(Date.now()).div(1000)
       const startTime = 0
   
       aludel = await launchAludel(
@@ -187,11 +179,6 @@ describe("Aludel factory", function () {
       await aludel.connect(admin).fund(ETHER(1), DAYS(1))
     })
     it("test full", async function () {
-      
-      // const aludelTemplate = await get('Aludel') as Aludel 
-    
-      // expect(await aludel.isStarted()).to.be.true
-  
       let receipt = await (await crucibleFactory.connect(admin)["create()"]()).wait();
       let event = receipt.events?.find(
         event => event.address == crucibleFactory.address && event.event == 'InstanceAdded'
@@ -247,6 +234,7 @@ describe("Aludel factory", function () {
         templateData = await factory.getTemplate(template2.address)
         expect(templateData.disabled).to.be.true
       })
+
       it("programs", async function() {
         let program = await factory.programs(aludel.address)
         expect(program.name, 'program test')
@@ -261,7 +249,6 @@ describe("Aludel factory", function () {
 
       it("add program", async function() {
         const template2 = await deployContract('Aludel2', 'src/contracts/aludel/Aludel.sol:Aludel')
-
         await factory.addProgram(
           AddressZero, template2.address, "program added manually", "https://new.url", 0
         )
@@ -271,12 +258,7 @@ describe("Aludel factory", function () {
       })
 
       it("delist program", async function() {
-
         await factory.delistProgram(aludel.address)
-        // await expectRevert(
-        //   factory.delistProgram(aludel.address),
-        //   'InstanceNotRegistered()'
-        // )  
         await factory.addProgram(
           aludel.address, aludelTemplate.address, "program added manually", "https://new.url", 0
         )
@@ -297,12 +279,6 @@ describe("Aludel factory", function () {
         expect(bps).eq(200)
         expect(receiver).equals(AddressZero)
       })
-
     })
-
   }) 
-
-  it("")
-
-
 });
