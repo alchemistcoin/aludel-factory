@@ -216,6 +216,9 @@ contract AludelFactory is Ownable {
             name: name,
             stakingTokenUrl: stakingTokenUrl
         });
+
+        emit ProgramAdded(program, name, stakingTokenUrl);
+
     }
 
     /// @notice delist a program
