@@ -171,7 +171,7 @@ contract AludelFactoryTest is DSTest {
         cheats.expectRevert(bytes("Ownable: caller is not the owner"));
         factory.addProgram(
             address(preexistingAludel),
-            address(preexistingAludel),
+            address(listedTemplate),
             "name",
             "http://stake.me",
             123
@@ -221,7 +221,7 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_WHEN_adding_a_program_manually_AND_using_template_zero_THEN_it_reverts() public {
-        cheats.expectRevert(AludelFactory.InvalidTemplate.selector);
+        cheats.expectRevert(AludelFactory.TemplateNotRegistered.selector);
         factory.addProgram(
             address(preexistingAludel),
             address(0),
@@ -245,7 +245,7 @@ contract AludelFactoryTest is DSTest {
     function test_WHEN_adding_a_program_manually_THEN_the_instance_is_registered_AND_a_program_AND_metadata_can_be_set_AND_it_CANNOT_be_added_again() public {
         factory.addProgram(
             address(preexistingAludel),
-            address(preexistingAludel),
+            address(listedTemplate),
             "name",
             "http://stake.me",
             123
@@ -258,7 +258,7 @@ contract AludelFactoryTest is DSTest {
         cheats.expectRevert(AludelFactory.AludelAlreadyRegistered.selector);
         factory.addProgram(
             address(preexistingAludel),
-            address(preexistingAludel),
+            address(listedTemplate),
             "name",
             "http://stake.me",
             123
@@ -274,7 +274,7 @@ contract AludelFactoryTest is DSTest {
     function test_WHEN_adding_a_program_manually_THEN_it_CANNOT_be_used_as_a_template() public {
         factory.addProgram(
             address(preexistingAludel),
-            address(preexistingAludel),
+            address(listedTemplate),
             "name",
             "http://stake.me",
             123
@@ -325,12 +325,51 @@ contract AludelFactoryTest is DSTest {
     function test_WHEN_adding_a_program_THEN_it_is_NOT_listed_as_a_template() public {
         factory.addProgram(
             address(preexistingAludel),
-            address(preexistingAludel),
+            address(listedTemplate),
             "name",
             "http://stake.me",
             123
         );
         assertTrue(!factory.getTemplate(address(preexistingAludel)).listed);
+    }
+
+    function test_WHEN_adding_a_template_as_disabled_THEN_its_listed_as_disabled_AND_no_programs_can_be_launched_with_it_AND_programs_can_be_added_with_it() public {
+        factory.addTemplate(
+            address(unlistedTemplate),
+            "bloop",
+            true
+        );
+        assertTrue(factory.getTemplate(address(unlistedTemplate)).disabled);
+        cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
+        factory.launch(
+            address(unlistedTemplate),
+            "name",
+            "https://staking.token",
+            START_TIME,
+            CRUCIBLE_FACTORY,
+            bonusTokens,
+            owner,
+            abi.encode(bytes(""))
+        );
+        factory.addProgram(
+            address(preexistingAludel),
+            address(unlistedTemplate),
+            "name",
+            "http://stake.me",
+            123
+        );
+        assertEq(factory.programs(address(preexistingAludel)).name, "name");
+    }
+
+    function test_GIVEN_an_unlisted_template_WHEN_adding_a_program_with_it_THEN_it_reverts() public {
+        cheats.expectRevert(AludelFactory.TemplateNotRegistered.selector);
+        factory.addProgram(
+            address(preexistingAludel),
+            address(unlistedTemplate),
+            "name",
+            "http://stake.me",
+            123
+        );
     }
 
     function test_WHEN_disabling_a_template_THEN_its_listed_as_disabled() public {

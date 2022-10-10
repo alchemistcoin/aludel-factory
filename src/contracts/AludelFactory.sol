@@ -75,7 +75,6 @@ contract AludelFactory is Ownable {
         public
         returns (address aludel)
     {
-        // reverts when template address is not registered
         if (!_templates[template].listed) {
             revert TemplateNotRegistered();
         }
@@ -205,8 +204,8 @@ contract AludelFactory is Ownable {
         if(isAludel(program)){
           revert AludelAlreadyRegistered();
         }
-        if (template == address(0)) {
-            revert InvalidTemplate();
+        if (!_templates[template].listed) {
+            revert TemplateNotRegistered();
         }
 
         // add program's data to the storage
