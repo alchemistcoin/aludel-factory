@@ -73,6 +73,36 @@ contract AludelFactoryTest is DSTest {
         );
     }
 
+    function test_WHEN_setting_a_different_fee_bps_and_recipient_THEN_its_passed_to_new_aludels() public {
+        factory.setFeeBps(69);
+        factory.setFeeRecipient(address(69));
+        Spy newAludel = Spy(
+            factory.launch(
+                address(listedTemplate),
+                "name",
+                "https://staking.token",
+                START_TIME,
+                CRUCIBLE_FACTORY,
+                bonusTokens,
+                owner,
+                abi.encode(bytes(""))
+            )
+        );
+        assertTrue(newAludel.spyWasCalled(
+            abi.encodeWithSelector(
+                IAludel.initialize.selector,
+                START_TIME,
+                owner,
+                address(69),
+                69,
+                abi.encode(bytes(""))
+            )
+        ));
+        // also use the getters, but this doesn't merit its own testcase
+        assertEq(factory.feeRecipient(), address(69));
+        assertEq(factory.feeBps(), 69);
+    }
+
     function test_WHEN_updating_a_program_with_empty_fields_THEN_it_isnt_updated() public {
         factory.updateProgram(address(aludel), "", "otherurl");
         assertEq(factory.programs(address(aludel)).name, "name");
@@ -109,7 +139,7 @@ contract AludelFactoryTest is DSTest {
         ));
     }
 
-    function test_WHEN_launching_an_aludel_THEN_its_initialized() public{
+    function test_WHEN_launching_an_aludel_THEN_its_initialized_AND_bps_and_recipient_set_at_construction_time_are_used() public{
         Spy spiedAludel = Spy(
             factory.launch(
                 address(spyTemplate),
@@ -130,7 +160,7 @@ contract AludelFactoryTest is DSTest {
                 recipient, // configured at the AludelFactory level
                 bps, // configured at the AludelFactory level
                 abi.encode("some data, idk") //arbitrary initialization data
-        )
+            )
         ));
     }
 
@@ -201,7 +231,18 @@ contract AludelFactoryTest is DSTest {
         );
     }
 
-    function test_WHEN_adding_a_program_manually_THEN_the_instance_is_registered_AND_a_program_AND_metadata_can_be_set() public {
+    function test_GIVEN_an_already_added_program_WHEN_adding_it_manually_THEN_it_reverts() public {
+        cheats.expectRevert(AludelFactory.AludelAlreadyRegistered.selector);
+        factory.addProgram(
+            address(aludel),
+            address(listedTemplate),
+            "name",
+            "http://stake.me",
+            123
+        );
+    }
+
+    function test_WHEN_adding_a_program_manually_THEN_the_instance_is_registered_AND_a_program_AND_metadata_can_be_set_AND_it_CANNOT_be_added_again() public {
         factory.addProgram(
             address(preexistingAludel),
             address(preexistingAludel),
@@ -214,6 +255,14 @@ contract AludelFactoryTest is DSTest {
         factory.updateProgram(address(preexistingAludel), "othername", "http://stake.other");
         assertEq(factory.programs(address(preexistingAludel)).name, "othername");
         assertEq(factory.programs(address(preexistingAludel)).stakingTokenUrl, "http://stake.other");
+        cheats.expectRevert(AludelFactory.AludelAlreadyRegistered.selector);
+        factory.addProgram(
+            address(preexistingAludel),
+            address(preexistingAludel),
+            "name",
+            "http://stake.me",
+            123
+        );
     }
 
     function test_GIVEN_a_program_wasnt_added_THEN_metadata_for_it_CANNOT_be_set() public {
@@ -299,6 +348,22 @@ contract AludelFactoryTest is DSTest {
 
         // now template is disabled
         assertTrue(factory.getTemplate(address(unlistedTemplate)).disabled == true);
+    }
+
+    function test_WHEN_updating_an_unlisted_template_THEN_it_reverts() public {
+        cheats.expectRevert(AludelFactory.InvalidTemplate.selector);
+        factory.updateTemplate(address(0), true);
+        cheats.expectRevert(AludelFactory.InvalidTemplate.selector);
+        factory.updateTemplate(address(preexistingAludel), true);
+    }
+
+    function test_WHEN_adding_an_already_added_tempalte_THEN_it_reverts() public {
+        cheats.expectRevert(AludelFactory.TemplateAlreadyAdded.selector);
+        factory.addTemplate(
+            address(listedTemplate),
+            "bloop",
+            false
+        );
     }
 
     function test_WHEN_launching_with_a_disabled_template_THEN_it_reverts() public {
