@@ -20,7 +20,6 @@ import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol"
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
-import {EnumerableSet} from "../contracts/libraries/EnumerableSet.sol";
 import "forge-std/src/console2.sol";
 
 contract AludelFactoryIntegrationTest is DSTest {
@@ -140,12 +139,6 @@ contract AludelFactoryIntegrationTest is DSTest {
     }
 
     function test_aludelLaunchKeepsData() public {
-        EnumerableSet.TemplateData[] memory templates = factory.getTemplates();
-        assertEq(templates.length, 1);
-
-        EnumerableSet.TemplateData memory data = templates[0];
-        address template = data.template;
-
         aludel = IAludel(
             factory.launch(
                 address(template),
