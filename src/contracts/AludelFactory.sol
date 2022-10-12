@@ -40,6 +40,9 @@ contract AludelFactory is Ownable {
     /// @dev emitted when a program's (deployed via the factory or preexisting)
     /// is created
     event ProgramAdded(address program, string name, string url);
+    /// @dev emitted when a program is delisted
+    event ProgramDelisted(address program);
+
 
     error InvalidTemplate();
     error TemplateNotRegistered();
@@ -230,6 +233,8 @@ contract AludelFactory is Ownable {
           revert AludelNotRegistered();
         }
         delete _programs[program];
+
+        emit ProgramDelisted(program);
     }
 
     /// @notice retrieves the full list of templates
