@@ -221,14 +221,10 @@ describe("Aludel factory", function () {
       })
 
       it("add program", async function () {
-        const { factory } = await setupTest()
-        const templateFactory = await hardhatEthers.getContractFactory(
-          "src/contracts/aludel/Aludel.sol:Aludel"
-        )
-        const template2 = (await templateFactory.deploy()) as Aludel
+        const { factory, aludelTemplate } = await setupTest()
         await factory.addProgram(
           AddressZero,
-          template2.address,
+          aludelTemplate.address,
           "program added manually",
           "https://new.url",
           0
