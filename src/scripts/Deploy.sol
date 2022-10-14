@@ -7,7 +7,6 @@ import {Hevm} from "solmate/test/utils/Hevm.sol";
 import "forge-std/src/Script.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
-
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
 import {AludelV1} from "../contracts/aludel/legacy/AludelV1.sol";
@@ -27,40 +26,39 @@ contract DeployFactory is Script {
         AludelFactory factory = new AludelFactory(recipient, bps);
         vm.stopBroadcast();
 
-        // AludelV1 deployment
         vm.startBroadcast();
-        AludelV1 aludelV1 = new AludelV1();
-        vm.stopBroadcast();
 
+        // AludelV1 deployment
+        AludelV1 aludelV1 = new AludelV1();
+        
+        // no need to initialize an empty contract
 
         // add AludelV1 template
-        vm.startBroadcast();
         factory.addTemplate(address(aludelV1), "AludelV1", true);
-        vm.stopBroadcast();
 
-
-        // AludelV2 deployment
-        vm.startBroadcast();
+        // GeyserV2 deployment
         GeyserV2 geyser = new GeyserV2();
-        vm.stopBroadcast();
+
+        // idem aludelV1, no need to initialize
 
         // add GeyserV2 template
-        vm.startBroadcast();
         factory.addTemplate(address(geyser), "GeyserV2", true);
+        
         vm.stopBroadcast();
 
+        vm.startBroadcast();
 
         // AludelV2 deployment
-        vm.startBroadcast();
         Aludel aludel = new Aludel();
-        vm.stopBroadcast();
 
+        aludel.initializeLock();
 
         // add AludelV2 template
-        vm.startBroadcast();
         factory.addTemplate(address(aludel), "AludelV2", false);
+
         vm.stopBroadcast();
 
     }
 
 }
+
