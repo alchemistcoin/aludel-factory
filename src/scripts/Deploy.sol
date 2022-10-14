@@ -69,27 +69,28 @@ contract AddPrograms is Script, DSTest {
     using stdJson for string;
 
 
-    // hex numbers are parsed as bytes
+    // Struct keys must be in alphabetical order
+    // @dev hex numbers are parsed as bytes
     struct ParsedProgramConfig {
-        bytes program;
-        bytes template;
         string name;
+        bytes program;
         string stakingTokenUrl;
         uint64 startTime;
+        bytes template;
     }
     // we need to reparse the json to convert hex numbers to the correct type
     struct ProgramConfig {
-        address program;
-        address template;
         string name;
+        address program;
         string stakingTokenUrl;
         uint64 startTime;
+        address template;
     }
 
 
     function run() external {
         
-        vm.startBroadcast();
+        // vm.startBroadcast();
 
         string memory root = vm.projectRoot();
         string memory path = string.concat(root, "/oldPrograms.json");
@@ -103,18 +104,22 @@ contract AddPrograms is Script, DSTest {
         for (uint256 i = 0; i < programs.length; i++) {
 
             ProgramConfig memory program = convertProgramConfig(programs[i]);
-
-            AludelFactory(aludelFactoryAddress).addProgram(
-                program.program,
-                program.template,
-                program.name,
-                program.stakingTokenUrl,
-                program.startTime
-            );
+            emit log_address(program.program);
+            emit log_address(program.template);
+            emit log_string(program.name);
+            emit log_string(program.stakingTokenUrl);
+            emit log_uint(program.startTime);
+            // AludelFactory(aludelFactoryAddress).addProgram(
+            //     program.program,
+            //     program.template,
+            //     program.name,
+            //     program.stakingTokenUrl,
+            //     program.startTime
+            // );
         }
 
 
-        vm.stopBroadcast();
+        // vm.stopBroadcast();
 
     }
 
