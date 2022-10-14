@@ -46,6 +46,11 @@
   },
   "packageManager": "yarn@1.22.1",
   "dependencies": {
+    "@ethersproject/abi": "5.7.0",
+    "@ethersproject/constants": "5.7.0",
+    "@ethersproject/contracts": "5.7.0",
+    "@ethersproject/units": "5.7.0",
+    "@ethersproject/wallet": "5.7.0",
     "@openzeppelin/contracts": "4.6.0",
     "@rari-capital/solmate": "6.4.0",
     "@uniswap/lib": "https://github.com/Uniswap/solidity-lib",
