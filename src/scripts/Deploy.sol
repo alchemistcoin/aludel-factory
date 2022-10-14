@@ -13,6 +13,9 @@ import {Aludel} from "../contracts/aludel/Aludel.sol";
 import {AludelV1} from "../contracts/aludel/legacy/AludelV1.sol";
 import {GeyserV2} from "../contracts/aludel/legacy/GeyserV2.sol";
 
+
+contract EmptyContract {}
+
 contract DeployFactory is Script {
 
     function run() external {
@@ -29,16 +32,16 @@ contract DeployFactory is Script {
 
         vm.startBroadcast();
 
-        // AludelV1 deployment
-        AludelV1 aludelV1 = new AludelV1();
+        // deploy an empty contract to reserve an address
+        EmptyContract aludelV1 = new EmptyContract();
         
         // no need to initialize an empty contract
 
         // add AludelV1 template
         factory.addTemplate(address(aludelV1), "AludelV1", true);
 
-        // GeyserV2 deployment
-        GeyserV2 geyser = new GeyserV2();
+        // deploy an empty contract to reserve an address
+        EmptyContract geyser = new EmptyContract();
 
         // idem aludelV1, no need to initialize
 
@@ -47,8 +50,8 @@ contract DeployFactory is Script {
         
         vm.stopBroadcast();
 
-        vm.startBroadcast();
 
+        vm.startBroadcast();
         // AludelV2 deployment
         Aludel aludel = new Aludel();
 
