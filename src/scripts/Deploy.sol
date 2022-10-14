@@ -10,9 +10,6 @@ import {AludelFactory} from "../contracts/AludelFactory.sol";
 import "forge-std/src/StdJson.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
-import {AludelV1} from "../contracts/aludel/legacy/AludelV1.sol";
-import {GeyserV2} from "../contracts/aludel/legacy/GeyserV2.sol";
-
 
 contract EmptyContract {}
 
