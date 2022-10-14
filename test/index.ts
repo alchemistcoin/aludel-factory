@@ -1,169 +1,80 @@
-import { AbiCoder } from "@ethersproject/abi";
-import { parseEther } from "@ethersproject/units";
-import { Wallet } from "@ethersproject/wallet";
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { expect } from "chai";
-import { BigNumber, Contract } from "ethers";
-import { deployments, ethers, getNamedAccounts, network, run } from "hardhat";
-import { DeployedContract } from "hardhat-deploy/dist/types";
-import { Aludel, AludelFactory, AludelFactory__factory, Crucible, CrucibleFactory, ERC20, InstanceRegistry__factory, MockERC20, PowerSwitchFactory, PowerSwitchFactory__factory, PowerSwitch__factory, RewardPoolFactory } from "../typechain-types";
-import { DAYS, ETHER, revertAfter, signPermission } from "./utils";
-import {AddressZero} from "@ethersproject/constants"
-
-
-const { expectRevert } = require('@openzeppelin/test-helpers');
+import { AbiCoder } from "@ethersproject/abi"
+import { parseEther } from "@ethersproject/units"
+import { Wallet } from "@ethersproject/wallet"
+import { Event } from "@ethersproject/contracts"
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
+import { expect } from "chai"
+import { Contract } from "ethers"
+import {
+  deployments as hardhatDeployments,
+  network,
+  ethers as hardhatEthers,
+} from "hardhat"
+import { DeployedContract } from "hardhat-deploy/dist/types"
+import {
+  Aludel,
+  AludelFactory,
+  Crucible,
+  CrucibleFactory,
+  MockERC20,
+  RewardPoolFactory,
+} from "../typechain-types"
+import { DAYS, ETHER, signPermission } from "./utils"
+import { AddressZero } from "@ethersproject/constants"
 
 describe("Aludel factory", function () {
+  const setupTest = hardhatDeployments.createFixture(
+    async ({ deployments, ethers }) => {
+      await deployments.fixture(undefined, {
+        keepExistingDeployments: true,
+      })
+      const signers = await ethers.getSigners()
+      const [admin, user, anotherUser] = signers
 
-  let factory: AludelFactory
-  let rewardPoolFactory: RewardPoolFactory
-  let powerSwitchFactory: PowerSwitchFactory
-  
-  let crucibleFactory: CrucibleFactory
+      const stakingToken: MockERC20 = await deployMockERC20("StakingToken")
+      const rewardToken: MockERC20 = await deployMockERC20("RewardToken")
+      const bonusTokenA: MockERC20 = await deployMockERC20("BonusTokenA")
+      const bonusTokenB: MockERC20 = await deployMockERC20("BonusTokenB")
 
-  let admin: SignerWithAddress
-  let user: SignerWithAddress
-  let anotherUser: SignerWithAddress
+      const factoryDeployment = await deployments.get("AludelFactory")
+      const factory: AludelFactory = (await ethers.getContractAt(
+        factoryDeployment.abi,
+        factoryDeployment.address
+      )) as AludelFactory
+      const crucibleFactory = await deployments.get("CrucibleFactory")
+      const rewardPoolFactory = await deployments.get("RewardPoolFactory")
+      const powerSwitchFactory = await deployments.get("PowerSwitchFactory")
 
-  const get = async (name: string) => {
-    const signer = (await ethers.getSigners())[0]
-    const deployed = await deployments.get(name)
-    return ethers.getContractAt(deployed.abi, deployed.address, signer);
-  }
+      const deployedAludel = await deployments.get("Aludel")
+      const aludelTemplate = (await ethers.getContractAt(
+        "src/contracts/aludel/Aludel.sol:Aludel",
+        deployedAludel.address,
+        admin
+      )) as Aludel
 
-  this.beforeAll(async function() {
-
-    await deployments.run()
-
-    const signers = await ethers.getSigners()
-    admin = signers[0]
-    user = signers[1]
-    anotherUser = signers[2]
-
-    const { deployer, dev } = await getNamedAccounts()
-
-    crucibleFactory = await ethers.getContractAt(
-      'alchemist/contracts/crucible/CrucibleFactory.sol:CrucibleFactory',
-      '0x54e0395CFB4f39beF66DBCd5bD93Cca4E9273D56'
-    ) as CrucibleFactory
-
-    rewardPoolFactory = await deployContract(
-      'RewardPoolFactory',
-      'alchemist/contracts/aludel/RewardPoolFactory.sol:RewardPoolFactory'
-    ) as RewardPoolFactory;
-
-  })
-
-  async function deploy(name: string, args ?: any[]): Promise<Contract> {
-    return deployContract(name, name, args)
-  }
-
-  async function deployContract(name: string, contract: string, args ?: any[]): Promise<Contract> {
-    const { deployer, dev } = await getNamedAccounts()
-    
-    const deployed = await deployments.getOrNull(name)
-
-    if (!deployed) {
-      await deployments.deploy(name, {
-        from: deployer,
-        args: args,
-        log: true,
-        contract,
-        deterministicDeployment: false
-      });
-    }
-
-    return get(name)
-  }
-
-  async function deployMockERC20(name: string): Promise<MockERC20> {
-    const { deployer, dev } = await getNamedAccounts()
-    return await (
-      deployContract(name, 'MockERC20', [admin.address, parseEther('1')])
-    ) as MockERC20
-  }
-
-  this.beforeEach(async function() {
-
-    factory = (await deploy('AludelFactory', [admin.address, 100])) as AludelFactory
-    powerSwitchFactory = (await deploy('PowerSwitchFactory')) as PowerSwitchFactory
-  })
-
-  describe("aludel launch", async function () {
-
-    let signer: SignerWithAddress
-    let deployed: DeployedContract
-    let aludelTemplate: Aludel;
-
-    let stakingToken: MockERC20
-    let rewardToken: MockERC20
-    let bonusTokenA: MockERC20
-    let bonusTokenB: MockERC20
-
-    let aludel: Aludel
-    let aludelAddress: string
-
-    async function launchAludel(
-      template: string,
-      name: string,
-      url: string,
-      startTime: number,
-      vaultFactory: string,
-      bonusTokens: string[],
-      owner: string,
-      params: any
-    ): Promise<Aludel> {
-      let tx = await factory.launch(
-        template, name, url,
-        startTime, vaultFactory,
-        bonusTokens,
-        owner, params
-      )
-      let receipt = await tx.wait()
-  
-      let event = receipt.events?.find(
-        event => event.address == factory.address && event.event == 'ProgramAdded'
-      )
-      const aludelAddress = event?.args!.program
-      const aludel = aludelTemplate.attach(aludelAddress) as Aludel
-
-      return aludel
-    }
-
-    function getAludelInitParams(
-      floor: number, ceiling: number, duration: number
-    ) {
+      await rewardToken.mint(admin.address, ETHER(1))
       const params = new AbiCoder().encode(
-        ['address', 'address', 'address', 'address', 'uint256', 'uint256', 'uint256'],
         [
-          rewardPoolFactory.address, powerSwitchFactory.address,
-          stakingToken.address, rewardToken.address,
-          floor, ceiling, duration
+          "address",
+          "address",
+          "address",
+          "address",
+          "uint256",
+          "uint256",
+          "uint256",
+        ],
+        [
+          rewardPoolFactory.address,
+          powerSwitchFactory.address,
+          stakingToken.address,
+          rewardToken.address,
+          1,
+          10,
+          DAYS(1),
         ]
       )
-      return params
-    }
-
-    this.beforeEach(async function() {
-      signer = (await ethers.getSigners())[0]
-      const deployed = await deployments.get('Aludel')
-      aludelTemplate = await ethers.getContractAt(
-        'src/contracts/aludel/Aludel.sol:Aludel',
-        deployed.address,
-        signer
-      ) as Aludel;
-  
-      stakingToken = await deployMockERC20('StakingToken')
-      rewardToken = await deployMockERC20('RewardToken')
-  
-      bonusTokenA = await deployMockERC20('BonusTokenA')
-      bonusTokenB = await deployMockERC20('BonusTokenB')
-  
-      await rewardToken.mint(admin.address, ETHER(1))
-      const params = getAludelInitParams(1, 10, DAYS(1))
       const startTime = 0
-  
-      aludel = await launchAludel(
+      const launchTx = await factory.launch(
         aludelTemplate.address,
         "program test",
         "https://staking.token",
@@ -173,28 +84,76 @@ describe("Aludel factory", function () {
         admin.address,
         params
       )
-      
+      const receipt = await launchTx.wait()
+
+      const event = receipt.events?.find(
+        (it: Event) =>
+          it.address == factory.address && it.event == "ProgramAdded"
+      )
+      const aludelAddress = event?.args!.program
+      const aludel = aludelTemplate.attach(aludelAddress) as Aludel
+
       await rewardToken.connect(admin).approve(aludel.address, ETHER(1))
-  
+
       await aludel.connect(admin).fund(ETHER(1), DAYS(1))
-    })
+      return {
+        crucibleFactory: await ethers.getContractAt(
+          crucibleFactory.abi,
+          crucibleFactory.address
+        ),
+        factory,
+        powerSwitchFactory: await ethers.getContractAt(
+          powerSwitchFactory.abi,
+          powerSwitchFactory.address
+        ),
+        rewardPoolFactory: await ethers.getContractAt(
+          rewardPoolFactory.abi,
+          rewardPoolFactory.address
+        ),
+        aludel,
+        aludelTemplate,
+        bonusTokenB,
+        bonusTokenA,
+        stakingToken,
+        rewardToken,
+        admin,
+        user,
+        anotherUser,
+      }
+    }
+  )
+
+  async function deployMockERC20(name: string): Promise<MockERC20> {
+    const factory = await hardhatEthers.getContractFactory("MockERC20")
+    return (await factory.deploy(name, "MockERC20")) as MockERC20
+  }
+
+  describe("aludel launch", async function () {
     it("test full", async function () {
-      let receipt = await (await crucibleFactory.connect(admin)["create()"]()).wait();
+      const { crucibleFactory, aludel, admin, stakingToken } =
+        await setupTest()
+      let receipt = await (
+        await crucibleFactory.connect(admin)["create()"]()
+      ).wait()
       let event = receipt.events?.find(
-        event => event.address == crucibleFactory.address && event.event == 'InstanceAdded'
+        (it: Event) =>
+          it.address == crucibleFactory.address && it.event == "InstanceAdded"
       )
       const crucibleAddress = event?.args!.instance
-  
-      const crucible = await ethers.getContractAt('Crucible', crucibleAddress) as Crucible
-  
+
+      const crucible = (await hardhatEthers.getContractAt(
+        "Crucible",
+        crucibleAddress
+      )) as Crucible
+
       await stakingToken.connect(admin).mint(crucible.address, ETHER(1))
-  
-      const signerWallet = Wallet.fromMnemonic(process.env.DEV_MNEMONIC || '')
+
+      const signerWallet = Wallet.fromMnemonic(process.env.DEV_MNEMONIC || "")
       let tx = await aludel.stake(
         crucible.address,
         ETHER(1),
         await signPermission(
-          'Lock',
+          "Lock",
           crucible,
           signerWallet,
           aludel.address,
@@ -204,14 +163,14 @@ describe("Aludel factory", function () {
         )
       )
       await tx.wait()
-  
+
       await network.provider.send("evm_increaseTime", [DAYS(1)])
-  
+
       await aludel.unstakeAndClaim(
         crucible.address,
         ETHER(1),
         await signPermission(
-          'Unlock',
+          "Unlock",
           crucible,
           signerWallet,
           aludel.address,
@@ -220,54 +179,82 @@ describe("Aludel factory", function () {
           1
         )
       )
-    });
-
+    })
 
     describe("admin functions", async function () {
-      it("templates", async function() {
-        const template2 = await deployContract('Aludel2', 'src/contracts/aludel/Aludel.sol:Aludel')
-        await factory.addTemplate(template2.address, 'aludel 2', false)
+      it("templates", async function () {
+        const { factory } = await setupTest()
+        const templateFactory = await hardhatEthers.getContractFactory(
+          "src/contracts/aludel/Aludel.sol:Aludel"
+        )
+        const template2 = (await templateFactory.deploy()) as Aludel
+        await factory.addTemplate(template2.address, "aludel 2", false)
         let templateData = await factory.getTemplate(template2.address)
         expect(templateData.disabled).to.be.false
-        expect(templateData.name).equals('aludel 2')
+        expect(templateData.name).equals("aludel 2")
         await factory.updateTemplate(template2.address, true)
         templateData = await factory.getTemplate(template2.address)
         expect(templateData.disabled).to.be.true
       })
 
-      it("programs", async function() {
+      it("programs", async function () {
+        const { factory, aludel } = await setupTest()
         let program = await factory.programs(aludel.address)
-        expect(program.name, 'program test')
-        expect(program.stakingTokenUrl, 'https://staking.token')
-        expect(program.stakingTokenUrl, (await factory.programs(aludel.address)).stakingTokenUrl)
-        await factory.updateProgram(aludel.address, 'changed', 'https://invalid.url')
+        expect(program.name, "program test")
+        expect(program.stakingTokenUrl, "https://staking.token")
+        expect(
+          program.stakingTokenUrl,
+          (await factory.programs(aludel.address)).stakingTokenUrl
+        )
+        await factory.updateProgram(
+          aludel.address,
+          "changed",
+          "https://invalid.url"
+        )
         program = await factory.programs(aludel.address)
-        expect(program.name, 'changed')
-        expect(program.stakingTokenUrl, 'https://invalid.url')
-        expect(program.stakingTokenUrl, (await factory.programs(aludel.address)).stakingTokenUrl)
+        expect(program.name, "changed")
+        expect(program.stakingTokenUrl, "https://invalid.url")
+        expect(
+          program.stakingTokenUrl,
+          (await factory.programs(aludel.address)).stakingTokenUrl
+        )
       })
 
-      it("add program", async function() {
-        const template2 = await deployContract('Aludel2', 'src/contracts/aludel/Aludel.sol:Aludel')
+      it("add program", async function () {
+        const { factory } = await setupTest()
+        const templateFactory = await hardhatEthers.getContractFactory(
+          "src/contracts/aludel/Aludel.sol:Aludel"
+        )
+        const template2 = (await templateFactory.deploy()) as Aludel
         await factory.addProgram(
-          AddressZero, template2.address, "program added manually", "https://new.url", 0
+          AddressZero,
+          template2.address,
+          "program added manually",
+          "https://new.url",
+          0
         )
         let program = await factory.programs(AddressZero)
-        expect(program.name, 'program added manually')
-        expect(program.stakingTokenUrl, 'https://new.url')
+        expect(program.name, "program added manually")
+        expect(program.stakingTokenUrl, "https://new.url")
       })
 
-      it("delist program", async function() {
+      it("delist program", async function () {
+        const { factory, aludel, aludelTemplate } = await setupTest()
         await factory.delistProgram(aludel.address)
         await factory.addProgram(
-          aludel.address, aludelTemplate.address, "program added manually", "https://new.url", 0
+          aludel.address,
+          aludelTemplate.address,
+          "program added manually",
+          "https://new.url",
+          0
         )
         let program = await factory.programs(aludel.address)
-        expect(program.name, 'program added manually')
-        expect(program.stakingTokenUrl, 'https://new.url')
+        expect(program.name, "program added manually")
+        expect(program.stakingTokenUrl, "https://new.url")
       })
 
-      it("funding fee", async function() {
+      it("funding fee", async function () {
+        const { factory, admin } = await setupTest()
         let bps = await factory.feeBps()
         let receiver = await factory.feeRecipient()
         expect(bps).eq(100)
@@ -280,5 +267,5 @@ describe("Aludel factory", function () {
         expect(receiver).equals(AddressZero)
       })
     })
-  }) 
-});
+  })
+})

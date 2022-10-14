@@ -10,7 +10,7 @@ export default async function ({
     artifacts
 }: HardhatRuntimeEnvironment) {
 
-    const { deploy, get } = deployments;
+    const { deploy, get, log } = deployments;
     const { deployer, dev } = await getNamedAccounts();
 
     const result = await deploy('Aludel', {
@@ -31,24 +31,23 @@ export default async function ({
     try {
         await aludel.initializeLock();
     } catch (err) {
-        console.log('initialization failed, it was probably already initialized.')
+        log('initialization failed, it was probably already initialized.')
     }
     
-    // const factory = await ethers.getContractAt(deployedFactory.abi, deployedFactory.address)
-    // const art = await artifacts.readArtifact('AludelFactory')
-    // const factory = await ethers.getContractAt(art.abi, '0x4E6A2A5055157CcE166a31595cFC5A1ee01B15F0')
-
     const deployedFactory = await get('AludelFactory')
     const factory = await ethers.getContractAt(deployedFactory.abi, deployedFactory.address)
 
-    console.log('Adding templates to', factory.address)
+    log('Adding templates to', factory.address)
 
     // add templates in factory
     if (!(await factory.isAludel(aludel.address))) {
-        console.log("adding template")
+        log("adding template")
         await factory.addTemplate(aludel.address, "AludelV2", false)
     } else {
-        console.log('Skipping', aludel.address)
+        log('Skipping', aludel.address)
     }
 
-};
+}
+
+module.exports.tags = ['AludelV1Template']
+module.exports.dependencies = ['AludelFactory']

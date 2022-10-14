@@ -22,3 +22,4 @@ export default async function ({
     });
 
 };
+module.exports.tags = ["PowerSwitchFactory"]
