@@ -17,7 +17,8 @@ dotenv.config();
 const forkingUrl = process.env.FORK_URL || ''
 const mnemonic = process.env.DEV_MNEMONIC || ''
 const privateKey = process.env.PRIVATE_KEY || ''
-const goerliUrl = process.env.GOERLI_RPC || ''
+const goerliUrl = process.env.GOERLI_URL || ''
+const mainnetUrl = process.env.MAINNET_URL || ''
 const infuraKey = process.env.ETHERSCAN_API_KEY || ''
 const polyscanApiKey = process.env.POLYGON_MUMBAI_API_KEY || ''
 const mumbaiUrl = process.env.MUMBAI_RPC || ''
@@ -42,6 +43,15 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic
       }
+    },
+    mainnet: {
+      url: mainnetUrl,
+      accounts: {
+        mnemonic
+      },
+      live: true,
+      saveDeployments: true,
+      tags: ['production']
     },
     goerli: {
       url: goerliUrl,
