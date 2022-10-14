@@ -7,6 +7,7 @@ import {Hevm} from "solmate/test/utils/Hevm.sol";
 import "forge-std/src/Script.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
+import "forge-std/src/StdJson.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
 import {AludelV1} from "../contracts/aludel/legacy/AludelV1.sol";
@@ -62,3 +63,69 @@ contract DeployFactory is Script {
 
 }
 
+
+contract AddPrograms is Script, DSTest {
+
+    using stdJson for string;
+
+
+    // hex numbers are parsed as bytes
+    struct ParsedProgramConfig {
+        bytes program;
+        bytes template;
+        string name;
+        string stakingTokenUrl;
+        uint64 startTime;
+    }
+    // we need to reparse the json to convert hex numbers to the correct type
+    struct ProgramConfig {
+        address program;
+        address template;
+        string name;
+        string stakingTokenUrl;
+        uint64 startTime;
+    }
+
+
+    function run() external {
+        
+        vm.startBroadcast();
+
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/oldPrograms.json");
+        string memory json = vm.readFile(path);
+        bytes memory parsed = json.parseRaw(".programs");
+
+        address aludelFactoryAddress = json.readAddress(".aludelFactory");
+
+        ParsedProgramConfig[] memory programs = abi.decode(parsed, (ParsedProgramConfig[]));
+        
+        for (uint256 i = 0; i < programs.length; i++) {
+
+            ProgramConfig memory program = convertProgramConfig(programs[i]);
+
+            AludelFactory(aludelFactoryAddress).addProgram(
+                program.program,
+                program.template,
+                program.name,
+                program.stakingTokenUrl,
+                program.startTime
+            );
+        }
+
+
+        vm.stopBroadcast();
+
+    }
+
+    function convertProgramConfig(ParsedProgramConfig memory config) internal pure returns (ProgramConfig memory) {
+        return ProgramConfig({
+            program: address(bytes20(config.program)),
+            template: address(bytes20(config.template)),
+            name: config.name,
+            stakingTokenUrl: config.stakingTokenUrl,
+            startTime: config.startTime
+        });
+    }
+
+}
