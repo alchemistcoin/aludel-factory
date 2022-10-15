@@ -998,11 +998,6 @@
     web3 "^1.2.5"
     web3-utils "^1.2.5"
 
-"@rari-capital/solmate@6.4.0":
-  version "6.4.0"
-  resolved "https://registry.yarnpkg.com/@rari-capital/solmate/-/solmate-6.4.0.tgz#c6ee4110c8075f14b415e420b13bd8bdbbc93d9e"
-  integrity sha512-BXWIHHbG5Zbgrxi0qVYe0Zs+bfx+XgOciVUACjuIApV0KzC0kY8XdO1higusIei/ZKCC+GUKdcdQZflxYPUTKQ==
-
 "@scure/base@~1.1.0":
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/@scure/base/-/base-1.1.1.tgz#ebb651ee52ff84f420097055f4bf46cfba403938"
@@ -4178,8 +4173,8 @@ forever-agent@~0.6.1:
   integrity sha512-j0KLYPhm6zeac4lz3oJ3o65qvgQCcPubiyotZrXqEaG4hNagNYO8qdlUrX5vwqv9ohqeT/Z3j6+yW067yWWdUw==
 
 "forge-std@https://github.com/foundry-rs/forge-std":
-  version "0.0.0"
-  resolved "https://github.com/foundry-rs/forge-std#0d0485bdea9f9455bd684acb0ba88548a104d99b"
+  version "0.1.0"
+  resolved "https://github.com/foundry-rs/forge-std#2a2ce3692b8c1523b29de3ec9d961ee9fbbc43a6"
 
 form-data-encoder@1.7.1:
   version "1.7.1"
@@ -7543,6 +7538,11 @@ solidity-coverage@0.8.0-rc.test.0:
     semver "^7.3.4"
     shelljs "^0.8.3"
     web3-utils "^1.3.0"
+
+solmate@6.6.1:
+  version "6.6.1"
+  resolved "https://registry.yarnpkg.com/solmate/-/solmate-6.6.1.tgz#f0907e1cdada6dd5fbfe11811ab545162b713197"
+  integrity sha512-WHvRXQvGtgR6R9nmkDTz/d+oULMqf/D33rlzQyadTX2SbuTmaW7ToEjGjGtWUVCQwZsZ/JP3vbOEVv7fB50btg==
 
 source-map-support@^0.5.13:
   version "0.5.21"
