@@ -3,6 +3,6 @@
 ds-test/=node_modules/ds-test/
 ds-auth/=node_modules/ds-auth/
 ds-math/=node_modules/ds-math/
-solmate/=node_modules/@rari-capital/solmate/src/
+solmate/=node_modules/solmate/
 alchemist/=node_modules/alchemist/
 forge-std/=node_modules/forge-std/
