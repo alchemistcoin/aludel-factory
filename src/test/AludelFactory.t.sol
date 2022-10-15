@@ -3,8 +3,8 @@
 pragma solidity ^0.8.6;
 
 import {DSTest} from "ds-test/src/test.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {Hevm} from "solmate/test/utils/Hevm.sol";
+import {ERC20} from "solmate/src/tokens/ERC20.sol";
+import {Hevm} from "solmate/src/test/utils/Hevm.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";

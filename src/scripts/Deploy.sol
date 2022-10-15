@@ -2,17 +2,16 @@
 pragma solidity ^0.8.13;
 
 import {DSTest} from "ds-test/src/test.sol";
-import {Hevm} from "solmate/test/utils/Hevm.sol";
+import {Hevm} from "solmate/src/test/utils/Hevm.sol";
 
 import "forge-std/src/Script.sol";
+import "forge-std/src/StdJson.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
-import "forge-std/src/StdJson.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
-
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract EmptyContract {}
 
@@ -26,7 +25,7 @@ contract DeploymentScript is Script, DSTest {
         address vaultFactory;
     }
 
-    // Keys mapped to this struct must be in alphabetical order
+    // JSON Keys mapped to this struct must be in alphabetical order
     struct ProgramConfig {
         string name;
         address program;

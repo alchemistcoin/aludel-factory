@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.10;
 
-import {Hevm} from "solmate/test/utils/Hevm.sol";
+import {Hevm} from "solmate/src/test/utils/Hevm.sol";
 
 library Utils {
     function getCheatcodes() public returns (Hevm) {

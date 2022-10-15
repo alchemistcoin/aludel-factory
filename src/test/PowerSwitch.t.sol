@@ -2,7 +2,7 @@
 pragma solidity ^0.8.6;
 
 import {DSTest} from "ds-test/src/test.sol";
-import {Hevm} from "solmate/test/utils/Hevm.sol";
+import {Hevm} from "solmate/src/test/utils/Hevm.sol";
 
 import {PowerSwitchFactory} from
     "../contracts/powerSwitch/PowerSwitchFactory.sol";
