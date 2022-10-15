@@ -11,23 +11,70 @@ import "forge-std/src/StdJson.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
 
+import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
+
 contract EmptyContract {}
+
+contract DeploymentScript is Script, DSTest {
+    
+
+    struct NetworkConfig {
+        uint256 chainId;
+        address aludelFactory;
+        ProgramConfig[] programs;
+        address vaultFactory;
+    }
+
+    // Keys mapped to this struct must be in alphabetical order
+    struct ProgramConfig {
+        string name;
+        address program;
+        string stakingTokenUrl;
+        address template;
+    }
+
+    using stdJson for string;
+
+    function loadConfig() internal returns (string memory config) {
+        string memory root = vm.projectRoot();
+        string memory path = string.concat(root, "/oldPrograms.json");
+        
+        config = vm.readFile(path);
+    
+        return config;
+    }
+
+    function loadNetworkConfig(string memory config) internal returns (NetworkConfig memory) {
+        string memory key = string.concat(".", Strings.toString(block.chainid));
+        // emit log_string(key);
+        // emit log_string(config);
+        bytes memory raw = stdJson.parseRaw(config, key);
+        NetworkConfig memory networkConfig = abi.decode(
+            raw,
+            (NetworkConfig)
+        );
+
+        return networkConfig;
+    }
+
+    function loadNetworkConfig() internal returns (NetworkConfig memory) {
+        return loadNetworkConfig(loadConfig());
+    }
+
+}
 
 contract DeployFactory is Script {
 
     function run() external {
         
-        // default value: 
         address recipient = vm.envAddress("ALUDEL_FACTORY_RECIPIENT");
-
-        // default value: 100
         uint16 bps = uint16(vm.envUint("ALUDEL_FACTORY_BPS"));
 
+        // start broadcasting transactions
         vm.startBroadcast();
-        AludelFactory factory = new AludelFactory(recipient, bps);
-        vm.stopBroadcast();
 
-        vm.startBroadcast();
+        AludelFactory factory = new AludelFactory(recipient, bps);
 
         // deploy an empty contract to reserve an address
         EmptyContract aludelV1 = new EmptyContract();
@@ -45,11 +92,6 @@ contract DeployFactory is Script {
         // add GeyserV2 template
         factory.addTemplate(address(geyser), "GeyserV2", true);
         
-        vm.stopBroadcast();
-
-
-        vm.startBroadcast();
-        // AludelV2 deployment
         Aludel aludel = new Aludel();
 
         aludel.initializeLock();
@@ -63,74 +105,54 @@ contract DeployFactory is Script {
 
 }
 
+/// @dev this is equivalent to using forge create
+contract DeployPowerSwitchFactory is Script, DSTest {
+    function run() external {
+        vm.startBroadcast();
 
-contract AddPrograms is Script, DSTest {
+        PowerSwitchFactory powerSwitchFactory = new PowerSwitchFactory();
+
+        vm.stopBroadcast();
+    }
+}
+
+contract AddPrograms is DeploymentScript {
 
     using stdJson for string;
 
-
-    // Struct keys must be in alphabetical order
-    // @dev hex numbers are parsed as bytes
-    struct ParsedProgramConfig {
-        string name;
-        bytes program;
-        string stakingTokenUrl;
-        uint64 startTime;
-        bytes template;
-    }
-    // we need to reparse the json to convert hex numbers to the correct type
-    struct ProgramConfig {
-        string name;
-        address program;
-        string stakingTokenUrl;
-        uint64 startTime;
-        address template;
-    }
-
-
     function run() external {
         
-        // vm.startBroadcast();
-
-        string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/oldPrograms.json");
-        string memory json = vm.readFile(path);
-        bytes memory parsed = json.parseRaw(".programs");
-
-        address aludelFactoryAddress = json.readAddress(".aludelFactory");
-
-        ParsedProgramConfig[] memory programs = abi.decode(parsed, (ParsedProgramConfig[]));
+        NetworkConfig memory config = loadNetworkConfig();
         
-        for (uint256 i = 0; i < programs.length; i++) {
+        AludelFactory factory = AludelFactory(config.aludelFactory);
 
-            ProgramConfig memory program = convertProgramConfig(programs[i]);
-            emit log_address(program.program);
-            emit log_address(program.template);
-            emit log_string(program.name);
-            emit log_string(program.stakingTokenUrl);
-            emit log_uint(program.startTime);
-            // AludelFactory(aludelFactoryAddress).addProgram(
-            //     program.program,
-            //     program.template,
-            //     program.name,
-            //     program.stakingTokenUrl,
-            //     program.startTime
-            // );
+        vm.startBroadcast();
+
+        for (uint256 i = 0; i < config.programs.length; i++) {
+
+            ProgramConfig memory program = config.programs[i];
+
+            // try to add program[i] to the factory
+            try factory.addProgram(
+                program.program,
+                program.template,
+                program.name,
+                program.stakingTokenUrl,
+                uint64(block.timestamp)
+            ) {
+            } catch (bytes memory err) {
+
+                // catch revert and continue iterating
+                if (bytes4(err) == AludelFactory.AludelAlreadyRegistered.selector) {
+                    emit log_string("Aludel already added");
+                    continue;
+                }
+            }
         }
 
 
-        // vm.stopBroadcast();
+        vm.stopBroadcast();
 
-    }
-
-    function convertProgramConfig(ParsedProgramConfig memory config) internal pure returns (ProgramConfig memory) {
-        return ProgramConfig({
-            program: address(bytes20(config.program)),
-            template: address(bytes20(config.template)),
-            name: config.name,
-            stakingTokenUrl: config.stakingTokenUrl,
-            startTime: config.startTime
-        });
     }
 
 }
