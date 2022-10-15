@@ -21,7 +21,7 @@ const goerliUrl = process.env.GOERLI_URL || ''
 const mainnetUrl = process.env.MAINNET_URL || ''
 const infuraKey = process.env.ETHERSCAN_API_KEY || ''
 const polyscanApiKey = process.env.POLYGON_MUMBAI_API_KEY || ''
-const mumbaiUrl = process.env.MUMBAI_RPC || ''
+const mumbaiUrl = process.env.MUMBAI_URL || ''
 
 const config: HardhatUserConfig = {
   solidity: {
