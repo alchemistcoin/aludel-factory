@@ -2,7 +2,7 @@ import "@nomiclabs/hardhat-ethers";
 import "hardhat-deploy";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 
-export default async function ({
+const deployFunc = async function ({
   getNamedAccounts,
   deployments,
 }: HardhatRuntimeEnvironment) {
@@ -21,4 +21,5 @@ export default async function ({
     deterministicDeployment: false,
   });
 }
-module.exports.tags = ["AludelFactory"];
+deployFunc.tags = ["AludelFactory"];
+export default deployFunc;
