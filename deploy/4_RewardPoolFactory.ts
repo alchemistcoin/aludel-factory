@@ -9,16 +9,13 @@ export default async function ({
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
 
-  const recipient = deployer;
-  const bps = 100;
-
   // deploy factory
-  await deploy("AludelFactory", {
+  await deploy("RewardPoolFactory", {
     from: deployer,
-    args: [recipient, bps],
     log: true,
-    contract: "AludelFactory",
+    contract: "RewardPoolFactory",
     deterministicDeployment: false,
   });
 }
-module.exports.tags = ["AludelFactory"];
+
+module.exports.tags = ["RewardPoolFactory"];
