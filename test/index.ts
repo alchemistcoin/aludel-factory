@@ -39,7 +39,7 @@ describe("Aludel factory", function () {
       const rewardPoolFactory = await deployments.get("RewardPoolFactory");
       const powerSwitchFactory = await deployments.get("PowerSwitchFactory");
 
-      const deployedAludel = await deployments.get("Aludel");
+      const deployedAludel = await deployments.get("AludelV2");
       const aludelTemplate = (await ethers.getContractAt(
         "src/contracts/aludel/Aludel.sol:Aludel",
         deployedAludel.address,
