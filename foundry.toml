@@ -9,8 +9,24 @@ optimizer_runs = 1000000
 
 eth-rpc-url = "http://localhost:8545"
 
-
 fs_permissions = [
     { access = "read", path = "./out"},
     { access = "read", path = "./oldPrograms.json"}
 ]
+
+[rpc_endpoints]
+fuji = "${FUJI_URL}"
+mumbai = "${MUMBAI_URL}"
+goerli = "${GOERLI_URL}"
+avalanche = "${AVALANCHE_URL}"
+polygon = "${POLYGON_URL}"
+mainnet = "${MAINNET_URL}"
+
+
+[etherscan]
+fuji = { key = "${SNOWTRACE_API_KEY}", chain = 43113 }
+mumbai = { key = "${POLYSCAN_API_KEY}", chain = 80001 }
+goerli = { key = "${ETHERSCAN_API_KEY}", chain = 5}
+avalanche = { key = "${SNOWTRACE_API_KEY}", chain = 43114 }
+polygon = { key = "${POLYSCAN_API_KEY}", chain = 137 }
+mainnet = { key = "${ETHERSCAN_API_KEY}", chain = 1 }
