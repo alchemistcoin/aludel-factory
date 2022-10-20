@@ -1,0 +1,208 @@
+{
+  "1": {
+    "chainId": 1,
+    "factory": "0xfe32d8c1dcc3e31d2286c4ed467c16e213e2d9b7",
+    "programs": [
+      {
+        "name": "Aludel v1",
+        "program": "0xf0D415189949d913264A454F57f4279ad66cB24d",
+        "stakingTokenUrl": "http://lp.mist.alchemist.wtf",
+        "template": "0xc61d759F28a30E1775c6e9F0F3f96EAFC4F335d7"
+      },
+      {
+        "name": "Aludel v1.5",
+        "program": "0x93c31fc68E613f9A89114f10B38F9fd2EA5de6BC",
+        "stakingTokenUrl": "http://lp.mist.alchemist.wtf",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Pescadero V2",
+        "program": "0x56eD0272f99eBD903043399A51794f966D72E526",
+        "stakingTokenUrl": "https://app.sushi.com/add/ETH/0xd46ba6d942050d489dbd938a2c909a5d5039a161",
+        "template": "0xb2872Ce31C76B15de6A827743523778f5ae1C7BC"
+      },
+      {
+        "name": "Old Faithful V2",
+        "program": "0x914A766578C2397da969b3ca088e3e757249A435",
+        "stakingTokenUrl": "https://pools.balancer.exchange/#/pool/0x7860e28ebfb8ae052bfe279c07ac5d94c9cd2937",
+        "template": "0xb2872Ce31C76B15de6A827743523778f5ae1C7BC"
+      },
+      {
+        "name": "Trinity V2",
+        "program": "0x0ec93391752ef1A06AA2b83D15c3a5814651C891",
+        "stakingTokenUrl": "https://pools.balancer.exchange/#/pool/0xa751a143f8fe0a108800bfb915585e4255c2fe80",
+        "template": "0xb2872Ce31C76B15de6A827743523778f5ae1C7BC"
+      },
+      {
+        "name": "Beehive V4",
+        "program": "0x88F12aE68315A89B885A2f1b0610fE2A9E1720B9",
+        "stakingTokenUrl": "https://app.uniswap.org/#/add/v2/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/0xD46bA6D942050d489DBd938a2C909A5d5039A161",
+        "template": "0xb2872Ce31C76B15de6A827743523778f5ae1C7BC"
+      },
+      {
+        "name": "Splendid Pilot (AAVE)",
+        "program": "0x1Fee4745E70509fBDc718beDf5050F471298c1CE",
+        "stakingTokenUrl": "https://app.aave.com/#/deposit/0xd46ba6d942050d489dbd938a2c909a5d5039a161-0xd46ba6d942050d489dbd938a2c909a5d5039a1610xb53c1a33016b2dc2ff3653530bff1848a515c8c5",
+        "template": "0xb2872Ce31C76B15de6A827743523778f5ae1C7BC"
+      },
+      {
+        "name": "NEO",
+        "program": "0x872b09f22873Dd22A1CB20c7D7120844650D1B9a",
+        "stakingTokenUrl": "https://app.uniswap.org/#/exchange?outputCurrency=0x06f3c323f0238c72bf35011071f2b5b7f43a054c",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "GEMINI",
+        "program": "0x1C8c8aF39d69a497943015833E3a7Ae102D1E2BD",
+        "stakingTokenUrl": "https://app.sushi.com/add/ETH/0x06f3c323f0238c72bf35011071f2b5b7f43a054c",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Wizard Island",
+        "program": "0x004BA6820A30A2c7B6458720495fb1eC5b5f7823",
+        "stakingTokenUrl": "https://app.sushi.com/add/ETH/0x68CFb82Eacb9f198d508B514d898a403c449533E",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Post LBP Klimate Party",
+        "program": "0xa4DC59bAE0Ca1A0e52DAC1885199A2Fb53B3ABE3",
+        "stakingTokenUrl": "https://copperlaunch.com/auctions/0x6aa8a7b23f7b3875a966ddcc83d5b675cc9af54b",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Ohmies get Liquity",
+        "program": "0x2230ad29920D61A535759678191094b74271f373",
+        "stakingTokenUrl": "https://app.sushi.com/add/0x383518188C0C6d7730D91b2c03a03C837814a899/0x5f98805A4E8be255a32880FDeC7F6728C6568bA0",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "EcoFi",
+        "program": "0x56DC5199e6664cBAa63b7897854A2677999132C7",
+        "stakingTokenUrl": "https://app.uniswap.org/#/swap?outputCurrency=0xc242eb8e4e27eae6a2a728a41201152f19595c83",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Tempus",
+        "program": "0x71bCC385406a8A4694Ccc0102f18DfDd59c08d2E",
+        "stakingTokenUrl": "https://app.balancer.fi/#/pool/0x514f35a92a13bc7093f299af5d8ebb1387e42d6b0002000000000000000000c9",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Aludel x CVI",
+        "program": "0xF2301F29344499727bf69F22980ba667194e6D4d",
+        "stakingTokenUrl": "https://lp.mist.alchemist.wtf",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Element V1",
+        "program": "0x5C20CEfc5161092Fa295a89E34D3B2bfe66e1E79",
+        "stakingTokenUrl": "https://app.balancer.fi/#/pool/0x77952e11e1ba727ffcea95a0f38ed7da586eebc7000200000000000000000116",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Substance V1",
+        "program": "0xc1F5D0b6617D8EFb951384509E759ac216745627",
+        "stakingTokenUrl": "https://app.balancer.fi/pools#/pool/0xf33a6b68d2f6ae0353746c150757e4c494e02366000200000000000000000117",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Matter V1",
+        "program": "0x89CA56d0D79815Eb896e180fc1b5c21FEdf074f7",
+        "stakingTokenUrl": "https://app.uniswap.org/#/add/v2/ETH/0x13C99770694f07279607A6274F28a28c33086424",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Essence V1",
+        "program": "0x3d9246c38c9e8a22d1f4d2742e28ced721897647",
+        "stakingTokenUrl": "https://app.uniswap.org/#/swap?use=v1&inputCurrency=ETH&outputCurrency=0x13c99770694f07279607a6274f28a28c33086424",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Cage Keeper",
+        "program": "0x3718f99751BCF8B1c63e0E7DE788f099dB43d65b",
+        "stakingTokenUrl": "https://app.uniswap.org/#/swap?outputCurrency=0xf2ef3551c1945a7218fc4ec0a75c9ecfdf012a4f",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "BITS LBP Bonus",
+        "program": "0x2575Cb3EFBf701220cd4796c2D2a345623ae086d",
+        "stakingTokenUrl": "https://copperlaunch.com/pools/0xbfAEb93b340468Aa3a980E744258b8e137A51900",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Larp Party",
+        "program": "0x07498A1202B086066025B48Aa3c2c5cF9e852f56",
+        "stakingTokenUrl": "https://app.uniswap.org/#/swap?inputCurrency=0xb7b186D6301080BcBB977d186200b1c649b28089&outputCurrency=ETH&chain=mainnet",
+        "template": "0xdf68712bF6D7D39deE1AE6E440F013924D23b2e4"
+      },
+      {
+        "name": "Beehive V5",
+        "program": "0x5Bc95edc2a05247235dd5D6d1773B8cCB95D083B",
+        "stakingTokenUrl": "https://app.uniswap.org/#/add/v2/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/0xD46bA6D942050d489DBd938a2C909A5d5039A161",
+        "template": "0xb2872Ce31C76B15de6A827743523778f5ae1C7BC"
+      },
+      {
+        "name": "Trinity V3",
+        "program": "0x13ED22A00576E41B64B686857B484987a3Ad1A3B",
+        "stakingTokenUrl": "https://app.balancer.fi/#/pool/0xd4e2af4507b6b89333441c0c398edffb40f86f4d0001000000000000000002ab",
+        "template": "0xb2872Ce31C76B15de6A827743523778f5ae1C7BC"
+      }
+    ]
+  },
+  "5": {
+    "chainId": 5,
+    "factory": "0x0C5567a2d52841141AA18e03Af4ab32119edCE6C",
+    "programs": [
+      {
+        "name": "Aludel V1.5",
+        "program": "0x33c64c46dC69C1bFd40665AB0cE20BdDb0D589Af",
+        "stakingTokenUrl": "https://app.uniswap.org/#/add/v2/0xDb435816E41eADa055750369Bc2662EFbD465D72/ETH",
+        "template": "0x17d595a07da489b7898b6a2efa72d66023ad7891"
+      }
+    ],
+    "vault": "0xB54AaD626C2B93878d82d7B5AB9704de10D9E816"
+  },
+  "137": {
+    "chainId": 137,
+    "factory": "0x075d940fa6878c6164f3f44cfc584923c4f5654c",
+    "programs": [
+      {
+        "name": "MASQATIC",
+        "program": "0xeE58832B0a4fd753d6E6184C6bfe3E69019E64Ee",
+        "stakingTokenUrl": "https://quickswap.exchange/#/add/0xEe9A352F6aAc4aF1A5B9f467F6a93E0ffBe9Dd35/ETH",
+        "template": "0xb2872Ce31C76B15de6A827743523778f5ae1C7BC"
+      },
+      {
+        "name": "MASQEREUM",
+        "program": "0xFF7C0970dBc4b1fbdE29D814EbE1b5c5F3b11142",
+        "stakingTokenUrl": "https://quickswap.exchange/#/add/0xEe9A352F6aAc4aF1A5B9f467F6a93E0ffBe9Dd35/0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619",
+        "template": "0xb2872Ce31C76B15de6A827743523778f5ae1C7BC"
+      }
+    ]
+  },
+  "80001": {
+    "chainId": 80001,
+    "factory": "0x86CE6C574C6e4Cc5aD0e2Ed9aD3934eE7beC659c",
+    "programs": [
+      {
+        "name": "Mumbai",
+        "program": "0xb8Fe338Aaac09E510b7925bfc77A997F9a63fb15",
+        "stakingTokenUrl": "https://app.uniswap.org/#/swap?chain=polygon_mumbai",
+        "template": "0x40b7a27fdbbd9a7439dad6a5ac7fd7aba0f03970"
+      }
+    ]
+  },
+  "43114": {
+    "chainId": 43114,
+    "factory": "0x075d940fa6878c6164f3f44cfc584923c4f5654c",
+    "programs": [
+      {
+        "name": "Crystal Geyser",
+        "program": "0x26645e8513B1D20aDb729E7114eDfA930D411720",
+        "stakingTokenUrl": "https://app.pangolin.exchange/#/add/0x027dbca046ca156de9622cd1e2d907d375e53aa7/0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+        "template": "0xc61d759F28a30E1775c6e9F0F3f96EAFC4F335d7"
+      }
+    ]
+  },
+  "43113": { "factory": "", "chainId": 43113, "programs": [] }
+}

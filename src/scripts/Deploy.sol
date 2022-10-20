@@ -39,7 +39,7 @@ contract DeploymentScript is Script, DSTest {
 
     function loadConfig() internal returns (string memory config) {
         string memory root = vm.projectRoot();
-        string memory path = string.concat(root, "/oldPrograms.json");
+        string memory path = string.concat(root, "/programs.config.json");
         
         config = vm.readFile(path);
     

@@ -11,7 +11,7 @@ eth-rpc-url = "http://localhost:8545"
 
 fs_permissions = [
     { access = "read", path = "./out"},
-    { access = "read", path = "./oldPrograms.json"}
+    { access = "read", path = "./programs.config.json"}
 ]
 
 [rpc_endpoints]
