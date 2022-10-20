@@ -48,7 +48,7 @@ contract DeploymentScript is Script, DSTest {
 
     function loadNetworkConfig(string memory config) internal returns (NetworkConfig memory) {
         string memory key = string.concat(".", Strings.toString(block.chainid));
-        bytes memory raw = stdJson.parseRaw(config, key);
+        bytes memory raw = config.parseRaw(key);
         NetworkConfig memory networkConfig = abi.decode(
             raw,
             (NetworkConfig)
@@ -100,11 +100,10 @@ contract DeployFactory is Script {
         vm.stopBroadcast();
 
     }
-
 }
 
 /// @dev this is equivalent to using forge create
-contract DeployPowerSwitchFactory is Script, DSTest {
+contract DeployPowerSwitchFactory is Script {
     function run() external {
         vm.startBroadcast();
 
@@ -152,7 +151,6 @@ contract AddPrograms is DeploymentScript {
                 // catch revert and continue iterating
                 if (bytes4(err) == AludelFactory.AludelAlreadyRegistered.selector) {
                     emit log_string("Aludel already added");
-                    continue;
                 }
             }
         }
