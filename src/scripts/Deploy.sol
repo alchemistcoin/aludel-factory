@@ -13,6 +13,8 @@ import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {Aludel} from "../contracts/aludel/Aludel.sol";
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
 
+import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
+
 contract EmptyContract {}
 
 contract DeploymentScript is Script, DSTest {
@@ -46,8 +48,6 @@ contract DeploymentScript is Script, DSTest {
 
     function loadNetworkConfig(string memory config) internal returns (NetworkConfig memory) {
         string memory key = string.concat(".", Strings.toString(block.chainid));
-        // emit log_string(key);
-        // emit log_string(config);
         bytes memory raw = stdJson.parseRaw(config, key);
         NetworkConfig memory networkConfig = abi.decode(
             raw,
@@ -77,7 +77,6 @@ contract DeployFactory is Script {
 
         // deploy an empty contract to reserve an address
         EmptyContract aludelV1 = new EmptyContract();
-        
         // no need to initialize an empty contract
 
         // add AludelV1 template
@@ -109,7 +108,17 @@ contract DeployPowerSwitchFactory is Script, DSTest {
     function run() external {
         vm.startBroadcast();
 
-        PowerSwitchFactory powerSwitchFactory = new PowerSwitchFactory();
+        new PowerSwitchFactory();
+
+        vm.stopBroadcast();
+    }
+}
+
+contract DeployRewardPoolFactory is Script, DSTest {
+    function run() external {
+        vm.startBroadcast();
+
+        new RewardPoolFactory();
 
         vm.stopBroadcast();
     }
@@ -140,7 +149,6 @@ contract AddPrograms is DeploymentScript {
                 uint64(block.timestamp)
             ) {
             } catch (bytes memory err) {
-
                 // catch revert and continue iterating
                 if (bytes4(err) == AludelFactory.AludelAlreadyRegistered.selector) {
                     emit log_string("Aludel already added");
@@ -148,7 +156,6 @@ contract AddPrograms is DeploymentScript {
                 }
             }
         }
-
 
         vm.stopBroadcast();
 
