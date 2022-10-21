@@ -1,6 +1,7 @@
 import "@nomiclabs/hardhat-ethers";
 import "hardhat-deploy";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { ALUDEL_V1_VANITY_ADDRESS } from "../constants";
 
 const deployFunc = async function ({
   ethers,
@@ -13,17 +14,15 @@ const deployFunc = async function ({
     deployedFactory.abi,
     deployedFactory.address
   );
-  // hand-picked pseudo-leetspeak vanity name. No one will have the privkey for this
-  const ALUDEL_V1_VANITY_ADDRESS_ = '0x00000000000000000000000000000000a1fde1b1'
 
   log("Adding disabled AludelV1 empty template to factory");
   // this is only meant to add previous programs, therefore it's disabled from the start
   try {
-    await factory.addTemplate(ALUDEL_V1_VANITY_ADDRESS_, "AludelV1", true);
+    await factory.addTemplate(ALUDEL_V1_VANITY_ADDRESS, "AludelV1", true);
   } catch {
     log("WARNING: AludelV1 was already added");
   }
-}
+};
 
 deployFunc.tags = ["AludelV1Template"];
 deployFunc.dependencies = ["AludelFactory"];
