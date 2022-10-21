@@ -36,7 +36,7 @@ jobs:
     - uses: borales/actions-yarn@v3.0.0
       name: deploy
       with:
-        cmd: hardhat deploy --network mumbai --write true 
+        cmd: rm deployments/mumbai/AludelFactory.json && hardhat deploy --network mumbai --write true --tags templates
       env:
         DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
         MUMBAI_URL: ${{secrets.MUMBAI_URL}}
