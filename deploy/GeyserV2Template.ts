@@ -1,6 +1,7 @@
 import "@nomiclabs/hardhat-ethers";
 import "hardhat-deploy";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
+import { GEYSER_V2_VANITY_ADDRESS } from "../constants";
 
 const deployFunc = async function ({
   ethers,
@@ -13,9 +14,6 @@ const deployFunc = async function ({
     deployedFactory.abi,
     deployedFactory.address
   );
-  // hand-picked pseudo-leetspeak vanity name. No one will have the privkey for this
-  const GEYSER_V2_VANITY_ADDRESS = '0x00000000000000000000000000000000be15efb2'
-
   log("Adding disabled GeyserV2 empty template to factory");
   // this is only meant to add previous programs, therefore it's disabled from the start
   try {
@@ -23,7 +21,7 @@ const deployFunc = async function ({
   } catch {
     log("WARNING: GeyserV2 was already added");
   }
-}
+};
 
 deployFunc.tags = ["GeyserV2Template"];
 deployFunc.dependencies = ["AludelFactory"];
