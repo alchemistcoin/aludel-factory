@@ -28,13 +28,15 @@ const deployFunc = async function ({
     log(`adding pre-existing program ${name}`);
 
     try {
-      await factory.addProgram(
-        program,
-        getTemplateAddress(templateName),
-        name,
-        stakingTokenUrl,
-        0
-      );
+      await (
+        await factory.addProgram(
+          program,
+          getTemplateAddress(templateName),
+          name,
+          stakingTokenUrl,
+          0
+        )
+      ).wait();
     } catch {
       log(`WARNING: couldnt add program ${name} at ${program}`);
     }

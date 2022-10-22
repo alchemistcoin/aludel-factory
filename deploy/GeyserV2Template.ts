@@ -17,7 +17,9 @@ const deployFunc = async function ({
   log("Adding disabled GeyserV2 empty template to factory");
   // this is only meant to add previous programs, therefore it's disabled from the start
   try {
-    await factory.addTemplate(GEYSER_V2_VANITY_ADDRESS, "GeyserV2", true);
+    await (
+      await factory.addTemplate(GEYSER_V2_VANITY_ADDRESS, "GeyserV2", true)
+    ).wait();
   } catch {
     log("WARNING: GeyserV2 was already added");
   }

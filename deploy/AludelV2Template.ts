@@ -18,11 +18,13 @@ const deployFunc = async function ({
 
   log("Adding working AludelV2 templates to factory");
   try {
-    await factory.addTemplate(aludelContract.address, "AludelV2", false);
+    await (
+      await factory.addTemplate(aludelContract.address, "AludelV2", false)
+    ).wait();
   } catch {
     log("WARNING: GeyserV2 was already added");
   }
-}
+};
 
 deployFunc.tags = ["AludelV2Template"];
 deployFunc.dependencies = ["AludelFactory", "AludelV2"];
