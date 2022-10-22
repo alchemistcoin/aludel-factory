@@ -18,7 +18,9 @@ const deployFunc = async function ({
   log("Adding disabled AludelV1 empty template to factory");
   // this is only meant to add previous programs, therefore it's disabled from the start
   try {
-    await factory.addTemplate(ALUDEL_V1_VANITY_ADDRESS, "AludelV1", true);
+    await (
+      await factory.addTemplate(ALUDEL_V1_VANITY_ADDRESS, "AludelV1", true)
+    ).wait();
   } catch {
     log("WARNING: AludelV1 was already added");
   }

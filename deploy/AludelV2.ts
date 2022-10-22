@@ -21,12 +21,14 @@ const deployFunc = async function ({
   const aludel = await ethers.getContractAt(result.abi, result.address);
 
   try {
-    await aludel.initializeLock();
+    await (await aludel.initializeLock()).wait();
     log(`Aludel ${result.address} initialization locked.`);
   } catch (err) {
-    log(`initialization failed, Aludel ${result.address} was already initialized.`);
+    log(
+      `initialization failed, Aludel ${result.address} was already initialized.`
+    );
   }
-}
+};
 
 deployFunc.tags = ["AludelV2"];
 export default deployFunc;
