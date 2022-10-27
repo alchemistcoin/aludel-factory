@@ -70,8 +70,8 @@ contract Aludel is IAludel, Ownable, Initializable, Powered {
     EnumerableSet.AddressSet internal _vaultFactorySet;
 
 
-    address _feeRecipient;
-    uint16 _feeBps;
+    address private _feeRecipient;
+    uint16 private _feeBps;
 
     struct AludelInitializationParams {
         address rewardPoolFactory;

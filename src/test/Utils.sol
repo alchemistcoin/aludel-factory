@@ -20,30 +20,13 @@ library Utils {
         public
         returns (bytes memory)
     {
-        // CheatCodes cheats = CheatCodes(address(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D));
-
-        // bytes32 domainSeparator = keccak256(abi.encode(
-        // 	keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-        // 	keccak256('UniversalVault'),
-        // 	keccak256('1.0.0'),
-        // 	getChainId(),
-        // 	crucible
-        // ));
-        // bytes32 structHash = keccak256(abi.encode(
-        // 	keccak256(abi.encodePacked(method, "(address delegate,address token,uint256 amount,uint256 nonce)")),
-        // 	address(delegate),
-        // 	address(token),
-        // 	amount,
-        // 	nonce
-        // ));
-
         bytes32 digest = keccak256(abi.encodePacked(
     "\x19\x01",
     // domain separator hash
     keccak256(abi.encode(
     keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-    keccak256('UniversalVault'),
-    keccak256('1.0.0'),
+    keccak256("UniversalVault"),
+    keccak256("1.0.0"),
     getChainId(),
     crucible
     )),
