@@ -5,6 +5,9 @@
   "repository": "git@github.com:alchemistcoin/crucible-collection.git",
   "author": "Ignacio Tirabasso <ignacio.tirabasso@gmail.com>",
   "license": "MIT",
+  "scripts": {
+    "lint-ts": "git ls-files |grep '\\.[tj]s$'| xargs ./node_modules/.bin/eslint"
+  },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "2.0.6",
     "@nomiclabs/hardhat-etherscan": "3.1.0",
