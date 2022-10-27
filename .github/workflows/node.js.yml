@@ -6,38 +6,20 @@ on:
   pull_request:
     branches: ['main']
 jobs:
-  build:
-
+  monolith:
     runs-on: ubuntu-latest
-
-    # strategy:
-    #   matrix:
-    #     node-version: [12.x, 14.x, 16.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
+    env:
+      DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
+      MUMBAI_URL: ${{secrets.MUMBAI_URL}}
+      FORK_URL: ${{ secrets.FORK_URL }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: borales/actions-yarn@v3.0.0
-      name: install
-      with:
-        cmd: install
-    - uses: borales/actions-yarn@v3.0.0
-      name: compile
-      with:
-        cmd: hardhat compile
-    - uses: borales/actions-yarn@v3.0.0
-      name: tests
-      with:
-        cmd: hardhat test --network hardhat
-      env: 
-        FORK_URL: ${{ secrets.FORK_URL }}
-        DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
-
-    - uses: borales/actions-yarn@v3.0.0
-      name: deploy
-      with:
-        cmd: rimraf deployments/mumbai/AludelFactory.json && yarn hardhat deploy --network mumbai --write true --tags templates
-      env:
-        DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
-        MUMBAI_URL: ${{secrets.MUMBAI_URL}}
-        DEPLOY_CHAIN: mumbai
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - run: yarn install --dev
+      - run: yarn compile
+      - run: yarn lint-sol
+      - run: yarn lint-ts
+      - run: yarn test-ts
+      - run: rm deployments/mumbai/AludelFactory.json && yarn hardhat deploy --network mumbai --tags templates
