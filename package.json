@@ -6,6 +6,7 @@
   "author": "Ignacio Tirabasso <ignacio.tirabasso@gmail.com>",
   "license": "MIT",
   "scripts": {
+    "lint-sol": "git ls-files |grep '\\.sol$' |xargs ./node_modules/.bin/solhint",
     "lint-ts": "git ls-files |grep '\\.[tj]s$'| xargs ./node_modules/.bin/eslint"
   },
   "devDependencies": {
