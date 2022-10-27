@@ -20,6 +20,6 @@ const deployFunc = async function ({
     contract: "AludelFactory",
     deterministicDeployment: false,
   });
-}
+};
 deployFunc.tags = ["AludelFactory"];
 export default deployFunc;

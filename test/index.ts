@@ -7,12 +7,7 @@ import {
   network,
   ethers as hardhatEthers,
 } from "hardhat";
-import{
-  Aludel,
-  AludelFactory,
-  Crucible,
-  MockERC20,
-} from "../typechain-types";
+import { Aludel, AludelFactory, Crucible, MockERC20 } from "../typechain-types";
 import { DAYS, ETHER, signPermission } from "./utils";
 import { AddressZero } from "@ethersproject/constants";
 
