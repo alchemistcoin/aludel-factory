@@ -11,9 +11,9 @@ import {
 } from "../contracts/powerSwitch/PowerSwitch.sol";
 
 contract PowerSwitchTest is DSTest {
-    Hevm cheats;
+	Hevm private cheats;
 
-	PowerSwitchFactory powerSwitchFactory;
+	PowerSwitchFactory private powerSwitchFactory;
 
 	function setUp() public {
 		cheats = Hevm(HEVM_ADDRESS);
