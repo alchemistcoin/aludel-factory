@@ -16,7 +16,7 @@ const deployFunc = async function ({
     contract: "RewardPoolFactory",
     deterministicDeployment: false,
   });
-}
+};
 
 deployFunc.tags = ["RewardPoolFactory"];
 export default deployFunc;

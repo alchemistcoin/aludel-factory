@@ -1,10 +1,6 @@
 import { TypedDataField } from "@ethersproject/abstract-signer";
 import { parseEther } from "@ethersproject/units";
-import {
-  BigNumberish,
-  Contract,
-  Wallet,
-} from "ethers";
+import { BigNumberish, Contract, Wallet } from "ethers";
 
 import { EthereumProvider } from "hardhat/types";
 
@@ -42,7 +38,8 @@ export function wrapWithTitle(title: string | undefined, str: string) {
 
 const DAY = 60 * 60 * 24;
 
-export const ETHER: (a:number) => BigNumberish = (amount = 1) => parseEther(amount.toString());
+export const ETHER: (a: number) => BigNumberish = (amount = 1) =>
+  parseEther(amount.toString());
 export const DAYS = (days = 1) => days * DAY;
 
 export const signPermission = async (

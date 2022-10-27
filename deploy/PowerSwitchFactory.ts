@@ -16,6 +16,6 @@ const deployFunc = async function ({
     contract: "PowerSwitchFactory",
     deterministicDeployment: false,
   });
-}
+};
 deployFunc.tags = ["PowerSwitchFactory"];
 export default deployFunc;
