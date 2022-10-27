@@ -6,17 +6,22 @@ import {
   deployments as hardhatDeployments,
   network,
   ethers as hardhatEthers,
+  getNamedAccounts,
 } from "hardhat";
 import{
   Aludel,
   AludelFactory,
+  AludelV2,
   Crucible,
   MockERC20,
 } from "../typechain-types";
 import { DAYS, ETHER, signPermission } from "./utils";
 import { AddressZero } from "@ethersproject/constants";
+import { deployContract } from "./setup";
 
 describe("Aludel factory", function () {
+
+
   const setupTest = hardhatDeployments.createFixture(
     async ({ deployments, ethers }) => {
       await deployments.fixture(undefined, {
@@ -35,16 +40,21 @@ describe("Aludel factory", function () {
         factoryDeployment.abi,
         factoryDeployment.address
       )) as AludelFactory;
-      const crucibleFactory = await deployments.get("CrucibleFactory");
+      
+      const template = await deployContract('Crucible')
+
+      const crucibleFactory = await deployContract(
+        'CrucibleFactory',
+        [template.address]
+      )
+
       const rewardPoolFactory = await deployments.get("RewardPoolFactory");
       const powerSwitchFactory = await deployments.get("PowerSwitchFactory");
 
       const deployedAludel = await deployments.get("AludelV2");
       const aludelTemplate = (await ethers.getContractAt(
-        "src/contracts/aludel/Aludel.sol:Aludel",
-        deployedAludel.address,
-        admin
-      )) as Aludel;
+        "AludelV2", deployedAludel.address, admin
+      )) as AludelV2;
 
       await rewardToken.mint(admin.address, ETHER(1));
       const params = new AbiCoder().encode(
@@ -91,10 +101,7 @@ describe("Aludel factory", function () {
 
       await aludel.connect(admin).fund(ETHER(1), DAYS(1));
       return {
-        crucibleFactory: await ethers.getContractAt(
-          crucibleFactory.abi,
-          crucibleFactory.address
-        ),
+        crucibleFactory,
         factory,
         powerSwitchFactory: await ethers.getContractAt(
           powerSwitchFactory.abi,
@@ -178,9 +185,7 @@ describe("Aludel factory", function () {
     describe("admin functions", async function () {
       it("templates", async function () {
         const { factory } = await setupTest();
-        const templateFactory = await hardhatEthers.getContractFactory(
-          "src/contracts/aludel/Aludel.sol:Aludel"
-        );
+        const templateFactory = await hardhatEthers.getContractFactory("AludelV2");
         const template2 = (await templateFactory.deploy()) as Aludel;
         await factory.addTemplate(template2.address, "aludel 2", false);
         let templateData = await factory.getTemplate(template2.address);
