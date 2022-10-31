@@ -1,9 +1,8 @@
 import { AbiCoder } from "@ethersproject/abi";
 import { formatEther } from "ethers/lib/utils";
-import { task } from "hardhat/config";
+import { task, types } from "hardhat/config";
 import "@nomiclabs/hardhat-ethers";
 import { parseEther } from "@ethersproject/units";
-import { AddressZero } from "@ethersproject/constants";
 
 // this function is meant to avoid polluting the tests with console output, and
 // log on every other scenario
@@ -198,48 +197,37 @@ task("delist-program")
     await (await factory.delistProgram(args.program)).wait();
   });
 
-task("add-program")
-  .addParam("aludelFactory", "address of the aludel factory")
+task("add-program", "add a pre-existing aludel to the network's aludel factory")
   .addParam("program", "deployed address of the program")
-  .addParam(
-    "template",
-    "Optional. deployed address of the program's template",
-    AddressZero
-  )
+  .addParam("template", "address of the program's template")
   .addParam("name", "the name of the program")
-  .addParam("stakingTokenUrl", "the URL of the staking token")
-  .addParam(
+  .addParam("stakingTokenUrl", "the URL where to buy the staking token")
+  .addOptionalParam(
     "startTime",
-    "the program start time in utc timestamp format (seconds)"
+    "the program start time in utc timestamp format (seconds). Default is now.",
+    Math.floor(Date.now() / 1000), // js date is in milliseconds, not an actual unix epoch
+    types.int
   )
-  .setAction(async (args, { ethers, network }) => {
-    // log config
-    log("Network");
-    log("  ", network.name);
-    log("Task Args");
-    log(args);
+  .setAction(
+    async (args, { getNamedAccounts, ethers, network, deployments }) => {
+      // get factory instance
+      const factoryAddress = (await deployments.get("AludelFactory")).address;
+      const factory = await ethers.getContractAt(
+        "src/contracts/AludelFactory.sol:AludelFactory",
+        factoryAddress
+      );
+      const { deployer } = await getNamedAccounts();
+      log(`Adding template ${args.template} to factory ${factoryAddress}`);
+      log(`  on network ${network.name} by default deployer ${deployer}`);
 
-    // get signer
-
-    const signer = (await ethers.getSigners())[0];
-    log("Signer");
-    log("  at", signer.address);
-    log("  ETH", formatEther(await signer.getBalance()));
-
-    // get factory instance
-    const factory = await ethers.getContractAt(
-      "src/contracts/AludelFactory.sol:AludelFactory",
-      args.aludelFactory
-    );
-
-    // deploy minimal proxy using `params` as init params
-    await (
-      await factory.addProgram(
-        args.program,
-        args.template,
-        args.name,
-        args.stakingTokenUrl,
-        args.startTime
-      )
-    ).wait();
-  });
+      await (
+        await factory.addProgram(
+          args.program,
+          args.template,
+          args.name,
+          args.stakingTokenUrl,
+          args.startTime
+        )
+      ).wait();
+    }
+  );
