@@ -5,6 +5,16 @@ import "@nomiclabs/hardhat-ethers";
 import { parseEther } from "@ethersproject/units";
 import { AddressZero } from "@ethersproject/constants";
 
+// this function is meant to avoid polluting the tests with console output, and
+// log on every other scenario
+// console.log actually receives several whatevers
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const log = (...args: any[]) => {
+  if (global.before === undefined) {
+    console.log(...args);
+  }
+};
+
 export const ETHER = (amount = 1) => parseEther(amount.toString());
 export const DAYS = (days = 1) => days * 60 * 60 * 24;
 
@@ -33,10 +43,10 @@ task("launch-program")
   .setAction(async (args, { ethers, network }) => {
     // log config
 
-    console.log("Network");
-    console.log("  ", network.name);
-    console.log("Task Args");
-    console.log(args);
+    log("Network");
+    log("  ", network.name);
+    log("Task Args");
+    log(args);
 
     // compile
 
@@ -45,9 +55,9 @@ task("launch-program")
     // get signer
 
     const signer = (await ethers.getSigners())[0];
-    console.log("Signer");
-    console.log("  at", signer.address);
-    console.log("  ETH", formatEther(await signer.getBalance()));
+    log("Signer");
+    log("  at", signer.address);
+    log("  ETH", formatEther(await signer.getBalance()));
 
     // get factory instance
     const factory = await ethers.getContractAt(
@@ -99,17 +109,17 @@ task("update-template")
   .setAction(async (args, { ethers, network }) => {
     // log config
 
-    console.log("Network");
-    console.log("  ", network.name);
-    console.log("Task Args");
-    console.log(args);
+    log("Network");
+    log("  ", network.name);
+    log("Task Args");
+    log(args);
 
     // get signer
 
     const signer = (await ethers.getSigners())[0];
-    console.log("Signer");
-    console.log("  at", signer.address);
-    console.log("  ETH", formatEther(await signer.getBalance()));
+    log("Signer");
+    log("  at", signer.address);
+    log("  ETH", formatEther(await signer.getBalance()));
 
     // get factory instance
     const factory = await ethers.getContractAt(
@@ -117,7 +127,7 @@ task("update-template")
       args.aludelFactory
     );
 
-    console.log(factory);
+    log(factory);
 
     // deploy minimal proxy using `params` as init params
     await (
@@ -133,17 +143,17 @@ task("add-template")
   .setAction(async (args, { ethers, network }) => {
     // log config
 
-    console.log("Network");
-    console.log("  ", network.name);
-    console.log("Task Args");
-    console.log(args);
+    log("Network");
+    log("  ", network.name);
+    log("Task Args");
+    log(args);
 
     // get signer
 
     const signer = (await ethers.getSigners())[0];
-    console.log("Signer");
-    console.log("  at", signer.address);
-    console.log("  ETH", formatEther(await signer.getBalance()));
+    log("Signer");
+    log("  at", signer.address);
+    log("  ETH", formatEther(await signer.getBalance()));
 
     // get factory instance
     const factory = await ethers.getContractAt(
@@ -166,17 +176,17 @@ task("delist-program")
   .setAction(async (args, { ethers, network }) => {
     // log config
 
-    console.log("Network");
-    console.log("  ", network.name);
-    console.log("Task Args");
-    console.log(args);
+    log("Network");
+    log("  ", network.name);
+    log("Task Args");
+    log(args);
 
     // get signer
 
     const signer = (await ethers.getSigners())[0];
-    console.log("Signer");
-    console.log("  at", signer.address);
-    console.log("  ETH", formatEther(await signer.getBalance()));
+    log("Signer");
+    log("  at", signer.address);
+    log("  ETH", formatEther(await signer.getBalance()));
 
     // get factory instance
     const factory = await ethers.getContractAt(
@@ -204,18 +214,17 @@ task("add-program")
   )
   .setAction(async (args, { ethers, network }) => {
     // log config
-
-    console.log("Network");
-    console.log("  ", network.name);
-    console.log("Task Args");
-    console.log(args);
+    log("Network");
+    log("  ", network.name);
+    log("Task Args");
+    log(args);
 
     // get signer
 
     const signer = (await ethers.getSigners())[0];
-    console.log("Signer");
-    console.log("  at", signer.address);
-    console.log("  ETH", formatEther(await signer.getBalance()));
+    log("Signer");
+    log("  at", signer.address);
+    log("  ETH", formatEther(await signer.getBalance()));
 
     // get factory instance
     const factory = await ethers.getContractAt(
