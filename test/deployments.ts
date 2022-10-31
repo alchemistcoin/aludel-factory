@@ -1,13 +1,15 @@
 import { expect } from "chai";
 import { AbiCoder } from "ethers/lib/utils";
-import { deployments, ethers } from "hardhat";
+import { deployments, ethers, run } from "hardhat";
 import {
   AludelFactory,
+  Aludel,
   CrucibleFactory,
   MockERC20,
   PowerSwitchFactory,
   RewardPoolFactory,
 } from "../typechain-types";
+import { GEYSER_V2_VANITY_ADDRESS } from "../constants";
 import { DAYS } from "./utils";
 
 describe("Aludel factory deployments", function () {
@@ -48,6 +50,31 @@ describe("Aludel factory deployments", function () {
       const factory = await ethers.getContractFactory("MockERC20");
       return (await factory.deploy(name, "MockERC20")) as MockERC20;
     }
+    describe("GIVEN a preexisting program", () => {
+      let preexistingProgram: Aludel;
+      beforeEach(async () => {
+        const ethersFactory = await ethers.getContractFactory(
+          "src/contracts/aludel/AludelV2.sol:AludelV2"
+        );
+        preexistingProgram = (await ethersFactory.deploy()) as Aludel;
+      });
+      describe("WHEN adding it with the add-program task, AND passing al parameters", () => {
+        beforeEach(async () => {
+          await run("add-program", {
+            aludelFactory: factory.address,
+            program: preexistingProgram.address,
+            template: GEYSER_V2_VANITY_ADDRESS,
+            name: "some name",
+            stakingTokenUrl: "http://buy.here",
+            startTime: "69",
+          });
+        });
+        it("THEN it is listed", async () => {
+          const program = await factory.programs(preexistingProgram.address);
+          expect(program.name).to.eq("some name");
+        });
+      });
+    });
 
     describe("GIVEN a PowerSwitchFactory, a CrucibleFactory, a RewardPoolFactory, and some other stuff", () => {
       let powerSwitchFactory: PowerSwitchFactory;
