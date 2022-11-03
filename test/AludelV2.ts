@@ -19,7 +19,7 @@ import "@nomicfoundation/hardhat-chai-matchers";
 
 const { expect } = chai;
 
-describe.only('AludelV2', function () {
+describe('AludelV2', function () {
   let accounts: SignerWithAddress[], admin: SignerWithAddress
   let user: Wallet
 
@@ -108,45 +108,6 @@ describe.only('AludelV2', function () {
     return stakeDuration >= rewardScaling.time ? baseReward : minReward.add(bonusReward)
   }
 
-  async function _launchProgram(
-    name: string,
-    startTime: BigNumberish,
-    bonusTokens: Contract[],
-    ownerAddress: string,
-    ) {
-      const deployParams = new AbiCoder().encode(
-        [
-          "address",
-          "address",
-          "address",
-          "address",
-          "uint256",
-          "uint256",
-          "uint256",
-        ],
-        [
-          rewardPoolFactory.address,
-          powerSwitchFactory.address,
-          stakingToken.address,
-          rewardToken.address,
-          1,
-          10,
-          DAYS(1),
-        ]
-      );
-
-      AludelFactory__factory.connect(aludelFactory.address, admin).launch(
-        aludelV2Template.address,
-        "program name",
-        "protocol://program.url",
-        0,
-        vaultFactory.address,
-        bonusToken.map((t: Contract) => t.address),
-        admin.address,
-        deployParams
-      )
-  }
-
   async function launchProgram(
     startTime: BigNumberish,
     _bonusTokens: Contract[],
@@ -166,7 +127,8 @@ describe.only('AludelV2', function () {
         args
       );
 
-      const tx = await AludelFactory__factory.connect(aludelFactory.address, admin).launch(
+      const factory = AludelFactory__factory.connect(aludelFactory.address, admin)
+      const address = await factory.callStatic.launch(
         aludelV2Template.address,
         "program name",
         "protocol://program.url",
@@ -176,17 +138,18 @@ describe.only('AludelV2', function () {
         owner.address,
         deployParams
       )
-
-      const receipt = await tx.wait()
-      const creationEvent = receipt.events?.find(
-        (e: Event) => e.event == 'ProgramAdded'
+      const tx = await factory.launch(
+        aludelV2Template.address,
+        "program name",
+        "protocol://program.url",
+        startTime,
+        vaultFactory.address,
+        _bonusTokens.map((t: Contract) => t.address),
+        owner.address,
+        deployParams
       )
-
-      if (creationEvent != undefined && creationEvent.args != undefined) {
-          return ethers.getContractAt('AludelV2', creationEvent?.args.program, owner)
-      }
-
-      return ethers.getContractAt('AludelV2', '0x00000000000')
+      await tx.wait()
+      return ethers.getContractAt('AludelV2', address, owner)
   }
 
   const subtractFundingFee = (amount: BigNumber) => {
@@ -210,10 +173,6 @@ describe.only('AludelV2', function () {
   })
 
   sharedBeforeEach(async function () {
-    // powerSwitchFactory = await deployContract('alchemist/contracts/aludel/PowerSwitchFactory.sol:PowerSwitchFactory')
-    // rewardPoolFactory = await deployContract('RewardPoolFactory')
-    // template = await deployContract('Crucible')
-
     powerSwitchFactory = await deployContract('src/contracts/powerSwitch/PowerSwitchFactory.sol:PowerSwitchFactory')
     rewardPoolFactory = await deployContract('RewardPoolFactory')
     template = await deployContract('Crucible')
@@ -230,12 +189,12 @@ describe.only('AludelV2', function () {
 
     bonusToken = await deployERC20(admin, mockTokenSupply)
   
-    const ds = await deployments.fixture(['AludelFactory', 'templates'])
+    const fixtures = await deployments.fixture(['AludelFactory', 'templates'])
     aludelFactory = await ethers.getContractAt(
-      'AludelFactory', ds['AludelFactory'].address
+      'AludelFactory', fixtures['AludelFactory'].address
     )
     aludelV2Template = await ethers.getContractAt(
-      'AludelV2', ds['AludelV2'].address
+      'AludelV2', fixtures['AludelV2'].address
     )
   
   });
@@ -284,8 +243,6 @@ describe.only('AludelV2', function () {
         const geyser = await launchProgram(0, [], admin, args)
 
         expect(geyser).is.not.undefined;
-
-        // const geyser = await deployAludel(args)
 
         const data = await geyser.getAludelData()
 
