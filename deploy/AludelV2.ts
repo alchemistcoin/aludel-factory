@@ -14,7 +14,7 @@ const deployFunc = async function ({
     from: deployer,
     args: [],
     log: true,
-    contract: "src/contracts/aludel/Aludel.sol:Aludel",
+    contract: "src/contracts/aludel/AludelV2.sol:AludelV2",
     deterministicDeployment: false,
   });
 
