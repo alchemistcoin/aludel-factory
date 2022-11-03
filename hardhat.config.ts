@@ -119,6 +119,9 @@ const config: HardhatUserConfig = {
     artifacts: "./out",
     sources: "./src/contracts",
   },
+  typechain: {
+    outDir: './typechain-types'
+  }
 };
 
 export default config;
