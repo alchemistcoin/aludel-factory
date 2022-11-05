@@ -1,8 +1,6 @@
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/dist/src/signer-with-address'
 import { deployments, ethers, network } from 'hardhat'
 import { BigNumber, BigNumberish, Contract, ContractFactory, Event, Wallet } from 'ethers'
-import { revertAfter } from './shared-before-each/revert-after'
-import { sharedBeforeEach } from './shared-before-each/shared-before-each'
 import {
   createInstance,
   deployContract,
@@ -156,10 +154,10 @@ describe('AludelV2', function () {
     return amount.div(10000).mul(9900)
   }
 
-  revertAfter();
-
-  before(async function () {
-    // prepare signers
+  beforeEach(async function () {
+    await deployments.fixture(["templates"], {
+      keepExistingDeployments: true,
+    });
     accounts = await ethers.getSigners()
     admin = accounts[1]
     user = Wallet.createRandom().connect(ethers.provider)
@@ -170,9 +168,6 @@ describe('AludelV2', function () {
     powered = await ethers.getContractFactory(
       'src/contracts/powerSwitch/Powered.sol:Powered'
     )
-  })
-
-  sharedBeforeEach(async function () {
     powerSwitchFactory = await deployContract('src/contracts/powerSwitch/PowerSwitchFactory.sol:PowerSwitchFactory')
     rewardPoolFactory = await deployContract('RewardPoolFactory')
     template = await deployContract('Crucible')
@@ -493,7 +488,6 @@ describe('AludelV2', function () {
           rewardScaling.floor, rewardScaling.ceiling, rewardScaling.time,
         ]
         geyser = await launchProgram(0, [], admin, args)
-        console.log('new geyser')
         vault = await createInstance('Crucible', vaultFactory, user)
       })
       describe.skip('when no factory registered', function () {
