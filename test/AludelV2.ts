@@ -273,7 +273,7 @@ describe('AludelV2', function () {
         rewardScaling.floor, rewardScaling.ceiling, rewardScaling.time,
       ]
       geyser = await launchProgram(0, [], admin, args)
-      // geyser = await deployAludel(args)
+
       powerSwitch = await ethers.getContractAt('alchemist/contracts/aludel/PowerSwitch.sol:PowerSwitch', await geyser.getPowerSwitch())
       rewardPool = await ethers.getContractAt('RewardPool', (await geyser.getAludelData()).rewardPool)
     })
@@ -336,9 +336,7 @@ describe('AludelV2', function () {
             const data = await geyser.getAludelData()
 
             expect(data.rewardSharesOutstanding).to.eq(
-              // amplInitialSupply.div(10000).mul(9900).mul(BASE_SHARES_PER_WEI)
               subtractFundingFee(amplInitialSupply).mul(BASE_SHARES_PER_WEI)
-              // amplInitialSupply.div(10000).mul(9900).mul(BASE_SHARES_PER_WEI)
             )
             expect(data.rewardSchedules.length).to.eq(1)
             expect(data.rewardSchedules[0].duration).to.eq(YEAR)
@@ -397,7 +395,6 @@ describe('AludelV2', function () {
 
           let vault: Contract
           beforeEach(async function () {
-            // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
             vault = await createInstance('Crucible', vaultFactory, user)
             
             await stakingToken.connect(admin).transfer(vault.address, stakeAmount)
@@ -490,23 +487,8 @@ describe('AludelV2', function () {
         geyser = await launchProgram(0, [], admin, args)
         vault = await createInstance('Crucible', vaultFactory, user)
       })
-      describe.skip('when no factory registered', function () {
-        it('should be false', async function () {
-          expect(await geyser.isValidVault(vault.address)).to.be.false
-        })
-      })
-      describe('when vault from factory registered', function () {
-        beforeEach(async function () {
-          // This is done by AludelFactory at launch.
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
-        })
-        it('should be true', async function () {
-          expect(await geyser.isValidVault(vault.address)).to.be.true
-        })
-      })
       describe('when vault from factory removed', function () {
         beforeEach(async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
           await geyser.connect(admin).removeVaultFactory(vaultFactory.address)
         })
         it('should be false', async function () {
@@ -517,7 +499,6 @@ describe('AludelV2', function () {
         let secondFactory: Contract
         let secondVault: Contract
         beforeEach(async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
           secondFactory = await deployContract(
             'CrucibleFactory',
             [template.address]
@@ -537,7 +518,6 @@ describe('AludelV2', function () {
             [template.address]
           )
           secondVault = await createInstance('Crucible', secondFactory, user)
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
           await geyser.connect(admin).registerVaultFactory(secondFactory.address)
         })
         it('should be true', async function () {
@@ -566,12 +546,7 @@ describe('AludelV2', function () {
         })
       })
       describe('when online', function () {
-        it('should succeed', async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
-        })
         it('should update state', async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
-
           expect(await geyser.getVaultFactorySetLength()).to.be.eq(1)
           expect(await geyser.getVaultFactoryAtIndex(0)).to.be.eq(vaultFactory.address)
         })
@@ -614,9 +589,6 @@ describe('AludelV2', function () {
         })
       })
       describe('when already added', function () {
-        beforeEach(async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
-        })
         it('should fail', async function () {
           await expect(geyser.connect(admin).registerVaultFactory(vaultFactory.address))
           .to.be.revertedWithCustomError(
@@ -627,7 +599,6 @@ describe('AludelV2', function () {
       })
       describe('when removed', function () {
         beforeEach(async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
           await geyser.connect(admin).removeVaultFactory(vaultFactory.address)
         })
         it('should succeed', async function () {
@@ -646,9 +617,6 @@ describe('AludelV2', function () {
         })
       })
       describe('with second factory', function () {
-        beforeEach(async function () {
-          // await geyser.connect(admin).registerVaultFactory(admin.address)
-        })
         it('should succeed', async function () {
           await geyser.connect(admin).registerVaultFactory(secondFactory.address)
         })
@@ -668,9 +636,6 @@ describe('AludelV2', function () {
     })
     describe('removeVaultFactory', function () {
       describe('as user', function () {
-        beforeEach(async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
-        })
         it('should fail', async function () {
           await expect(geyser.connect(user).removeVaultFactory(vaultFactory.address)).to.be.revertedWith(
             'Ownable: caller is not the owner',
@@ -678,9 +643,6 @@ describe('AludelV2', function () {
         })
       })
       describe('when online', function () {
-        beforeEach(async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
-        })
         it('should succeed', async function () {
           await geyser.connect(admin).removeVaultFactory(vaultFactory.address)
         })
@@ -698,7 +660,6 @@ describe('AludelV2', function () {
       })
       describe('when offline', function () {
         beforeEach(async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
           await powerSwitch.connect(admin).powerOff()
         })
         it('should succeed', async function () {
@@ -718,7 +679,6 @@ describe('AludelV2', function () {
       })
       describe('when shutdown', function () {
         beforeEach(async function () {
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
           await powerSwitch.connect(admin).emergencyShutdown()
         })
         it('should fail', async function () {
@@ -726,15 +686,6 @@ describe('AludelV2', function () {
           .to.be.revertedWithCustomError(
             powered,
             'Powered_IsShutdown',
-          )
-        })
-      })
-      describe.skip('when never added', function () {
-        it('should fail', async function () {
-          await expect(geyser.connect(admin).removeVaultFactory(vaultFactory.address))
-          .to.be.revertedWithCustomError(
-            geyser,
-            'VaultFactoryNotRegistered',
           )
         })
       })
@@ -1057,11 +1008,9 @@ describe('AludelV2', function () {
         rewardToken.address,
         rewardScaling.floor, rewardScaling.ceiling, rewardScaling.time,
       ]
-      // geyser = await deployAludel(args)
       geyser = await launchProgram(0, [], admin, args)
 
       // now vault factory is registered when the program is created
-      // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
       powerSwitch = await ethers.getContractAt('alchemist/contracts/aludel/PowerSwitch.sol:PowerSwitch', await geyser.getPowerSwitch())
       rewardPool = await ethers.getContractAt('RewardPool', (await geyser.getAludelData()).rewardPool)
     })
@@ -1250,7 +1199,6 @@ describe('AludelV2', function () {
     describe('unstake', function () {
       const stakeAmount = ethers.utils.parseEther('100')
       const fundingAmount = ethers.utils.parseUnits('1000', 9)
-      // const rewardAmount = ethers.utils.parseUnits('1000', 9)
       const rewardAmount = subtractFundingFee(fundingAmount)
 
       describe('with default config', function () {
@@ -1430,10 +1378,8 @@ describe('AludelV2', function () {
             rewardToken.address,
             rewardScaling.floor * 2, rewardScaling.ceiling * 2, rewardScaling.time,
           ]
-          // geyser = await deployAludel(args)
           geyser = await launchProgram(0, [], admin, args)
 
-          // await geyser.connect(admin).registerVaultFactory(vaultFactory.address)
           powerSwitch = await ethers.getContractAt('alchemist/contracts/aludel/PowerSwitch.sol:PowerSwitch', await geyser.getPowerSwitch())
           rewardPool = await ethers.getContractAt('RewardPool', (await geyser.getAludelData()).rewardPool)
 
@@ -2222,7 +2168,6 @@ describe('AludelV2', function () {
       describe('with multiple vaults', function () {
         const stakeAmount = ethers.utils.parseEther('1')
 
-        // ethers.utils.parseUnits('1000', 9)
         const rewardAmount = subtractFundingFee(fundingAmount)
         const quantity = 10
 
