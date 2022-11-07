@@ -13,7 +13,8 @@ const deployFunc = async function ({
     from: deployer,
     args: [],
     log: true,
-    contract: "src/contracts/powerSwitch/PowerSwitchFactory.sol:PowerSwitchFactory",
+    contract:
+      "src/contracts/powerSwitch/PowerSwitchFactory.sol:PowerSwitchFactory",
     deterministicDeployment: false,
   });
 };

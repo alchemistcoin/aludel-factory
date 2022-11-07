@@ -1,10 +1,5 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
-import {
-  BigNumberish,
-  BytesLike,
-  Contract,
-  Signer,
-} from "ethers";
+import { BigNumberish, BytesLike, Contract, Signer } from "ethers";
 import { ethers, network } from "hardhat";
 
 export async function getTimestamp() {
@@ -52,7 +47,7 @@ export async function createInstance(
   instanceName: string,
   factory: Contract,
   signer: Signer,
-  args: string = "0x"
+  args = "0x"
 ) {
   // get contract class
   const instanceFactory = ethers.getContractFactory(instanceName, signer);
