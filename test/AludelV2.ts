@@ -134,7 +134,7 @@ describe("AludelV2", function () {
       aludelFactory.address,
       admin
     );
-    const address = await factory.callStatic.launch(
+    const launchArguments = [
       aludelV2Template.address,
       "program name",
       "protocol://program.url",
@@ -142,18 +142,12 @@ describe("AludelV2", function () {
       vaultFactory.address,
       _bonusTokens.map((t: Contract) => t.address),
       owner.address,
-      deployParams
+      deployParams,
+    ];
+    const address = await (factory.callStatic as any).launch(
+      ...launchArguments
     );
-    const tx = await factory.launch(
-      aludelV2Template.address,
-      "program name",
-      "protocol://program.url",
-      startTime,
-      vaultFactory.address,
-      _bonusTokens.map((t: Contract) => t.address),
-      owner.address,
-      deployParams
-    );
+    const tx = await (factory as any).launch(...launchArguments);
     await tx.wait();
     return ethers.getContractAt("AludelV2", address, owner);
   }
