@@ -8,7 +8,7 @@ import {Hevm} from "solmate/test/utils/Hevm.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
-import {Aludel} from "../contracts/aludel/Aludel.sol";
+import {AludelV2} from "../contracts/aludel/AludelV2.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
@@ -39,7 +39,7 @@ contract AludelFactoryIntegrationTest is DSTest {
     RewardPoolFactory private rewardPoolFactory;
     PowerSwitchFactory private powerSwitchFactory;
     RewardScaling private rewardScaling;
-    Aludel private template;
+    AludelV2 private template;
 
     CrucibleFactory private crucibleFactory;
 
@@ -73,7 +73,7 @@ contract AludelFactoryIntegrationTest is DSTest {
         bps = 100;
         factory = new AludelFactory(recipient, bps);
 
-        template = new Aludel();
+        template = new AludelV2();
         template.initializeLock();
         rewardPoolFactory = new RewardPoolFactory();
         powerSwitchFactory = new PowerSwitchFactory();
@@ -174,13 +174,13 @@ contract AludelFactoryIntegrationTest is DSTest {
     }
 
     function test_template_initialization() public {
-        Aludel template = new Aludel();
+        AludelV2 template = new AludelV2();
         template.initializeLock();
         factory.addTemplate(address(template), "bleep", false);
     }
 
     function testFail_template_double_initialization() public {
-        Aludel template = new Aludel();
+        AludelV2 template = new AludelV2();
         template.initializeLock();
         cheats.expectRevert(new bytes(0));
         template.initializeLock();

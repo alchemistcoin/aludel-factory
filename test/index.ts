@@ -36,7 +36,7 @@ describe("Aludel factory", function () {
 
       const deployedAludel = await deployments.get("AludelV2");
       const aludelTemplate = (await ethers.getContractAt(
-        "src/contracts/aludel/Aludel.sol:Aludel",
+        "src/contracts/aludel/AludelV2.sol:AludelV2",
         deployedAludel.address,
         admin
       )) as Aludel;
@@ -174,7 +174,7 @@ describe("Aludel factory", function () {
       it("templates", async function () {
         const { factory } = await setupTest();
         const templateFactory = await hardhatEthers.getContractFactory(
-          "src/contracts/aludel/Aludel.sol:Aludel"
+          "src/contracts/aludel/AludelV2.sol:AludelV2"
         );
         const template2 = (await templateFactory.deploy()) as Aludel;
         await factory.addTemplate(template2.address, "aludel 2", false);

@@ -46,6 +46,8 @@ interface IPowerSwitch {
 }
 
 /// @title PowerSwitch
+/// @notice This power switch contract receives a uint256 
+///         to enforce powering a switch only after a particular timestamp.
 /// @notice Standalone pausing and emergency stop functionality
 contract PowerSwitch is IPowerSwitch, Ownable {
     /* storage */
