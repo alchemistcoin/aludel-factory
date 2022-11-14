@@ -1,14 +1,18 @@
-import { expect } from "chai";
+import chai, { expect } from "chai";
 import { AbiCoder } from "ethers/lib/utils";
-import { deployments, ethers } from "hardhat";
+import { deployments, ethers, run } from "hardhat";
 import {
   AludelFactory,
+  Aludel,
   CrucibleFactory,
   MockERC20,
   PowerSwitchFactory,
   RewardPoolFactory,
 } from "../typechain-types";
+import { GEYSER_V2_VANITY_ADDRESS } from "../constants";
+import chaiAsPromised from "chai-as-promised";
 import { DAYS } from "./utils";
+chai.use(chaiAsPromised);
 
 describe("Aludel factory deployments", function () {
   describe("WHEN deploying a template set", () => {
@@ -48,6 +52,67 @@ describe("Aludel factory deployments", function () {
       const factory = await ethers.getContractFactory("MockERC20");
       return (await factory.deploy(name, "MockERC20")) as MockERC20;
     }
+    describe("GIVEN a preexisting program", () => {
+      let preexistingProgram: Aludel;
+      beforeEach(async () => {
+        const ethersFactory = await ethers.getContractFactory(
+          "src/contracts/aludel/AludelV2.sol:AludelV2"
+        );
+        preexistingProgram = (await ethersFactory.deploy()) as Aludel;
+      });
+
+      describe("WHEN adding it with the add-program task, AND passing al parameters", () => {
+        beforeEach(async () => {
+          await run("add-program", {
+            program: preexistingProgram.address,
+            template: GEYSER_V2_VANITY_ADDRESS,
+            name: "some name",
+            stakingTokenUrl: "http://buy.here",
+            startTime: 69,
+          });
+        });
+        it("THEN it is listed", async () => {
+          const program = await factory.programs(preexistingProgram.address);
+          expect(program.name).to.eq("some name");
+        });
+      });
+
+      it("WHEN adding it with the add-program task, AND omitting the template THEN it fails because the template is not optional", async () => {
+        await expect(
+          run("add-program", {
+            program: preexistingProgram.address,
+            name: "some name",
+            stakingTokenUrl: "http://buy.here",
+            startTime: 69,
+          })
+        ).to.be.rejectedWith(
+          "HH306: The 'template' parameter expects a value, but none was passed"
+        );
+      });
+
+      describe("WHEN adding it with the add-program task, AND omitting the startTime", () => {
+        beforeEach(async () => {
+          await run("add-program", {
+            program: preexistingProgram.address,
+            template: GEYSER_V2_VANITY_ADDRESS,
+            name: "some name",
+            stakingTokenUrl: "http://buy.here",
+          });
+        });
+        it("THEN the current timestamp is used", async () => {
+          const program = await factory.programs(preexistingProgram.address);
+          const currentTime = Date.now() / 1000;
+          // we have to use a difference of a stupid amount of seconds, since
+          // the optional param in the task is evaluated when the task is
+          // registered, and when running the entire test suite, there could be
+          // a large difference with the time at which the test is run. This
+          // should not be relevant for actual task runs, since the task is run
+          // just a few milliseconds after being registered
+          expect(program.startTime.toNumber()).to.be.lt(currentTime);
+          expect(program.startTime.toNumber()).to.be.gt(currentTime - 400);
+        });
+      });
+    });
 
     describe("GIVEN a PowerSwitchFactory, a CrucibleFactory, a RewardPoolFactory, and some other stuff", () => {
       let powerSwitchFactory: PowerSwitchFactory;
