@@ -17,10 +17,14 @@ import {IUniversalVault} from "alchemist/contracts/crucible/Crucible.sol";
 import {IRewardPool} from "alchemist/contracts/aludel/RewardPool.sol";
 import {Powered} from "../powerSwitch/Powered.sol";
 
-import {IAludel} from "./IAludel.sol";
-import "hardhat/console.sol";
+import {IAludelTimelock} from "./IAludelTimelock.sol";
 
-/// @title Aludel
+import "hardhat/console.sol";
+import {FIFO} from "../FIFO.sol";
+
+import "./IAludelTimelock.sol";
+
+/// @title AludelTimelock
 /// @notice Reward distribution contract with time multiplier
 /// Access Control
 /// - Power controller:
@@ -45,9 +49,10 @@ import "hardhat/console.sol";
 ///     Users can withdraw their stake through rageQuit()
 ///     Power controller can withdraw from the reward pool
 ///     Should only be used if Proxy Owner role is compromized
-contract AludelV2 is IAludel, Ownable, Initializable, Powered {
+contract AludelTimelock is IAludelTimelock, Ownable, Initializable, Powered {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
+    using FIFO for FIFO.StakesQueue;
 
     /* constants */
 
@@ -69,11 +74,15 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
     EnumerableSet.AddressSet internal _bonusTokenSet;
     EnumerableSet.AddressSet internal _vaultFactorySet;
 
+    /// @dev This uses another storage slot but it could fit inside the AludelData,
+    ///      although the contract would need to redefine AludelData struct.
+    uint96 internal minimumLockTime;
 
     address private _feeRecipient;
     uint16 private _feeBps;
 
     struct AludelInitializationParams {
+        uint96 minimumLockTime;
         address rewardPoolFactory;
         address powerSwitchFactory;
         address stakingToken;
@@ -94,10 +103,11 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
     error NoAmountUnstaked();
     error InsufficientVaultStake();
     error NoStakes();
+    error LockedStake();
 
     /* initializer */
 
-    function initializeLock() external override initializer {}
+    function initializeLock() external initializer {}
 
     /// @notice Initizalize Aludel
     /// access control: only proxy constructor
@@ -112,7 +122,6 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         bytes calldata data
     )
         external
-        override
         initializer
     {
       
@@ -152,6 +161,8 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         _aludel.rewardToken = params.rewardToken;
         _aludel.rewardPool = rewardPool;
         _aludel.rewardScaling = params.rewardScaling;
+
+        minimumLockTime = params.minimumLockTime;
 
         // emit event
         emit AludelCreated(rewardPool, powerSwitch);
@@ -303,9 +314,16 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         external
         view
         override
-        returns (VaultData memory vaultData)
+        returns (LegacyVaultData memory vaultData)
     {
-        return _vaults[vault];
+
+        VaultData storage data = _vaults[vault];
+        // FIFO stakes internally uses a mapping and we can't return storage pointers
+        // so we need to convert the mapping's values into an array.
+        return LegacyVaultData(
+            data.totalStake,
+            FIFO.values(data.stakes)
+        );
     }
 
     function getCurrentVaultReward(address vault)
@@ -423,17 +441,16 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
     /* pure functions */
 
     function calculateTotalStakeUnits(
-        StakeData[] memory stakes,
+        FIFO.StakesQueue storage stakes,
         uint256 timestamp
     )
-        public
-        pure
-        override
+        internal
+        view
         returns (uint256 totalStakeUnits)
     {
-        for (uint256 index; index < stakes.length; index++) {
+        for (uint256 index; index < stakes.length(); index++) {
             // reference stake
-            StakeData memory stakeData = stakes[index];
+            FIFO.StakeData memory stakeData = stakes.at(index);
             // calculate stake units
             uint256 stakeUnits =
             calculateStakeUnits(stakeData.amount, stakeData.timestamp, timestamp);
@@ -508,26 +525,28 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
     }
 
     function calculateRewardFromStakes(
-        StakeData[] memory stakes,
+        FIFO.StakesQueue storage stakes,
         uint256 unstakeAmount,
         uint256 unlockedRewards,
         uint256 totalStakeUnits,
         uint256 timestamp,
         RewardScaling memory rewardScaling
     )
-        public
-        pure
-        override
+        internal view
         returns (RewardOutput memory out)
     {
         uint256 stakesToDrop = 0;
         while (unstakeAmount > 0) {
             // fetch vault stake storage reference
-            StakeData memory lastStake =
-                stakes[stakes.length.sub(stakesToDrop).sub(1)];
+            FIFO.StakeData memory lastStake = stakes.at(stakesToDrop);
 
             // calculate stake duration
             uint256 stakeDuration = timestamp.sub(lastStake.timestamp);
+
+            // revert when stake duration is smaller than minimum lock time.
+            if (stakeDuration < minimumLockTime) {
+                out.lockedStake = true;
+            } 
 
             uint256 currentAmount;
             if (lastStake.amount > unstakeAmount) {
@@ -567,14 +586,10 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
             totalStakeUnits = totalStakeUnits.sub(stakeUnits);
         }
 
-        // explicit return
-        return
-            RewardOutput(
-                out.lastStakeAmount,
-                stakes.length.sub(stakesToDrop),
-                out.reward,
-                totalStakeUnits
-            );
+
+        // update return value
+        out.newStakesCount = uint64(stakes.length().sub(stakesToDrop));
+        out.newTotalStakeUnits = totalStakeUnits;
     }
 
     function calculateReward(
@@ -868,7 +883,7 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         VaultData storage vaultData = _vaults[vault];
 
         // verify stakes boundary not reached
-        if (vaultData.stakes.length >= MAX_STAKES_PER_VAULT) {
+        if (vaultData.stakes.length() >= MAX_STAKES_PER_VAULT) {
             revert MaxStakesReached();
         }
 
@@ -876,7 +891,7 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         _updateTotalStakeUnits();
 
         // store amount and timestamp
-        vaultData.stakes.push(StakeData(amount, block.timestamp));
+        vaultData.stakes.push(FIFO.StakeData(amount, block.timestamp));
 
         // update cached total vault and Aludel amounts
         vaultData.totalStake = vaultData.totalStake.add(amount);
@@ -962,6 +977,11 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
                 _aludel.rewardScaling
             );
 
+
+        if (out.lockedStake) {
+            revert LockedStake();
+        }
+
         // update stake data in storage
         if (out.newStakesCount == 0) {
             // all stakes have been unstaked
@@ -969,13 +989,12 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         } else {
             // some stakes have been completely or partially unstaked
             // delete fully unstaked stakes
-            while (vaultData.stakes.length > out.newStakesCount) vaultData.stakes.pop();
+            while (vaultData.stakes.length() > out.newStakesCount) vaultData.stakes.pop();
 
             // update stake amount when lastStakeAmount is set
             if (out.lastStakeAmount > 0) {
                 // update partially unstaked stake
-                vaultData.stakes[out.newStakesCount.sub(1)].amount =
-                    out.lastStakeAmount;
+                vaultData.stakes.update(out.newStakesCount - 1 , out.lastStakeAmount);
             }
         }
 
@@ -1053,7 +1072,7 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         VaultData storage _vaultData = _vaults[msg.sender];
 
         // revert if no active stakes
-        if (_vaultData.stakes.length == 0) {
+        if (_vaultData.stakes.length() == 0) {
             revert NoStakes();
         }
 

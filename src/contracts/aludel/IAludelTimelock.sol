@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
-
 pragma abicoder v2;
+
+import {FIFO} from "../FIFO.sol";
 
 interface IRageQuit {
     function rageQuit() external;
 }
 
-interface IAludel is IRageQuit {
+interface IAludelTimelock is IRageQuit {
     /* admin events */
 
     event AludelCreated(address rewardPool, address powerSwitch);
@@ -25,6 +26,7 @@ interface IAludel is IRageQuit {
     /* data types */
 
     struct AludelData {
+        uint96 minimumLockTime;
         address stakingToken;
         address rewardToken;
         address rewardPool;
@@ -44,7 +46,12 @@ interface IAludel is IRageQuit {
 
     struct VaultData {
         uint256 totalStake;
-        StakeData[] stakes;
+        FIFO.StakesQueue stakes;
+    }
+
+    struct LegacyVaultData {
+        uint256 totalStake;
+        FIFO.StakeData[] stakes;
     }
 
     struct StakeData {
@@ -63,17 +70,8 @@ interface IAludel is IRageQuit {
         uint256 newStakesCount;
         uint256 reward;
         uint256 newTotalStakeUnits;
+        bool lockedStake;
     }
-
-    function initializeLock() external;
-
-    function initialize(
-        uint64 startTime,
-        address ownerAddress,
-        address feeRecipient,
-        uint16 feeBps,
-        bytes calldata
-    ) external;
 
     /* user functions */
 
@@ -123,10 +121,7 @@ interface IAludel is IRageQuit {
         view
         returns (address factory);
 
-    function getVaultData(address vault)
-        external
-        view
-        returns (VaultData memory vaultData);
+    function getVaultData(address vault) external view returns (LegacyVaultData memory vaultData);
 
     function isValidAddress(address target)
         external
@@ -188,10 +183,11 @@ interface IAludel is IRageQuit {
 
     /* pure functions */
 
-    function calculateTotalStakeUnits(
-        StakeData[] memory stakes,
-        uint256 timestamp
-    ) external pure returns (uint256 totalStakeUnits);
+    // needs to be internal
+    // function calculateTotalStakeUnits(StakeData[] memory stakes, uint256 timestamp)
+    //     external
+    //     pure
+    //     returns (uint256 totalStakeUnits);
 
     function calculateStakeUnits(
         uint256 amount,
@@ -206,14 +202,16 @@ interface IAludel is IRageQuit {
         uint256 timestamp
     ) external pure returns (uint256 unlockedRewards);
 
-    function calculateRewardFromStakes(
-        StakeData[] memory stakes,
-        uint256 unstakeAmount,
-        uint256 unlockedRewards,
-        uint256 totalStakeUnits,
-        uint256 timestamp,
-        RewardScaling memory rewardScaling
-    ) external pure returns (RewardOutput memory out);
+    
+    // needs to be internal
+    // function calculateRewardFromStakes(
+    //     FIFO.StakesQueue memory stakes,
+    //     uint256 unstakeAmount,
+    //     uint256 unlockedRewards,
+    //     uint256 totalStakeUnits,
+    //     uint256 timestamp,
+    //     RewardScaling memory rewardScaling
+    // ) external pure returns (RewardOutput memory out);
 
     function calculateReward(
         uint256 unlockedRewards,
