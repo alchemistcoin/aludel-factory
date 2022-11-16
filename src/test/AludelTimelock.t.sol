@@ -24,6 +24,7 @@ import "./Utils.sol";
 
 import "forge-std/src/console2.sol";
 
+
 contract AludelTimelockTest is DSTest {
     
     AludelFactory private factory;
@@ -34,6 +35,7 @@ contract AludelTimelockTest is DSTest {
     address private user;
     address private anotherUser;
     address private admin;
+    address private anotherAdmin;
 
     MockERC20 private stakingToken;
     MockERC20 private rewardToken;
@@ -56,7 +58,22 @@ contract AludelTimelockTest is DSTest {
     address private constant CRUCIBLE_FACTORY = address(0xcc1b13);
     uint64 private constant START_TIME = 1234567;
 
+    uint256 public constant BASE_SHARES_PER_WEI = 1000000;
+    uint256 public constant STAKE_AMOUNT = 60 ether;
+
     AludelTimelock.AludelInitializationParams private defaultParams;
+    mapping(address => uint256) private userToPKs;
+
+    struct LaunchParams {
+        address template;
+        string name;
+        string stakingTokenUrl;
+        uint64 startTime;
+        address vaultFactory;
+        address[] bonusTokens;
+        address owner;
+        bytes initParams;
+    }
 
     function setUp() public {
 
@@ -69,6 +86,12 @@ contract AludelTimelockTest is DSTest {
         user = vm.addr(PRIVATE_KEY);
         anotherUser = vm.addr(PRIVATE_KEY + 1);
         admin = vm.addr(PRIVATE_KEY + 2);
+        anotherAdmin = vm.addr(PRIVATE_KEY + 3);
+
+        userToPKs[user] = PRIVATE_KEY;
+        userToPKs[anotherUser] = PRIVATE_KEY+1;
+        userToPKs[admin] = PRIVATE_KEY+2;
+        userToPKs[anotherAdmin] = PRIVATE_KEY+3;
 
         vm.prank(user);
         crucible = Crucible(payable(crucibleFactory.create("")));
@@ -120,13 +143,136 @@ contract AludelTimelockTest is DSTest {
         
     }
 
-    function testA() public {}
-
     // aux functions
+
+    function launchProgram(
+        AludelFactory factory,
+        LaunchParams memory params
+    ) internal returns(address program) {
+        program = factory.launch(
+            params.template,
+            params.name,
+            params.stakingTokenUrl,
+            params.startTime,
+            params.vaultFactory,
+            params.bonusTokens,
+            params.owner,
+            params.initParams
+        );
+    }
+
+    function _stake(
+        uint256 privateKey,
+        address crucible,
+        address aludel,
+        address token,
+        uint256 amount
+    ) internal {
+        bytes memory lockPermission = Utils.getPermission(
+			privateKey,
+			"Lock",
+			crucible,
+			aludel,
+			token,
+			amount,
+			IUniversalVault(crucible).getNonce()
+		);
+
+        IAludelTimelock(aludel).stake(crucible, amount, lockPermission);
+    }
+
+    function createInstance(address owner, CrucibleFactory crucibleFactory) internal returns (Crucible crucible) {
+        vm.prank(owner);
+        return Crucible(payable(crucibleFactory.create("")));
+    }
+
+    function getLockPermission(
+        address user,
+        IUniversalVault crucible,
+        IAludelTimelock delegate,
+        ERC20 token,
+        uint256 amount
+    ) internal returns (bytes memory) {
+        return Utils.getPermission(
+			userToPKs[user],
+			"Lock",
+			address(crucible),
+			address(delegate),
+			address(token),
+			amount,
+			crucible.getNonce()
+        );
+    }
+
+    function getUnlockPermission(
+        address user,
+        IUniversalVault crucible,
+        IAludelTimelock delegate,
+        ERC20 token,
+        uint256 amount
+    ) internal returns (bytes memory) {
+        return Utils.getPermission(
+			userToPKs[user],
+			"Unlock",
+			address(crucible),
+			address(delegate),
+			address(token),
+			amount,
+			crucible.getNonce()
+        );
+    }
+
+    function stake(
+        address staker,
+        IUniversalVault crucible,
+        IAludelTimelock aludel,
+        ERC20 token,
+        uint256 amount
+    ) internal {
+        bytes memory lockSig = getLockPermission(
+            user, crucible, aludel, token, amount
+        );
+
+        IAludelTimelock(aludel).stake(address(crucible), amount, lockSig);
+    }
+
+    function unstake(
+        address staker,
+        IUniversalVault crucible,
+        IAludelTimelock aludel,
+        ERC20 token,
+        uint256 amount
+    ) internal {
+        bytes memory unlockSig = getUnlockPermission(
+            user, crucible, aludel, token, amount
+        );
+
+        IAludelTimelock(aludel).unstakeAndClaim(address(crucible), amount, unlockSig);
+    }
+
+    function fundMockToken(
+        address receiver,
+        ERC20 token,
+        uint256 amount
+    ) internal {
+        MockERC20(address(token)).mint(receiver, amount);
+    }
+
+
+
 
     // aludel initialization
 
+    function test_GIVEN_launch_params_WHEN_floor_is_greater_than_ceiling_THEN_reverts() public {}
+    function test_GIVEN_launch_params_WHEN_reward_scaling_time_is_zero_THEN_reverts() public {}
+    function test_GIVEN_launch_params_WHEN_params_are_not_properly_encoded_THEN_reverts() public {}
+    function test_GIVEN_a_default_launch_params_THEN_a_valid_program_is_launched_AND_events_are_emitted() public {}
+
     // aludel getters
+
+    function test_GIVEN_a_launched_program_with_bonus_tokens_THEN_returns_bonus_token_data() public {}
+    function test_GIVEN_a_launched_program_with_vault_factories_THEN_returns_vault_factories_data() public {}
+    function test_GIVEN_a_launched_program_with_vaults_THEN_returns_vaults_data() public {}
 
     // vault getters
 
@@ -134,17 +280,219 @@ contract AludelTimelockTest is DSTest {
 
     // aludel funding
 
+    function test_GIVEN_a_program_WHEN_admin_funds_AND_program_is_not_online_THEN_reverts() public {}
+    function test_GIVEN_a_program_WHEN_admin_funds_BUT_program_is_not_authorized_THEN_reverts() public {}
+    function test_GIVEN_a_program_WHEN_reward_duration_is_zero_THEN_reverts() public {}
+    function test_GIVEN_a_program_WHEN_user_funds_THEN_reverts() public {}
+
+    function test_GIVEN_empty_program_WHEN_admin_funds_THEN_rewards_are_transfered_to_reward_pool() public {}
+    function test_GIVEN_empty_program_WHEN_admin_funds_THEN_fee_is_transfered_to_fee_recipient() public {}
+    
+    function test_GIVEN_empty_program_WHEN_admin_funds_THEN_shares_are_minted() public {}
+    function test_GIVEN_empty_program_WHEN_admin_funds_twice_THEN_shares_are_incremented() public {}
+    function test_GIVEN_empty_program_WHEN_admin_funds_THEN_new_reward_schedule_is_appended() public {}
+    
+    function test_GIVEN_program_THEN_admin_funds_THEN_events_are_emitted() public {}
+    function test_GIVEN_program_AND_exausted_rewards_WHEN_admin_funds_THEN_succeeds() public {}
+
+
     // valid vault
     
     // aludel vault factories
+    
+    function test_GIVEN_program_WHEN_user_adds_a_factory_THEN_reverts() public {}
+    function test_GIVEN_program_WHEN_admin_adds_a_factory_AND_program_is_shutdown_THEN_reverts() public {}
+    
+    function test_GIVEN_program_WHEN_admin_adds_a_factory_AND_factory_is_not_added_THEN_succeeds() public {}
+    function test_GIVEN_program_WHEN_admin_adds_a_factory_AND_is_already_added_THEN_reverts() public {}
+    function test_GIVEN_program_WHEN_admin_adds_multiple_factories_THEN_succeeds() public {}
 
+    function test_GIVEN_program_WHEN_user_removes_a_factory_THEN_reverts() public {}
+    function test_GIVEN_program_WHEN_admin_removes_a_factory_AND_program_is_shutdown_THEN_reverts() public {}
+    function test_GIVEN_program_WHEN_admin_removes_a_factory_THEN_succeeds() public {}
+    function test_GIVEN_program_WHEN_admin_removes_a_not_registered_factory_THEN_reverts() public {}
+    function test_GIVEN_program_WHEN_admin_removes_all_factories_THEN_succeeds() public {}
+    
     // bonus tokens
     
     // reward pool
 
     // stake
 
+    function test_GIVEN_a_shutdown_program_WHEN_user_stakes_THEN_reverts() public {}
+    
+    function test_GIVEN_an_offline_program_WHEN_user_stakes_THEN_reverts() public {}
+    
+    function test_GIVEN_a_not_started_program_WHEN_user_stakes_THEN_reverts() public {}
+    
+    function test_GIVEN_a_started_BUT_offline_program_WHEN_user_stakes_THEN_reverts() public {}
+    
+    function test_GIVEN_a_started_AND_online_program_WHEN_user_stakes_THEN_succeeds() public {}
+
+    function test_GIVEN_a_running_program_WHEN_user_stakes_THEN_succeeds() public {
+        fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+        stake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+    }
+
+    function test_GIVEN_a_running_program_WHEN_user_stakes_AND_tokens_are_not_in_vault_THEN_reverts() public {
+        fundMockToken(address(user), stakingToken, STAKE_AMOUNT);
+        
+        bytes memory lockSig = getLockPermission(
+            user, crucible, aludel, stakingToken, STAKE_AMOUNT
+        );
+
+        vm.expectRevert(bytes("UniversalVault: insufficient balance"));
+        IAludelTimelock(aludel).stake(address(crucible), STAKE_AMOUNT, lockSig);
+    }
+
+    function test_GIVEN_a_program_AND_a_staking_user_WHEN_user_stakes_zero_amount_THEN_reverts() public {
+        fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+
+        bytes memory lockSig = Utils.getPermission(
+			userToPKs[user],
+			"Lock",
+			address(crucible),
+			address(aludel),
+			address(stakingToken),
+			STAKE_AMOUNT,
+			IUniversalVault(crucible).getNonce()
+		);
+
+        vm.expectRevert(AludelTimelock.NoAmountStaked.selector);
+        IAludelTimelock(aludel).stake(address(crucible), 0, lockSig);
+    }
+
+    function test_GIVEN_a_program_AND_a_staking_user_WHEN_user_stakes_too_many_times_THEN_reverts() public {
+        fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT * 30);
+
+        for (uint i = 0; i < 30; i++) {
+            stake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+        }
+
+        bytes memory lockSig = getLockPermission(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+
+        vm.expectRevert(AludelTimelock.MaxStakesReached.selector);
+        IAludelTimelock(aludel).stake(address(crucible), STAKE_AMOUNT, lockSig);
+    }
+
+    function test_GIVEN_a_program_AND_a_staking_user_WHEN_user_stake_AND_vault_is_invalid_THEN_reverts() public {
+        Crucible crucibleTemplate = new Crucible();
+        crucibleTemplate.initializeLock();
+        CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
+
+        Crucible crucible = createInstance(user, crucibleFactory);
+
+        bytes memory lockSig = getLockPermission(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+
+        vm.expectRevert(AludelTimelock.InvalidVault.selector);
+        IAludelTimelock(aludel).stake(address(crucible), STAKE_AMOUNT, lockSig);
+    }
+
+    function test_GIVEN_a_program_AND_a_staking_user_WHEN_user_stakes_already_staked_coins_THEN_reverts() public {
+        fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+
+        bytes memory lockSig = getLockPermission(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+        IAludelTimelock(aludel).stake(address(crucible), STAKE_AMOUNT, lockSig);
+
+        lockSig = getLockPermission(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+        vm.expectRevert(bytes("UniversalVault: insufficient balance"));
+        IAludelTimelock(aludel).stake(address(crucible), STAKE_AMOUNT, lockSig);
+    }
+
+    function test_GIVEN_a_program_AND_a_staking_user_WHEN_user_stakes_THEN_user_CAN_stakes_AND_vault_locks_coins() public {
+        // This test is for crucible.sol
+    }
+
+    function test_GIVEN_a_program_AND_a_staking_user_WHEN_user_CAN_stake_AND_events_are_emitted() public {
+        bytes memory lockSig = getLockPermission(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+        vm.expectRevert(bytes("UniversalVault: insufficient balance"));
+        IAludelTimelock(aludel).stake(address(crucible), STAKE_AMOUNT, lockSig);
+    }
+    function test_GIVEN_a_program_AND_a_staking_user_WHEN_user_stakes_in_another_program_THEN_succeeds() public {
+        fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT * 30);
+
+        LaunchParams memory params = LaunchParams({
+            template: address(timelockTemplate),
+            name: "name",
+            stakingTokenUrl: "https://staking.token",
+            startTime: 0,
+            vaultFactory: address(crucibleFactory),
+            bonusTokens: new address[](0),
+            owner: admin,
+            initParams: abi.encode(defaultParams)
+        });
+
+        IAludelTimelock anotherProgram = IAludelTimelock(launchProgram(factory, params));
+
+        bytes memory lockSig = getLockPermission(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+        IAludelTimelock(aludel).stake(address(crucible), STAKE_AMOUNT, lockSig);
+
+        lockSig = getLockPermission(user, crucible, anotherProgram, stakingToken, STAKE_AMOUNT);
+        IAludelTimelock(anotherProgram).stake(address(crucible), STAKE_AMOUNT, lockSig);
+    }
+
+
     // unstake
+
+    function test_GIVEN_a_program_AND_a_staked_user_WHEN_unstakes_before_required_stake_time_THEN_reverts() public {
+        fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+        stake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+
+        bytes memory unlockSig = getUnlockPermission(
+            user, crucible, aludel, stakingToken, STAKE_AMOUNT
+        );
+
+        vm.expectRevert(AludelTimelock.LockedStake.selector);
+        IAludelTimelock(aludel).unstakeAndClaim(address(crucible), STAKE_AMOUNT, unlockSig);
+    }
+
+    function test_GIVEN_a_program_AND_a_staked_user_WHEN_unstakes_after_required_stake_time_THEN_reverts() public {
+        fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+        stake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+        vm.warp(block.timestamp + 1 days);
+        unstake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+    }
+
+    function test_GIVEN_a_program_AND_a_non_staked_user_WHEN_unstake_THEN_reverts() public {
+        fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+
+        bytes memory unlockSig = getUnlockPermission(
+            user, crucible, aludel, stakingToken, STAKE_AMOUNT
+        );
+
+        vm.expectRevert(AludelTimelock.InsufficientVaultStake.selector);
+        IAludelTimelock(aludel).unstakeAndClaim(address(crucible), STAKE_AMOUNT, unlockSig);
+    }
+    
+    function test_GIVEN_a_funded_program_AND_a_staked_user_WHEN_unstake_THEN_vault_receives_rewards() public {
+        fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+        fundMockToken(admin, rewardToken, STAKE_AMOUNT);
+
+        vm.startPrank(admin);
+        rewardToken.approve(address(aludel), STAKE_AMOUNT);
+        aludel.fund(STAKE_AMOUNT, 10 days);
+        vm.stopPrank();
+
+        assertEq(rewardToken.balanceOf(address(crucible)), 0);
+        stake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+        vm.warp(block.timestamp + 10 days);
+        unstake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+        assertTrue(rewardToken.balanceOf(address(crucible)) > 0);
+    }
+
+    function test_GIVEN_a_program_AND_a_staked_user_WHEN_unstake_THEN_events_are_emitted() public {
+
+    }
+    function test_GIVEN_a_program_AND_a_staked_user_WHEN_unstake_THEN_receive_rewards_tokens_AND_bonus_tokens() public {
+
+    }
+    function test_GIVEN_a_program_AND_a_staked_user_WHEN_unstake_AND_reward_pool_balance_is_zero_THEN_reiceve_no_rewards() public {
+
+    }
+    function test_GIVEN_a_program_AND_a_staked_user_THEN_user_CANNOT_unstake_WHEN_amount_is_zero() public {}
+    function test_GIVEN_a_program_AND_a_staked_user_THEN_user_CANNOT_unstake_WHEN_amount_is_too_high() public {}
+    function test_GIVEN_a_program_AND_a_staked_user_THEN_user_CANNOT_unstake_WHEN_stake_duration_is_smaller_than_required_lock_time() public {}
+
 
     // rage quit
 
