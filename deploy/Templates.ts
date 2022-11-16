@@ -11,5 +11,6 @@ deployFunc.dependencies = [
   "GeyserV2Template",
   "AludelV2Template",
   "AludelV1Template",
+  "AludelTimelockTemplate",
 ];
 export default deployFunc;
