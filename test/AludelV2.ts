@@ -955,7 +955,7 @@ describe("AludelV2", function () {
               ).to.be.revertedWithCustomError(geyser, "InvalidAddress");
             });
           });
-          describe("with bonus token", function () {
+          describe("with one other bonus token", function () {
             it("should succeed", async function () {
               await geyser
                 .connect(admin)
@@ -977,6 +977,26 @@ describe("AludelV2", function () {
                 .to.emit(geyser, "BonusTokenRegistered")
                 .withArgs(bonusToken.address);
             });
+          });
+        });
+        describe("with 50 other bonus tokens", () => {
+          beforeEach(async () => {
+            for (let i = 0; i < 50; i++) {
+              const deployment = await deployContract("MockERC20", [
+                admin.address,
+                0,
+              ]);
+              geyser.connect(admin).registerBonusToken(deployment.address);
+            }
+          });
+          it("should fail when adding the 51th", async function () {
+            const deployment = await deployContract("MockERC20", [
+              admin.address,
+              0,
+            ]);
+            await expect(
+              geyser.connect(admin).registerBonusToken(deployment.address)
+            ).to.be.revertedWithCustomError(geyser, "MaxBonusTokensReached");
           });
         });
         describe("on second call", function () {
