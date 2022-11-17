@@ -18,7 +18,7 @@ import { AludelFactory__factory } from "../typechain-types";
 import { AbiCoder } from "@ethersproject/abi";
 import { signPermission } from "./utils";
 import chai from "chai";
-import "@nomicfoundation/hardhat-chai-matchers";
+import assert from "assert";
 
 const { expect } = chai;
 
@@ -199,42 +199,74 @@ describe("AludelV2", function () {
   });
 
   describe("initialize", function () {
-    // eslint-disable-next-line mocha/no-skipped-tests
-    describe.skip("when rewardScaling.floor > rewardScaling.ceiling", function () {
-      it("should fail", async function () {
-        const args = [
+    const buildParams = (floor: number, ceiling: number, time: number) => {
+      const deployParams = new AbiCoder().encode(
+        [
+          "address",
+          "address",
+          "address",
+          "address",
+          "uint256",
+          "uint256",
+          "uint256",
+        ],
+        [
           rewardPoolFactory.address,
           powerSwitchFactory.address,
           stakingToken.address,
           rewardToken.address,
-          rewardScaling.ceiling + 1,
-          rewardScaling.ceiling,
-          rewardScaling.time,
-        ];
-
-        await expect(
-          launchProgram(0, [bonusToken], admin, args)
-        ).to.be.revertedWithCustomError(aludelV2Template, "FloorAboveCeiling");
-      });
-    });
-    // eslint-disable-next-line mocha/no-skipped-tests
-    describe.skip("when rewardScalingTime = 0", function () {
+          floor,
+          ceiling,
+          time,
+        ]
+      );
+      return [
+        aludelV2Template.address,
+        "program name",
+        "protocol://program.url",
+        0,
+        vaultFactory.address,
+        [],
+        admin.address,
+        deployParams,
+      ];
+    };
+    describe("when rewardScaling.floor > rewardScaling.ceiling", function () {
       it("should fail", async function () {
-        const args = [
-          rewardPoolFactory.address,
-          powerSwitchFactory.address,
-          stakingToken.address,
-          rewardToken.address,
-          rewardScaling.floor,
-          rewardScaling.ceiling,
-          0,
-        ];
-
-        await expect(
-          launchProgram(0, [bonusToken], admin, args)
-        ).to.be.revertedWithCustomError(aludelV2Template, "ScalingTimeIsZero");
+        try {
+          await aludelFactory.launch(
+            ...buildParams(
+              rewardScaling.ceiling + 1,
+              rewardScaling.ceiling,
+              rewardScaling.time
+            )
+          );
+          assert(false, "transaction didnt fail as expected");
+        } catch (error: unknown) {
+          expect((error as { data: string }).data).to.eq(
+            "0x08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000000418084af300000000000000000000000000000000000000000000000000000000",
+            "transaction didnt fail as expected"
+          );
+        }
       });
     });
+
+    describe("when rewardScalingTime = 0", function () {
+      it("should fail", async function () {
+        try {
+          await aludelFactory.launch(
+            ...buildParams(rewardScaling.floor, rewardScaling.ceiling, 0)
+          );
+          assert(false, "transaction didnt fail as expected");
+        } catch (error: unknown) {
+          expect((error as { data: string }).data).to.eq(
+            "0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000048c648c8500000000000000000000000000000000000000000000000000000000",
+            "transaction didnt fail as expected"
+          );
+        }
+      });
+    });
+
     describe("when parameters are valid", function () {
       it("should set contract variables", async function () {
         const args = [
