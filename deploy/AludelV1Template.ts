@@ -1,4 +1,5 @@
 import "@nomiclabs/hardhat-ethers";
+import { getNamedAccounts } from "hardhat";
 import "hardhat-deploy";
 import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { ALUDEL_V1_VANITY_ADDRESS } from "../constants";
@@ -9,10 +10,12 @@ const deployFunc = async function ({
 }: HardhatRuntimeEnvironment) {
   const { get, log } = deployments;
 
+  const { deployer } = await getNamedAccounts()
   const deployedFactory = await get("AludelFactory");
   const factory = await ethers.getContractAt(
     deployedFactory.abi,
-    deployedFactory.address
+    deployedFactory.address,
+    await ethers.getSigner(deployer)
   );
 
   log("Adding disabled AludelV1 empty template to factory");
