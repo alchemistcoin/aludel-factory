@@ -5,7 +5,7 @@ import {Vm} from "forge-std/src/Vm.sol";
 import {Utils} from "./Utils.sol";
 
 contract User {
-    // string memory mnemonic = "test test test test test test test test test test test junk";
+
     Vm internal vm;
     uint256 public privateKey;
     address public addr;

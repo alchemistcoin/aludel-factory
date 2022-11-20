@@ -8,9 +8,8 @@ import {Vm} from "forge-std/Vm.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
-import {AludelV3} from "../contracts/aludel/AludelV3.sol";
-import {IAludelHooks} from "../contracts/aludel/IAludelHooks.sol";
-import {IAludelV3} from "../contracts/aludel/IAludelV3.sol";
+import {IAludelV2} from "../contracts/aludel/IAludelV3.sol";
+import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
 
@@ -39,14 +38,17 @@ contract AludelFactoryIntegrationTest is Test {
 
     MockERC20 private stakingToken;
     MockERC20 private rewardToken;
-    Crucible private crucible;
+    
+    Crucible private crucibleA;
+    Crucible private crucibleB;
+    Crucible private crucibleC;
 
     address[] private bonusTokens;
 
     RewardPoolFactory private rewardPoolFactory;
     PowerSwitchFactory private powerSwitchFactory;
-    IAludelV3.RewardScaling private rewardScaling;
-    AludelV3 private template;
+    RewardScaling private rewardScaling;
+    IAludel private template;
 
     CrucibleFactory private crucibleFactory;
 
@@ -56,15 +58,14 @@ contract AludelFactoryIntegrationTest is Test {
     uint256 public constant STAKE_AMOUNT = 1 ether;
     uint256 public constant REWARD_AMOUNT = 10 ether;
 
-    AludelV3.AludelInitializationParams private defaultParams;
+    uint256 public constant SCHEDULE_DURATION = 1 days;
+
+    AludelInitializationParams private defaultParams;
 
     function setUp() public {
-
-        owner = vm.addr(PRIVATE_KEY);
-
-        recipient = vm.addr(PRIVATE_KEY + 1);
-        // 100 / 10000 => 1%
-        bps = 100;
+       
+        // feeBps set 0 to make calculations easier to comprehend
+        bps = 0;
 
         UserFactory userFactory = new UserFactory();
         user = userFactory.createUser("user", 0);
@@ -74,7 +75,7 @@ contract AludelFactoryIntegrationTest is Test {
 
         factory = new AludelFactory(recipient.addr(), bps);
 
-        template = new AludelV3();
+        template = new AludelV2();
         template.initializeLock();
         rewardPoolFactory = new RewardPoolFactory();
         powerSwitchFactory = new PowerSwitchFactory();
@@ -90,10 +91,10 @@ contract AludelFactoryIntegrationTest is Test {
         bonusTokens[0] = address(new MockERC20("", "BonusToken A"));
         bonusTokens[1] = address(new MockERC20("", "BonusToken B"));
 
-        rewardScaling = IAludelV3.RewardScaling({
-            floor: 1 ether,
-            ceiling: 10 ether,
-            time: 1 days
+        rewardScaling = RewardScaling({
+            floor: 1,
+            ceiling: 1,
+            time: SCHEDULE_DURATION
         });
 
         defaultParams = AludelV3.AludelInitializationParams({
@@ -109,7 +110,7 @@ contract AludelFactoryIntegrationTest is Test {
 
         uint64 startTime = uint64(block.timestamp);
 
-        aludel = IAludelV3(
+        aludel = IAludel(
             factory.launch(
                 address(template),
                 "name",
@@ -122,23 +123,24 @@ contract AludelFactoryIntegrationTest is Test {
             )
         );
 
-        IAludelV3.AludelData memory data = aludel.getAludelData();
+        IAludel.AludelData memory data = aludel.getAludelData();
 
-        Utils.fundMockToken(admin.addr(), rewardToken, REWARD_AMOUNT);
-
-        Utils.fundAludel(aludel, admin, rewardToken, REWARD_AMOUNT, 1 days);
+        Utils.fundAludel(aludel, admin, rewardToken, REWARD_AMOUNT, SCHEDULE_DURATION);
 
         data = aludel.getAludelData();
 
-        crucible = Utils.createCrucible(user, crucibleFactory);
+        crucibleA = Utils.createCrucible(user, crucibleFactory);
+        crucibleB = Utils.createCrucible(anotherUser, crucibleFactory);
 
-        Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+        Utils.fundMockToken(address(crucibleA), stakingToken, STAKE_AMOUNT);
+        Utils.fundMockToken(address(crucibleB), stakingToken, STAKE_AMOUNT);
     }
+
 
     function test_stake() public {
         Utils.stake(
             user,
-            crucible,
+            crucibleA,
             aludel,
             stakingToken,
             STAKE_AMOUNT
@@ -146,100 +148,66 @@ contract AludelFactoryIntegrationTest is Test {
     }
 
     function test_unstake() public {
-        IAludel.VaultData memory vault = aludel.getVaultData(address(crucible));
-        assertEq(vault.totalStake, 0);
-        assertEq(vault.stakes.length, 0);
 
         Utils.stake(
             user,
-            crucible,
-            aludel,
-            stakingToken,
-            STAKE_AMOUNT
-        );
-
-        vault = aludel.getVaultData(address(crucible));
-        assertEq(vault.totalStake, STAKE_AMOUNT);
-        assertEq(vault.stakes.length, 1);
-        assertEq(vault.stakes[0].amount, STAKE_AMOUNT);
-        assertEq(vault.stakes[0].timestamp, block.timestamp);
-
-        IAludelV3.AludelData memory data = aludel.getAludelData();
-
-        assertEq(
-            data.rewardSharesOutstanding,
-            discountBasisPoints(REWARD_AMOUNT) * BASE_SHARES_PER_WEI
-        );
-        assertEq(data.totalStake, 1 ether);
-        assertEq(data.totalStakeUnits, 0);
-
-        vm.warp(block.timestamp + 1);
-        data = aludel.getAludelData();
-        assertEq(data.totalStake, 1 ether);
-        assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 1);
-
-        vm.warp(block.timestamp + 4);
-        data = aludel.getAludelData();
-        assertEq(
-            data.rewardSharesOutstanding,
-            discountBasisPoints(REWARD_AMOUNT) * BASE_SHARES_PER_WEI
-        );
-        assertEq(data.totalStake, 1 ether);
-        assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 5);
-
-        vm.warp(block.timestamp + 1 days - 5);
-
-        vm.prank(owner);
-        uint256[] memory amounts = new uint256[](1);
-        uint256[] memory indices = new uint256[](1);
-        amounts[0]=1 ether;
-        indices[0]=0;
-        aludel.unstakeAndClaim(crucible, indices, amounts, unlockPermission);
-
-        data = aludel.getAludelData();
-        assertEq(data.rewardSharesOutstanding, 0);
-        assertEq(data.totalStake, 0 ether);
-        assertEq(aludel.getCurrentTotalStakeUnits(), 0);
-
-        vault = aludel.getVaultData(address(crucible));
-        assertEq(vault.totalStake, 0);
-        assertEq(vault.stakes.length, 0);
-    }
-
-    function discountBasisPoints(uint256 amount)
-        internal
-        view
-        returns (uint256)
-    {
-        return amount - ((amount * bps) / 10000);
-    }
-
-    function test_unstake_with_bonus_rewards() public {
-        IAludel.AludelData memory data = aludel.getAludelData();
-
-        Utils.fundMockToken(data.rewardPool, bonusTokens[0], REWARD_AMOUNT);
-        Utils.fundMockToken(data.rewardPool, bonusTokens[1], REWARD_AMOUNT);
-
-        Utils.stake(
-            user,
-            crucible,
+            crucibleA,
             aludel,
             stakingToken,
             STAKE_AMOUNT
         );
 
         vm.warp(block.timestamp + 1 days);
+        
+        vm.prank(user.addr());
 
         Utils.unstake(
             user,
-            crucible,
+            crucibleA,
             aludel,
             stakingToken,
             STAKE_AMOUNT
         );
-
-        assertEq(ERC20(data.rewardToken).balanceOf(address(crucible)), discountBasisPoints(REWARD_AMOUNT));
-        assertEq(ERC20(bonusTokens[0]).balanceOf(address(crucible)), REWARD_AMOUNT);
-        assertEq(ERC20(bonusTokens[1]).balanceOf(address(crucible)), REWARD_AMOUNT);
     }
+
+
+    function test_many_users_multiple_stakes() public {
+
+        // Two stakers, two crucibles, equal staked amount at the same time.
+
+        Utils.stake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
+        Utils.stake(anotherUser, crucibleB, aludel, stakingToken, STAKE_AMOUNT);
+        // Utils.stake(anotherUser, crucibleC, aludel, stakingToken, STAKE_AMOUNT);
+
+        // This fully unlock shares for this current period. 
+        vm.warp(block.timestamp + SCHEDULE_DURATION);
+    
+        // Fund Aludel again with the same reward amount and schedule duration.
+        Utils.fundAludel(aludel, admin, rewardToken, REWARD_AMOUNT, SCHEDULE_DURATION);
+
+        // Unstake should only receive rewards for first reward period.
+        Utils.unstake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
+
+        // Stake crucibleA again.
+        Utils.stake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
+
+        // user mints crucibleC and then stakes
+        crucibleC = Utils.createCrucible(user, crucibleFactory);
+        Utils.fundMockToken(address(crucibleC), stakingToken, STAKE_AMOUNT);
+        Utils.stake(user, crucibleC, aludel, stakingToken, STAKE_AMOUNT);
+
+        // Advance time.
+        vm.warp(block.timestamp + SCHEDULE_DURATION);
+
+        // Should only get rewards for the second schedule
+        Utils.unstake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
+        // should get rewards from first and second schedule?
+        Utils.unstake(anotherUser, crucibleB, aludel, stakingToken, STAKE_AMOUNT);
+        // should only get rewards from second schedule
+        Utils.unstake(user, crucibleC, aludel, stakingToken, STAKE_AMOUNT);
+
+    }
+
+    
+
 }
