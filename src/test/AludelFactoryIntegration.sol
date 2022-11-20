@@ -34,8 +34,6 @@ contract AludelFactoryIntegrationTest is Test {
 
     address[] private bonusTokens;
 
-    uint248 public constant PRIVATE_KEY = type(uint248).max >> 7;
-
     RewardPoolFactory private rewardPoolFactory;
     PowerSwitchFactory private powerSwitchFactory;
     IAludelV3.RewardScaling private rewardScaling;
