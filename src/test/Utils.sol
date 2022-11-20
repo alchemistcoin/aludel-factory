@@ -51,12 +51,12 @@ library Utils {
         );
     }
 
-    function createInstance(address owner, CrucibleFactory crucibleFactory) internal returns (Crucible crucible) {
+    function createCrucible(address owner, CrucibleFactory crucibleFactory) internal returns (Crucible crucible) {
         vm().prank(owner);
         return Crucible(payable(crucibleFactory.create("")));
     }
 
-    function createInstance(User user, CrucibleFactory crucibleFactory) internal returns (Crucible crucible) {
+    function createCrucible(User user, CrucibleFactory crucibleFactory) internal returns (Crucible crucible) {
         vm().prank(user.addr());
         return Crucible(payable(crucibleFactory.create("")));
     }

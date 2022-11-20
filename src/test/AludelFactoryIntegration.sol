@@ -14,6 +14,10 @@ import {IAludelV3} from "../contracts/aludel/IAludelV3.sol";
 import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
 
+import {User} from "./User.sol";
+import {Utils} from "./Utils.sol";
+import {UserFactory} from "./UserFactory.sol";
+
 import {IFactory} from "alchemist/contracts/factory/IFactory.sol";
 
 import {IUniversalVault, Crucible} from "alchemist/contracts/crucible/Crucible.sol";
@@ -26,11 +30,16 @@ import "forge-std/console2.sol";
 contract AludelFactoryIntegrationTest is Test {
     AludelFactory private factory;
     IAludelV3 private aludel;
+    Vm private vm;
+
+    User private user;
+    User private anotherUser;
+    User private admin;
+    User private recipient;
 
     MockERC20 private stakingToken;
     MockERC20 private rewardToken;
-    address private owner;
-    address private crucible;
+    Crucible private crucible;
 
     address[] private bonusTokens;
 
@@ -41,10 +50,11 @@ contract AludelFactoryIntegrationTest is Test {
 
     CrucibleFactory private crucibleFactory;
 
-    address private recipient;
     uint16 private bps;
 
     uint256 public constant BASE_SHARES_PER_WEI = 1000000;
+    uint256 public constant STAKE_AMOUNT = 1 ether;
+    uint256 public constant REWARD_AMOUNT = 10 ether;
 
     AludelV3.AludelInitializationParams private defaultParams;
 
@@ -55,7 +65,14 @@ contract AludelFactoryIntegrationTest is Test {
         recipient = vm.addr(PRIVATE_KEY + 1);
         // 100 / 10000 => 1%
         bps = 100;
-        factory = new AludelFactory(recipient, bps);
+
+        UserFactory userFactory = new UserFactory();
+        user = userFactory.createUser("user", 0);
+        anotherUser = userFactory.createUser("anotherUser", 1);
+        admin = userFactory.createUser("admin", 2);
+        recipient = userFactory.createUser("recipient", 3);
+
+        factory = new AludelFactory(recipient.addr(), bps);
 
         template = new AludelV3();
         template.initializeLock();
@@ -100,117 +117,58 @@ contract AludelFactoryIntegrationTest is Test {
                 startTime,
                 address(crucibleFactory),
                 bonusTokens,
-                owner,
+                admin.addr(),
                 abi.encode(defaultParams)
             )
         );
 
         IAludelV3.AludelData memory data = aludel.getAludelData();
 
-        MockERC20(data.rewardToken).mint(owner, 1 ether);
+        Utils.fundMockToken(admin.addr(), rewardToken, REWARD_AMOUNT);
 
-        vm.startPrank(owner);
-        MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
-        aludel.fund(1 ether, 1 days);
-        aludel.registerVaultFactory(address(template));
-        vm.stopPrank();
+        Utils.fundAludel(aludel, admin, rewardToken, REWARD_AMOUNT, 1 days);
 
         data = aludel.getAludelData();
-        MockERC20(data.stakingToken).mint(owner, 1 ether);
 
-        vm.prank(owner);
-        crucible = crucibleFactory.create("");
-        MockERC20(data.stakingToken).mint(crucible, 1 ether);
-    }
+        crucible = Utils.createCrucible(user, crucibleFactory);
 
-    function test_aludelLaunchKeepsData() public {
-        aludel = IAludelV3(
-            factory.launch(
-                address(template),
-                "name",
-                "https://staking.token",
-                uint64(block.timestamp),
-                address(crucibleFactory),
-                bonusTokens,
-                owner,
-                abi.encode(defaultParams)
-            )
-        );
-        assertEq(aludel.getBonusTokenSetLength(), 2);
-
-        assertEq(factory.programs(address(aludel)).template, address(template));
-        assertEq(factory.programs(address(aludel)).name, "name");
-        assertEq(factory.programs(address(aludel)).startTime, block.timestamp);
-
-        IAludelV3.AludelData memory aludelData = aludel.getAludelData();
-
-        MockERC20(aludelData.rewardToken).mint(owner, 1 ether);
-
-        vm.startPrank(owner);
-        MockERC20(aludelData.rewardToken).approve(address(aludel), 1 ether);
-        aludel.fund(1 ether, 1 days);
-        aludel.registerVaultFactory(address(template));
-        vm.stopPrank();
-
-        aludelData = aludel.getAludelData();
-        IAludelV3.RewardSchedule[] memory rewardSchedules = aludelData
-            .rewardSchedules;
-        assertEq(rewardSchedules[0].shares, 0.99 ether * BASE_SHARES_PER_WEI);
-    }
-
-    function test_template_initialization() public {
-        AludelV3 template = new AludelV3();
-        template.initializeLock();
-        factory.addTemplate(address(template), "bleep", false);
-    }
-
-    function testFail_template_double_initialization() public {
-        AludelV3 template = new AludelV3();
-        template.initializeLock();
-        vm.expectRevert(new bytes(0));
-        template.initializeLock();
+        Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
     }
 
     function test_stake() public {
-        bytes memory permission = getPermission(
-            PRIVATE_KEY,
-            "Lock",
+        Utils.stake(
+            user,
             crucible,
-            address(aludel),
-            address(stakingToken),
-            1 ether
+            aludel,
+            stakingToken,
+            STAKE_AMOUNT
         );
-        vm.prank(owner);
-        aludel.stake(crucible, 1 ether, permission);
     }
 
     function test_unstake() public {
-        IAludelV3.VaultData memory vault = aludel.getVaultData(crucible);
+        IAludel.VaultData memory vault = aludel.getVaultData(address(crucible));
         assertEq(vault.totalStake, 0);
         assertEq(vault.stakes.length, 0);
 
-        bytes memory lockPermission = getPermission(
-            PRIVATE_KEY,
-            "Lock",
+        Utils.stake(
+            user,
             crucible,
-            address(aludel),
-            address(stakingToken),
-            1 ether
+            aludel,
+            stakingToken,
+            STAKE_AMOUNT
         );
-        vm.prank(owner);
-        aludel.stake(crucible, 1 ether, lockPermission);
 
-        vault = aludel.getVaultData(crucible);
-        assertEq(vault.totalStake, 1 ether);
+        vault = aludel.getVaultData(address(crucible));
+        assertEq(vault.totalStake, STAKE_AMOUNT);
         assertEq(vault.stakes.length, 1);
-        assertEq(vault.stakes[0].amount, 1 ether);
+        assertEq(vault.stakes[0].amount, STAKE_AMOUNT);
         assertEq(vault.stakes[0].timestamp, block.timestamp);
 
         IAludelV3.AludelData memory data = aludel.getAludelData();
 
         assertEq(
             data.rewardSharesOutstanding,
-            0.99 ether * BASE_SHARES_PER_WEI
+            discountBasisPoints(REWARD_AMOUNT) * BASE_SHARES_PER_WEI
         );
         assertEq(data.totalStake, 1 ether);
         assertEq(data.totalStakeUnits, 0);
@@ -224,20 +182,12 @@ contract AludelFactoryIntegrationTest is Test {
         data = aludel.getAludelData();
         assertEq(
             data.rewardSharesOutstanding,
-            0.99 ether * BASE_SHARES_PER_WEI
+            discountBasisPoints(REWARD_AMOUNT) * BASE_SHARES_PER_WEI
         );
         assertEq(data.totalStake, 1 ether);
         assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 5);
 
         vm.warp(block.timestamp + 1 days - 5);
-        bytes memory unlockPermission = getPermission(
-            PRIVATE_KEY,
-            "Unlock",
-            crucible,
-            address(aludel),
-            address(stakingToken),
-            1 ether
-        );
 
         vm.prank(owner);
         uint256[] memory amounts = new uint256[](1);
@@ -251,12 +201,12 @@ contract AludelFactoryIntegrationTest is Test {
         assertEq(data.totalStake, 0 ether);
         assertEq(aludel.getCurrentTotalStakeUnits(), 0);
 
-        vault = aludel.getVaultData(crucible);
+        vault = aludel.getVaultData(address(crucible));
         assertEq(vault.totalStake, 0);
         assertEq(vault.stakes.length, 0);
     }
 
-    function getTokensAfterFunding(uint256 amount)
+    function discountBasisPoints(uint256 amount)
         internal
         view
         returns (uint256)
@@ -265,112 +215,31 @@ contract AludelFactoryIntegrationTest is Test {
     }
 
     function test_unstake_with_bonus_rewards() public {
-        IAludelV3.AludelData memory data = aludel.getAludelData();
-        MockERC20(bonusTokens[0]).mint(
-            data.rewardPool,
-            getTokensAfterFunding(1 ether)
-        );
-        MockERC20(bonusTokens[1]).mint(
-            data.rewardPool,
-            getTokensAfterFunding(1 ether)
-        );
+        IAludel.AludelData memory data = aludel.getAludelData();
 
-        bytes memory lockPermission = getPermission(
-            PRIVATE_KEY,
-            "Lock",
+        Utils.fundMockToken(data.rewardPool, bonusTokens[0], REWARD_AMOUNT);
+        Utils.fundMockToken(data.rewardPool, bonusTokens[1], REWARD_AMOUNT);
+
+        Utils.stake(
+            user,
             crucible,
-            address(aludel),
-            address(stakingToken),
-            1 ether
+            aludel,
+            stakingToken,
+            STAKE_AMOUNT
         );
-
-        vm.prank(owner);
-        aludel.stake(crucible, 1 ether, lockPermission);
 
         vm.warp(block.timestamp + 1 days);
-        bytes memory unlockPermission = getPermission(
-            PRIVATE_KEY,
-            "Unlock",
+
+        Utils.unstake(
+            user,
             crucible,
-            address(aludel),
-            address(stakingToken),
-            1 ether
+            aludel,
+            stakingToken,
+            STAKE_AMOUNT
         );
 
-        vm.startPrank(owner);
-        uint256[] memory amounts = new uint256[](1);
-        uint256[] memory indices = new uint256[](1);
-        amounts[0]=1 ether;
-        indices[0]=0;
-        aludel.unstakeAndClaim(crucible, indices, amounts, unlockPermission);
-
-        assertEq(ERC20(data.rewardToken).balanceOf(crucible), 0.99 ether);
-        assertEq(ERC20(bonusTokens[0]).balanceOf(crucible), 0.99 ether);
-        assertEq(ERC20(bonusTokens[1]).balanceOf(crucible), 0.99 ether);
-    }
-
-    function getPermission(
-        uint256 privateKey,
-        string memory method,
-        address crucible,
-        address delegate,
-        address token,
-        uint256 amount
-    ) public returns (bytes memory) {
-        uint256 nonce = IUniversalVault(crucible).getNonce();
-
-        bytes32 domainSeparator = keccak256(
-            abi.encode(
-                keccak256(
-                    "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                ),
-                keccak256("UniversalVault"),
-                keccak256("1.0.0"),
-                getChainId(),
-                crucible
-            )
-        );
-        bytes32 structHash = keccak256(
-            abi.encode(
-                keccak256(
-                    abi.encodePacked(
-                        method,
-                        "(address delegate,address token,uint256 amount,uint256 nonce)"
-                    )
-                ),
-                address(delegate),
-                address(token),
-                amount,
-                nonce
-            )
-        );
-
-        bytes32 digest = keccak256(
-            abi.encodePacked("\x19\x01", domainSeparator, structHash)
-        );
-
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
-
-        return joinSignature(r, s, v);
-    }
-
-    function getChainId() internal view returns (uint256 chainId) {
-        assembly {
-            chainId := chainid()
-        }
-    }
-
-    function joinSignature(
-        bytes32 r,
-        bytes32 s,
-        uint8 v
-    ) internal returns (bytes memory) {
-        bytes memory sig = new bytes(65);
-        assembly {
-            mstore(add(sig, 0x20), r)
-            mstore(add(sig, 0x40), s)
-            mstore8(add(sig, 0x60), v)
-        }
-        return sig;
+        assertEq(ERC20(data.rewardToken).balanceOf(address(crucible)), discountBasisPoints(REWARD_AMOUNT));
+        assertEq(ERC20(bonusTokens[0]).balanceOf(address(crucible)), REWARD_AMOUNT);
+        assertEq(ERC20(bonusTokens[1]).balanceOf(address(crucible)), REWARD_AMOUNT);
     }
 }
