@@ -7,6 +7,8 @@ import {
   ContractFactory,
   Wallet,
 } from "ethers";
+import { LogDescription } from "ethers/lib/utils";
+import { TransactionResponse } from "@ethersproject/abstract-provider";
 import {
   createInstance,
   deployContract,
@@ -14,9 +16,9 @@ import {
   increaseTime,
   deployERC20,
 } from "./setup";
-import { AludelFactory__factory } from "../typechain-types";
+import { AludelFactory__factory, AludelV2 } from "../typechain-types";
 import { AbiCoder } from "@ethersproject/abi";
-import { signPermission } from "./utils";
+import { signPermission, populateEvents } from "./utils";
 import chai from "chai";
 import assert from "assert";
 
@@ -70,7 +72,7 @@ describe("AludelV2", function () {
 
   const unstakeAndClaim = async (
     user: Wallet,
-    geyser: Contract,
+    geyser: AludelV2,
     vault: Contract,
     stakingToken: Contract,
     amount: BigNumberish,
@@ -116,7 +118,7 @@ describe("AludelV2", function () {
     _bonusTokens: Contract[],
     owner: SignerWithAddress,
     args: any[]
-  ): Promise<Contract> {
+  ): Promise<AludelV2> {
     const deployParams = new AbiCoder().encode(
       [
         "address",
@@ -149,7 +151,8 @@ describe("AludelV2", function () {
     );
     const tx = await (factory as any).launch(...launchArguments);
     await tx.wait();
-    return ethers.getContractAt("AludelV2", address, owner);
+    const contract = await ethers.getContractAt("AludelV2", address, owner);
+    return contract as AludelV2;
   }
 
   const subtractFundingFee = (amount: BigNumber) => {
@@ -309,7 +312,7 @@ describe("AludelV2", function () {
   });
 
   describe("admin functions", function () {
-    let geyser: Contract, powerSwitch: Contract, rewardPool: Contract;
+    let geyser: AludelV2, powerSwitch: Contract, rewardPool: Contract;
     beforeEach(async function () {
       const args = [
         rewardPoolFactory.address,
@@ -1372,7 +1375,7 @@ describe("AludelV2", function () {
   });
 
   describe("user functions", function () {
-    let geyser: Contract, powerSwitch: Contract, rewardPool: Contract;
+    let geyser: AludelV2, powerSwitch: Contract, rewardPool: Contract;
     beforeEach(async function () {
       const args = [
         rewardPoolFactory.address,
@@ -1926,6 +1929,179 @@ describe("AludelV2", function () {
             .withArgs(geyser.address, stakingToken.address, stakeAmount);
         });
       });
+
+      describe("with floor and ceiling set to the same value", function () {
+        let vault: Contract;
+        beforeEach(async function () {
+          const args = [
+            rewardPoolFactory.address,
+            powerSwitchFactory.address,
+            stakingToken.address,
+            rewardToken.address,
+            rewardScaling.floor,
+            rewardScaling.floor,
+            rewardScaling.time,
+          ];
+          geyser = await launchProgram(0, [], admin, args);
+
+          powerSwitch = await ethers.getContractAt(
+            "alchemist/contracts/aludel/PowerSwitch.sol:PowerSwitch",
+            await geyser.getPowerSwitch()
+          );
+          rewardPool = await ethers.getContractAt(
+            "RewardPool",
+            (
+              await geyser.getAludelData()
+            ).rewardPool
+          );
+
+          await rewardToken
+            .connect(admin)
+            .approve(geyser.address, fundingAmount);
+          await geyser.connect(admin).fund(fundingAmount, rewardScaling.time);
+
+          vault = await createInstance("Crucible", vaultFactory, user);
+
+          await stakingToken
+            .connect(admin)
+            .transfer(vault.address, stakeAmount);
+        });
+
+        describe("WHEN a user stays for the entire rewardScaling.time", () => {
+          const stakeDuration = rewardScaling.time;
+          const rewardAmount = subtractFundingFee(fundingAmount);
+          let tx: Promise<TransactionResponse>;
+          beforeEach(async () => {
+            await stake(user, geyser, vault, stakingToken, stakeAmount);
+            await increaseTime(stakeDuration);
+            tx = unstakeAndClaim(
+              user,
+              geyser,
+              vault,
+              stakingToken,
+              stakeAmount
+            );
+          });
+
+          it("should update state", async function () {
+            await tx;
+            const geyserData = await geyser.getAludelData();
+            const vaultData = await geyser.getVaultData(vault.address);
+
+            expect(geyserData.rewardSharesOutstanding).to.eq(0);
+            expect(geyserData.totalStake).to.eq(0);
+            expect(geyserData.totalStakeUnits).to.eq(0);
+            expect(geyserData.lastUpdate).to.eq(await getTimestamp());
+            expect(vaultData.totalStake).to.eq(0);
+            expect(vaultData.stakes.length).to.eq(0);
+          });
+
+          it("should emit event", async function () {
+            await expect(tx)
+              .to.emit(geyser, "Unstaked")
+              .withArgs(vault.address, stakeAmount);
+            await expect(tx)
+              .to.emit(geyser, "RewardClaimed")
+              .withArgs(vault.address, rewardToken.address, rewardAmount);
+          });
+
+          it("should transfer tokens", async function () {
+            await expect(tx)
+              .to.emit(rewardToken, "Transfer")
+              .withArgs(rewardPool.address, vault.address, rewardAmount);
+          });
+
+          it("should unlock tokens", async function () {
+            await expect(tx)
+              .to.emit(vault, "Unlocked")
+              .withArgs(geyser.address, stakingToken.address, stakeAmount);
+          });
+        });
+
+        describe("WHEN a user stays for a fifth of rewardScaling.time", () => {
+          const rewardAmount = subtractFundingFee(fundingAmount).div(5);
+          const stakeDuration = rewardScaling.time / 5;
+          let tx: Promise<TransactionResponse>;
+          let events: Array<LogDescription>;
+          beforeEach(async () => {
+            await stake(user, geyser, vault, stakingToken, stakeAmount);
+            await increaseTime(stakeDuration);
+            tx = unstakeAndClaim(
+              user,
+              geyser,
+              vault,
+              stakingToken,
+              stakeAmount
+            );
+            events = populateEvents(
+              [geyser.interface, stakingToken.interface, vault.interface],
+              (await (await tx).wait()).logs
+            );
+          });
+
+          it("should update state", async function () {
+            const geyserData = await geyser.getAludelData();
+            const vaultData = await geyser.getVaultData(vault.address);
+
+            const expectedSharesBurnt = subtractFundingFee(fundingAmount)
+              .mul(4)
+              .div(5)
+              .mul(BASE_SHARES_PER_WEI);
+            // 1% margin for smol time elapsed by other things
+            expect(geyserData.rewardSharesOutstanding).to.be.lt(
+              expectedSharesBurnt
+            );
+            expect(geyserData.rewardSharesOutstanding).to.be.gt(
+              expectedSharesBurnt.mul(99).div(100)
+            );
+            expect(geyserData.totalStake).to.eq(0);
+            expect(geyserData.totalStakeUnits).to.eq(0);
+            expect(geyserData.lastUpdate).to.eq(await getTimestamp());
+            expect(vaultData.totalStake).to.eq(0);
+            expect(vaultData.stakes.length).to.eq(0);
+          });
+
+          it("should emit event", async function () {
+            await expect(tx)
+              .to.emit(geyser, "Unstaked")
+              .withArgs(vault.address, stakeAmount);
+            // don't assert the value directly, since .withArgs doesn't support providing a range
+            const rewardClaimedEvents = events.filter(
+              (it) => it.name == "RewardClaimed"
+            );
+            expect(rewardClaimedEvents.length).to.eq(1);
+            // 1% margin for smol time elapsed by other things
+            expect(rewardClaimedEvents[0].args.vault).to.eq(vault.address);
+            expect(rewardClaimedEvents[0].args.token).to.eq(
+              rewardToken.address
+            );
+            expect(rewardClaimedEvents[0].args.amount).to.be.gt(rewardAmount);
+            expect(rewardClaimedEvents[0].args.amount).to.be.lt(
+              rewardAmount.mul(101).div(100)
+            );
+          });
+
+          it("should transfer tokens", async function () {
+            const transferEvents = events.filter(
+              (it) => it.name === "Transfer"
+            );
+            expect(transferEvents.length).to.eq(1);
+            expect(transferEvents[0].args.from).to.eq(rewardPool.address);
+            expect(transferEvents[0].args.to).to.eq(vault.address);
+            expect(transferEvents[0].args.amount).to.be.gt(rewardAmount);
+            // 1% margin
+            expect(transferEvents[0].args.amount).to.be.lt(
+              rewardAmount.mul(101).div(100)
+            );
+          });
+
+          it("should unlock tokens", async function () {
+            await expect(tx)
+              .to.emit(vault, "Unlocked")
+              .withArgs(geyser.address, stakingToken.address, stakeAmount);
+          });
+        });
+      });
       describe("with no reward", function () {
         let vault: Contract;
         beforeEach(async function () {
@@ -1975,7 +2151,7 @@ describe("AludelV2", function () {
             .withArgs(geyser.address, stakingToken.address, stakeAmount);
         });
       });
-      describe("with partially vested reward", function () {
+      describe("with partially vested stake", function () {
         const expectedReward = calculateExpectedReward(
           stakeAmount,
           rewardScaling.time,
