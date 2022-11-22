@@ -16,7 +16,7 @@ import {
   increaseTime,
   deployERC20,
 } from "./setup";
-import { AludelFactory__factory, AludelV2 } from "../typechain-types";
+import { AludelFactory__factory, AludelV3 } from "../typechain-types";
 import { AbiCoder } from "@ethersproject/abi";
 import { signPermission, populateEvents } from "./utils";
 import chai from "chai";
@@ -24,7 +24,7 @@ import assert from "assert";
 
 const { expect } = chai;
 
-describe("AludelV2", function () {
+describe("AludelV3", function () {
   let accounts: SignerWithAddress[], admin: SignerWithAddress;
   let user: Wallet;
 
@@ -35,7 +35,7 @@ describe("AludelV2", function () {
     rewardToken: Contract,
     bonusToken: Contract,
     aludelFactory: Contract,
-    aludelV2Template: Contract,
+    aludelV3Template: Contract,
     powered: ContractFactory;
 
   let template: Contract;
@@ -72,7 +72,7 @@ describe("AludelV2", function () {
 
   const unstakeAndClaim = async (
     user: Wallet,
-    aludel: AludelV2,
+    aludel: AludelV3,
     vault: Contract,
     stakingToken: Contract,
     amount: BigNumberish,
@@ -118,7 +118,7 @@ describe("AludelV2", function () {
     _bonusTokens: Contract[],
     owner: SignerWithAddress,
     args: any[]
-  ): Promise<AludelV2> {
+  ): Promise<AludelV3> {
     const deployParams = new AbiCoder().encode(
       [
         "address",
@@ -137,7 +137,7 @@ describe("AludelV2", function () {
       admin
     );
     const launchArguments = [
-      aludelV2Template.address,
+      aludelV3Template.address,
       "program name",
       "protocol://program.url",
       startTime,
@@ -151,8 +151,8 @@ describe("AludelV2", function () {
     );
     const tx = await (factory as any).launch(...launchArguments);
     await tx.wait();
-    const contract = await ethers.getContractAt("AludelV2", address, owner);
-    return contract as AludelV2;
+    const contract = await ethers.getContractAt("AludelV3", address, owner);
+    return contract as AludelV3;
   }
 
   const subtractFundingFee = (amount: BigNumber) => {
@@ -195,9 +195,9 @@ describe("AludelV2", function () {
       "AludelFactory",
       fixtures["AludelFactory"].address
     );
-    aludelV2Template = await ethers.getContractAt(
-      "AludelV2",
-      fixtures["AludelV2"].address
+    aludelV3Template = await ethers.getContractAt(
+      "AludelV3",
+      fixtures["AludelV3"].address
     );
   });
 
@@ -224,7 +224,7 @@ describe("AludelV2", function () {
         ]
       );
       return [
-        aludelV2Template.address,
+        aludelV3Template.address,
         "program name",
         "protocol://program.url",
         0,
@@ -312,7 +312,7 @@ describe("AludelV2", function () {
   });
 
   describe("admin functions", function () {
-    let aludel: AludelV2, powerSwitch: Contract, rewardPool: Contract;
+    let aludel: AludelV3, powerSwitch: Contract, rewardPool: Contract;
     beforeEach(async function () {
       const args = [
         rewardPoolFactory.address,
@@ -1375,7 +1375,7 @@ describe("AludelV2", function () {
   });
 
   describe("user functions", function () {
-    let aludel: AludelV2, powerSwitch: Contract, rewardPool: Contract;
+    let aludel: AludelV3, powerSwitch: Contract, rewardPool: Contract;
     beforeEach(async function () {
       const args = [
         rewardPoolFactory.address,

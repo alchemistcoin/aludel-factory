@@ -45,7 +45,7 @@ import "hardhat/console.sol";
 ///     Users can withdraw their stake through rageQuit()
 ///     Power controller can withdraw from the reward pool
 ///     Should only be used if Proxy Owner role is compromized
-contract AludelV2 is IAludel, Ownable, Initializable, Powered {
+contract AludelV3 is IAludel, Ownable, Initializable, Powered {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
