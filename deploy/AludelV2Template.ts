@@ -10,13 +10,12 @@ const deployFunc = async function ({
   const { get, log } = deployments;
 
   const aludelContract = await get("AludelV2");
-  const { deployer } = await getNamedAccounts()
+  const { deployer } = await getNamedAccounts();
   const deployedFactory = await get("AludelFactory");
   const factory = await ethers.getContractAt(
     deployedFactory.abi,
     deployedFactory.address,
     await ethers.getSigner(deployer)
-
   );
 
   log("Adding working AludelV2 templates to factory");

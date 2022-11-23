@@ -10,7 +10,7 @@ const deployFunc = async function ({
 }: HardhatRuntimeEnvironment) {
   const { get, log } = deployments;
 
-  const { deployer } = await getNamedAccounts()
+  const { deployer } = await getNamedAccounts();
   const deployedFactory = await get("AludelFactory");
   const factory = await ethers.getContractAt(
     deployedFactory.abi,
