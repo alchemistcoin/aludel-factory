@@ -18,6 +18,7 @@ import {IRewardPool} from "alchemist/contracts/aludel/RewardPool.sol";
 import {Powered} from "../powerSwitch/Powered.sol";
 
 import {IAludel} from "./IAludel.sol";
+import {IAludelV3} from "./IAludelV3.sol";
 import "hardhat/console.sol";
 
 /// @title Aludel
@@ -45,7 +46,7 @@ import "hardhat/console.sol";
 ///     Users can withdraw their stake through rageQuit()
 ///     Power controller can withdraw from the reward pool
 ///     Should only be used if Proxy Owner role is compromized
-contract AludelV3 is IAludel, Ownable, Initializable, Powered {
+contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -92,8 +93,8 @@ contract AludelV3 is IAludel, Ownable, Initializable, Powered {
     error MaxStakesReached();
     error NoAmountStaked();
     error NoAmountUnstaked();
-    error InsufficientVaultStake();
     error NoStakes();
+    error InvalidAmountArray();
 
     /* initializer */
 
@@ -363,76 +364,6 @@ contract AludelV3 is IAludel, Ownable, Initializable, Powered {
 
         // explicit return
         return unlockedRewards;
-    }
-
-    function calculateRewardFromStakes(
-        StakeData[] memory stakes,
-        uint256 unstakeAmount,
-        uint256 unlockedRewards,
-        uint256 totalStakeUnits,
-        uint256 timestamp,
-        RewardScaling memory rewardScaling
-    )
-        public
-        pure
-        override
-        returns (RewardOutput memory out)
-    {
-        uint256 stakesToDrop = 0;
-        while (unstakeAmount > 0) {
-            // fetch vault stake storage reference
-            StakeData memory lastStake =
-                stakes[stakes.length.sub(stakesToDrop).sub(1)];
-
-            // calculate stake duration
-            uint256 stakeDuration = timestamp.sub(lastStake.timestamp);
-
-            uint256 currentAmount;
-            if (lastStake.amount > unstakeAmount) {
-                // set current amount to remaining unstake amount
-                currentAmount = unstakeAmount;
-                // amount of last stake is reduced
-                out.lastStakeAmount = lastStake.amount.sub(unstakeAmount);
-            } else {
-                // set current amount to amount of last stake
-                currentAmount = lastStake.amount;
-                // add to stakes to drop
-                stakesToDrop += 1;
-            }
-
-            // update remaining unstakeAmount
-            unstakeAmount = unstakeAmount.sub(currentAmount);
-
-            // calculate reward amount
-            uint256 currentReward = calculateReward(
-                    unlockedRewards,
-                    currentAmount,
-                    stakeDuration,
-                    totalStakeUnits,
-                    rewardScaling
-                );
-
-            // update cumulative reward
-            out.reward = out.reward.add(currentReward);
-
-            // update cached unlockedRewards
-            unlockedRewards = unlockedRewards.sub(currentReward);
-
-            // calculate time weighted stake
-            uint256 stakeUnits = currentAmount.mul(stakeDuration);
-
-            // update cached totalStakeUnits
-            totalStakeUnits = totalStakeUnits.sub(stakeUnits);
-        }
-
-        // explicit return
-        return
-            RewardOutput(
-                out.lastStakeAmount,
-                stakes.length.sub(stakesToDrop),
-                out.reward,
-                totalStakeUnits
-            );
     }
 
     function calculateReward(
@@ -766,11 +697,13 @@ contract AludelV3 is IAludel, Ownable, Initializable, Powered {
     ///   - transfer reward tokens from reward pool to vault
     ///   - transfer bonus tokens from reward pool to vault
     /// @param vault address The vault to unstake from
-    /// @param amount uint256 The amount of staking tokens to unstake
+    /// @param indices uint256 The amount of staking tokens to unstake
+    /// @param amounts uint256 The amount of staking tokens to unstake
     /// @param permission bytes The signed lock permission for the universal vault
     function unstakeAndClaim(
         address vault,
-        uint256 amount,
+        uint256[] calldata indices,
+        uint256[] calldata amounts,
         bytes calldata permission
     )
         external
@@ -778,69 +711,65 @@ contract AludelV3 is IAludel, Ownable, Initializable, Powered {
         onlyOnline
         hasStarted
     {
+        uint256 remainingRewards=0;
+        uint256 unlockedRewards=0;
+        uint256 poppedStakes=0;
+        uint256 amount=0;
+        uint256 reward=0;
         // fetch vault storage reference
         VaultData storage vaultData = _vaults[vault];
-
-        // verify non-zero amount
-        if (amount == 0) {
-            revert NoAmountUnstaked();
-        }
-
-        // check for sufficient vault stake amount
-        if (vaultData.totalStake < amount) {
-            revert InsufficientVaultStake();
-        }
-
-        // check for sufficient Aludel stake amount
-        // if this check fails, there is a bug in stake accounting
-        assert(_aludel.totalStake >= amount);
 
         // update cached sum of stake units across all vaults
         _updateTotalStakeUnits();
 
         // get reward amount remaining
-        uint256 remainingRewards =
+        remainingRewards =
             IERC20(_aludel.rewardToken).balanceOf(_aludel.rewardPool);
 
         // calculate vested portion of reward pool
-        uint256 unlockedRewards = calculateUnlockedRewards(
+        unlockedRewards = calculateUnlockedRewards(
                 _aludel.rewardSchedules,
                 remainingRewards,
                 _aludel.rewardSharesOutstanding,
                 block.timestamp
             );
 
-        // calculate vault time weighted reward with scaling
-        RewardOutput memory out = calculateRewardFromStakes(
-                vaultData.stakes,
-                amount,
+        StakeData[] storage stakes = vaultData.stakes; 
+        for (uint256 metaIndex = 0; metaIndex< indices.length; metaIndex++){
+            uint256 computedStakeIndex = indices[metaIndex]-poppedStakes;
+            StakeData memory currentStake = stakes[computedStakeIndex];
+            amount += amounts[metaIndex];
+            if (currentStake.amount < amounts[metaIndex]) {
+                revert InvalidAmountArray();
+            } 
+            if(currentStake.amount == amounts[metaIndex]){
+                stakes[computedStakeIndex] = stakes[stakes.length-1];
+                poppedStakes+=1;
+                stakes.pop();
+            } else {
+                stakes[computedStakeIndex].amount -= amounts[metaIndex];
+                currentStake.amount -= amounts[metaIndex];
+            }
+            uint256 stakeDuration = block.timestamp - currentStake.timestamp;
+            uint256 currentReward = calculateReward(
                 unlockedRewards,
+                currentStake.amount,
+                stakeDuration,
                 _aludel.totalStakeUnits,
-                block.timestamp,
                 _aludel.rewardScaling
             );
-
-        // update stake data in storage
-        if (out.newStakesCount == 0) {
-            // all stakes have been unstaked
-            delete vaultData.stakes;
-        } else {
-            // some stakes have been completely or partially unstaked
-            // delete fully unstaked stakes
-            while (vaultData.stakes.length > out.newStakesCount) vaultData.stakes.pop();
-
-            // update stake amount when lastStakeAmount is set
-            if (out.lastStakeAmount > 0) {
-                // update partially unstaked stake
-                vaultData.stakes[out.newStakesCount.sub(1)].amount =
-                    out.lastStakeAmount;
-            }
+            reward += currentReward;
+            unlockedRewards -= currentReward;
+            _aludel.totalStakeUnits -= amounts[metaIndex].mul(stakeDuration);
+        }
+        // verify non-zero amount
+        if (amount == 0) {
+            revert NoAmountUnstaked();
         }
 
         // update cached stake totals
         vaultData.totalStake = vaultData.totalStake.sub(amount);
         _aludel.totalStake = _aludel.totalStake.sub(amount);
-        _aludel.totalStakeUnits = out.newTotalStakeUnits;
 
         // unlock staking tokens from vault
         IUniversalVault(vault).unlock(_aludel.stakingToken, amount, permission);
@@ -849,12 +778,12 @@ contract AludelV3 is IAludel, Ownable, Initializable, Powered {
         emit Unstaked(vault, amount);
 
         // only perform on non-zero reward
-        if (out.reward > 0) {
+        if (reward > 0) {
 
             // calculate shares to burn
             // sharesToBurn = sharesOutstanding * reward / remainingRewards
             uint256 sharesToBurn =
-            _aludel.rewardSharesOutstanding.mul(out.reward).div(remainingRewards);
+            _aludel.rewardSharesOutstanding.mul(reward).div(remainingRewards);
 
             // burn claimed shares
             _aludel.rewardSharesOutstanding =
@@ -871,7 +800,7 @@ contract AludelV3 is IAludel, Ownable, Initializable, Powered {
                     // calculate bonus token amount
                     // bonusAmount = bonusRemaining * reward / remainingRewards
                     uint256 bonusAmount =
-                    IERC20(bonusToken).balanceOf(_aludel.rewardPool).mul(out.reward).div(
+                    IERC20(bonusToken).balanceOf(_aludel.rewardPool).mul(reward).div(
                             remainingRewards
                         );
 
@@ -884,10 +813,10 @@ contract AludelV3 is IAludel, Ownable, Initializable, Powered {
             }
 
             // transfer reward tokens from reward pool to vault
-            IRewardPool(_aludel.rewardPool).sendERC20(_aludel.rewardToken, vault, out.reward);
+            IRewardPool(_aludel.rewardPool).sendERC20(_aludel.rewardToken, vault, reward);
 
             // emit event
-            emit RewardClaimed(vault, _aludel.rewardToken, out.reward);
+            emit RewardClaimed(vault, _aludel.rewardToken, reward);
         }
     }
 

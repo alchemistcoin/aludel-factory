@@ -109,10 +109,10 @@ export function revertAfter(title?: string, provider?: EthereumProvider) {
   });
 }
 
-export const populateEvents = (
+export function populateEvents(
   ifaces: Array<Interface>,
   events: Array<{ topics: Array<string>; data: string }>
-): Array<LogDescription> => {
+): Array<LogDescription> {
   const result: Array<LogDescription> = [];
   events.forEach((event: { topics: Array<string>; data: string }) => {
     let parsed;
@@ -126,4 +126,4 @@ export const populateEvents = (
     }
   });
   return result;
-};
+}

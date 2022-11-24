@@ -1,3 +1,4 @@
+
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
 
@@ -7,7 +8,7 @@ interface IRageQuit {
     function rageQuit() external;
 }
 
-interface IAludel is IRageQuit {
+interface IAludelV3 is IRageQuit {
     /* admin events */
 
     event AludelCreated(address rewardPool, address powerSwitch);
@@ -82,7 +83,8 @@ interface IAludel is IRageQuit {
 
     function unstakeAndClaim(
         address vault,
-        uint256 amount,
+        uint256[] calldata indices,
+        uint256[] calldata amounts,
         bytes calldata permission
     )
         external;
@@ -180,18 +182,6 @@ interface IAludel is IRageQuit {
         external
         pure
         returns (uint256 unlockedRewards);
-
-    function calculateRewardFromStakes(
-        StakeData[] memory stakes,
-        uint256 unstakeAmount,
-        uint256 unlockedRewards,
-        uint256 totalStakeUnits,
-        uint256 timestamp,
-        RewardScaling memory rewardScaling
-    )
-        external
-        pure
-        returns (RewardOutput memory out);
 
     function calculateReward(
         uint256 unlockedRewards,
