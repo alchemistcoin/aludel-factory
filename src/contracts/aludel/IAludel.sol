@@ -146,50 +146,6 @@ interface IAludel is IRageQuit {
         view
         returns (bool validity);
 
-    function getCurrentUnlockedRewards()
-        external
-        view
-        returns (uint256 unlockedRewards);
-
-    function getFutureUnlockedRewards(uint256 timestamp)
-        external
-        view
-        returns (uint256 unlockedRewards);
-
-    function getCurrentVaultReward(address vault)
-        external
-        view
-        returns (uint256 reward);
-
-    function getCurrentStakeReward(address vault, uint256 stakeAmount)
-        external
-        view
-        returns (uint256 reward);
-
-    function getFutureVaultReward(address vault, uint256 timestamp)
-        external
-        view
-        returns (uint256 reward);
-
-    function getFutureStakeReward(
-        address vault,
-        uint256 stakeAmount,
-        uint256 timestamp
-    )
-        external
-        view
-        returns (uint256 reward);
-
-    function getCurrentVaultStakeUnits(address vault)
-        external
-        view
-        returns (uint256 stakeUnits);
-
-    function getFutureVaultStakeUnits(address vault, uint256 timestamp)
-        external
-        view
-        returns (uint256 stakeUnits);
-
     function getCurrentTotalStakeUnits()
         external
         view

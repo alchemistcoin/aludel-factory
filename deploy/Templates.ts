@@ -9,6 +9,7 @@ const deployFunc = function ({ deployments }: HardhatRuntimeEnvironment) {
 deployFunc.tags = ["templates"];
 deployFunc.dependencies = [
   "GeyserV2Template",
+  "AludelV3Template",
   "AludelV2Template",
   "AludelV1Template",
 ];

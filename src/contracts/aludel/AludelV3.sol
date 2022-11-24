@@ -45,7 +45,7 @@ import "hardhat/console.sol";
 ///     Users can withdraw their stake through rageQuit()
 ///     Power controller can withdraw from the reward pool
 ///     Should only be used if Proxy Owner role is compromized
-contract AludelV2 is IAludel, Ownable, Initializable, Powered {
+contract AludelV3 is IAludel, Ownable, Initializable, Powered {
     using SafeMath for uint256;
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -240,34 +240,6 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         return _aludel;
     }
 
-    function getCurrentUnlockedRewards()
-        public
-        view
-        returns (uint256 unlockedRewards)
-    {
-        // calculate reward available based on state
-        return getFutureUnlockedRewards(block.timestamp);
-    }
-
-    function getFutureUnlockedRewards(uint256 timestamp)
-        public
-        view
-        returns (uint256 unlockedRewards)
-    {
-        // get reward amount remaining
-        uint256 remainingRewards =
-            IERC20(_aludel.rewardToken).balanceOf(_aludel.rewardPool);
-        // calculate reward available based on state
-        unlockedRewards = calculateUnlockedRewards(
-            _aludel.rewardSchedules,
-            remainingRewards,
-            _aludel.rewardSharesOutstanding,
-            timestamp
-        );
-        // explicit return
-        return unlockedRewards;
-    }
-
     function getCurrentTotalStakeUnits()
         public
         view
@@ -304,112 +276,6 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         returns (VaultData memory vaultData)
     {
         return _vaults[vault];
-    }
-
-    function getCurrentVaultReward(address vault)
-        external
-        view
-        returns (uint256 reward)
-    {
-        // calculate rewards
-        return
-            calculateRewardFromStakes(
-                _vaults[vault]
-                    .stakes,
-                _vaults[vault]
-                    .totalStake,
-                getCurrentUnlockedRewards(),
-                getCurrentTotalStakeUnits(),
-                block
-                    .timestamp,
-                _aludel
-                    .rewardScaling
-            )
-                .reward;
-    }
-
-    function getFutureVaultReward(address vault, uint256 timestamp)
-        external
-        view
-        returns (uint256 reward)
-    {
-        // calculate rewards
-        return
-            calculateRewardFromStakes(
-                _vaults[vault]
-                    .stakes,
-                _vaults[vault]
-                    .totalStake,
-                getFutureUnlockedRewards(timestamp),
-                getFutureTotalStakeUnits(timestamp),
-                timestamp,
-                _aludel
-                    .rewardScaling
-            )
-                .reward;
-    }
-
-    function getCurrentStakeReward(address vault, uint256 stakeAmount)
-        external
-        view
-        returns (uint256 reward)
-    {
-        // calculate rewards
-        return
-            calculateRewardFromStakes(
-                _vaults[vault]
-                    .stakes,
-                stakeAmount,
-                getCurrentUnlockedRewards(),
-                getCurrentTotalStakeUnits(),
-                block
-                    .timestamp,
-                _aludel
-                    .rewardScaling
-            )
-                .reward;
-    }
-
-    function getFutureStakeReward(
-        address vault,
-        uint256 stakeAmount,
-        uint256 timestamp
-    )
-        external
-        view
-        returns (uint256 reward)
-    {
-        // calculate rewards
-        return
-            calculateRewardFromStakes(
-                _vaults[vault]
-                    .stakes,
-                stakeAmount,
-                getFutureUnlockedRewards(timestamp),
-                getFutureTotalStakeUnits(timestamp),
-                timestamp,
-                _aludel
-                    .rewardScaling
-            )
-                .reward;
-    }
-
-    function getCurrentVaultStakeUnits(address vault)
-        public
-        view
-        returns (uint256 stakeUnits)
-    {
-        // calculate stake units
-        return getFutureVaultStakeUnits(vault, block.timestamp);
-    }
-
-    function getFutureVaultStakeUnits(address vault, uint256 timestamp)
-        public
-        view
-        returns (uint256 stakeUnits)
-    {
-        // calculate stake units
-        return calculateTotalStakeUnits(_vaults[vault].stakes, timestamp);
     }
 
     /* pure functions */
@@ -1079,18 +945,5 @@ contract AludelV2 is IAludel, Ownable, Initializable, Powered {
         if (!isValidAddress(target)) {
             revert InvalidAddress(target);
         }
-    }
-
-    function _truncateStakesArray(StakeData[] memory array, uint256 newLength)
-        internal
-        pure
-        virtual
-        returns (StakeData[] memory newArray)
-    {
-        newArray = new StakeData[](newLength);
-        for (uint256 index = 0; index < newLength; index++) {
-            newArray[index] = array[index];
-        }
-        return newArray;
     }
 }
