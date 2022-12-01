@@ -112,6 +112,11 @@ describe("AludelV3", function () {
     const baseReward = rewardAvailable
       .mul(stakeUnits)
       .div(stakeUnits.add(otherStakeUnits));
+    // FIXME this makes the case where floor == ceiling still different from
+    // not having rewardScaling at all, and I think that isn't the case in
+    // the smart contract, but we should check it and update this function
+    // accordingly. What I did in this case is to set the floor and ceiling
+    // to 100 for the time being so I can deal with one problem at a time
     const minReward = baseReward.mul(rewardScaling.floor).div(100);
     const bonusReward = baseReward
       .mul(rewardScaling.ceiling - rewardScaling.floor)
@@ -2069,9 +2074,9 @@ describe("AludelV3", function () {
       describe("with floor and ceiling set to the same value", function () {
         let vault: Contract;
         const disabledRewardScaling = {
-          floor: defaultRewardScaling.floor,
-          ceiling: defaultRewardScaling.floor,
-          time: defaultRewardScaling.time,
+          floor: 100,
+          ceiling: 100,
+          time: 60 * DAY,
         };
         beforeEach(async function () {
           const args = [
@@ -2099,13 +2104,243 @@ describe("AludelV3", function () {
           await rewardToken
             .connect(admin)
             .approve(aludel.address, fundingAmount);
-          await aludel.connect(admin).fund(fundingAmount, disabledRewardScaling.time);
+          await aludel
+            .connect(admin)
+            .fund(fundingAmount, disabledRewardScaling.time);
 
           vault = await createInstance("Crucible", vaultFactory, user);
 
           await stakingToken
             .connect(admin)
-            .transfer(vault.address, stakeAmount);
+            .transfer(vault.address, stakeAmount.mul(10));
+        });
+
+        describe("GIVEN 3 individual stakes across the funding period", () => {
+          const stakeDuration = disabledRewardScaling.time;
+          let tx: Promise<TransactionResponse>;
+          let events: Array<LogDescription>;
+          const totalStakeUnitsCreated = BigNumber.from(
+            "777600300000000000000000000"
+          );
+          const totalRewardSharesCreated =
+            rewardAmount.mul(BASE_SHARES_PER_WEI);
+          beforeEach(async () => {
+            await stake(user, aludel, vault, stakingToken, stakeAmount);
+            await increaseTime(stakeDuration / 2);
+            await stake(user, aludel, vault, stakingToken, stakeAmount);
+            await increaseTime(stakeDuration / 2);
+            await stake(user, aludel, vault, stakingToken, stakeAmount);
+          });
+
+          describe("WHEN unstaking the first one", () => {
+            const expectedReward = calculateExpectedReward(
+              stakeAmount,
+              stakeDuration,
+              rewardAmount,
+              // the only other stake adding shares is the middle one, which is staked for only half of the fund
+              stakeAmount.mul(stakeDuration / 2),
+              disabledRewardScaling
+            );
+            beforeEach(async () => {
+              tx = unstakeAndClaim(
+                user,
+                aludel,
+                vault,
+                stakingToken,
+                [0],
+                [stakeAmount]
+              );
+              events = populateEvents(
+                [aludel.interface, stakingToken.interface, vault.interface],
+                (await (await tx).wait()).logs
+              );
+            });
+
+            it("THEN all of its rewards are realized", async () => {
+              const rewardClaimedEvents = events.filter(
+                (it) => it.name == "RewardClaimed"
+              );
+              expect(rewardClaimedEvents.length).to.eq(1);
+              expect(rewardClaimedEvents[0].args.vault).to.eq(vault.address);
+              expect(rewardClaimedEvents[0].args.token).to.eq(
+                rewardToken.address
+              );
+              // 1% margin for smol time elapsed by other things
+              expect(rewardClaimedEvents[0].args.amount).to.be.gt(
+                expectedReward.mul(99).div(100)
+              );
+              expect(rewardClaimedEvents[0].args.amount).to.be.lt(
+                expectedReward
+              );
+            });
+
+            it("AND the correct amount of stakeUnits is burnt", async () => {
+              // total stakeUnits are (30 * DAY ) * 10e20 + (60 * DAY) * 10e20
+              // remember, stakeAmount = 10e20, and one stake was up for 30 days and the other for 60
+              // the third stake is really small since it's up for only one second
+              // this stake is the one live for 60 days, so 60*DAY*10e20 stakeUnits should be burnt
+              const expectedStakeUnitsBurnt = stakeAmount.mul(60 * DAY);
+              const aludelData = await aludel.getAludelData();
+              // lil buffer since with every block the other stakes accrue one second worth of stakes
+              expect(aludelData.totalStakeUnits).to.gte(
+                totalStakeUnitsCreated
+                  .sub(expectedStakeUnitsBurnt)
+                  .mul(99)
+                  .div(100)
+              );
+              expect(aludelData.totalStakeUnits).to.lte(
+                totalStakeUnitsCreated.sub(expectedStakeUnitsBurnt)
+              );
+            });
+
+            it("AND the correct amount of rewardShares is burnt", async () => {
+              // total rewardShares are rewardAmount * BASE_SHARES_PER_WEI
+              // reward shares that should be burnt for an unstake is the share of the total rewards that this unstake's rewards represent
+              const expectedSharesBurnt = totalRewardSharesCreated
+                .mul(expectedReward)
+                .div(rewardAmount);
+              const aludelData = await aludel.getAludelData();
+              // lil buffer since with every block the other stakes accrue one second worth of stakes
+              expect(aludelData.rewardSharesOutstanding).to.gte(
+                totalRewardSharesCreated.sub(expectedSharesBurnt)
+              );
+              expect(aludelData.rewardSharesOutstanding).to.lte(
+                totalRewardSharesCreated
+                  .sub(expectedSharesBurnt)
+                  .mul(101)
+                  .div(100)
+              );
+            });
+          });
+
+          describe("WHEN unstaking the one in the middle", () => {
+            const expectedReward = calculateExpectedReward(
+              stakeAmount,
+              stakeDuration / 2,
+              rewardAmount,
+              // the only other stake adding shares is the first one, which is staked for the entire fund period
+              stakeAmount.mul(stakeDuration),
+              disabledRewardScaling
+            );
+            beforeEach(async () => {
+              tx = unstakeAndClaim(
+                user,
+                aludel,
+                vault,
+                stakingToken,
+                [1],
+                [stakeAmount]
+              );
+              events = populateEvents(
+                [aludel.interface, stakingToken.interface, vault.interface],
+                (await (await tx).wait()).logs
+              );
+            });
+
+            it("THEN half of the rewards from it are realized", async () => {
+              const rewardClaimedEvents = events.filter(
+                (it) => it.name == "RewardClaimed"
+              );
+              expect(rewardClaimedEvents.length).to.eq(1);
+              expect(rewardClaimedEvents[0].args.vault).to.eq(vault.address);
+              expect(rewardClaimedEvents[0].args.token).to.eq(
+                rewardToken.address
+              );
+              // 1% margin for smol time elapsed by other things
+              expect(rewardClaimedEvents[0].args.amount).to.be.gt(
+                expectedReward.mul(99).div(100)
+              );
+              expect(rewardClaimedEvents[0].args.amount).to.be.lte(
+                expectedReward
+              );
+            });
+
+            it("AND the correct amount of stakeUnits is burnt", async () => {
+              // total stakeUnits are (30 * DAY ) * 10e20 + (60 * DAY) * 10e20
+              // remember, stakeAmount = 10e20, and one stake was up for 30 days and the other for 60
+              // the third stake is really small since it's up for only one second
+              // this stake is the one live for 30 days, so 30*DAY*10e20 stakeUnits should be burnt
+              const expectedStakeUnitsBurnt = stakeAmount.mul(30 * DAY);
+              const aludelData = await aludel.getAludelData();
+              // lil buffer since with every block the other stakes accrue one second worth of stakes
+              expect(aludelData.totalStakeUnits).to.gte(
+                totalStakeUnitsCreated
+                  .sub(expectedStakeUnitsBurnt)
+                  .mul(99)
+                  .div(100)
+              );
+              expect(aludelData.totalStakeUnits).to.lte(
+                totalStakeUnitsCreated.sub(expectedStakeUnitsBurnt)
+              );
+            });
+
+            it("AND the correct amount of rewardShares is burnt", async () => {
+              // total rewardShares are rewardAmount * BASE_SHARES_PER_WEI
+              // reward shares that should be burnt for an unstake is the share of the total rewards that this unstake's rewards represent
+              const expectedSharesBurnt = totalRewardSharesCreated
+                .mul(expectedReward)
+                .div(rewardAmount);
+              const aludelData = await aludel.getAludelData();
+              // lil buffer since with every block the other stakes accrue one second worth of stakes
+              expect(aludelData.rewardSharesOutstanding).to.gte(
+                totalRewardSharesCreated.sub(expectedSharesBurnt)
+              );
+              expect(aludelData.rewardSharesOutstanding).to.lte(
+                totalRewardSharesCreated
+                  .sub(expectedSharesBurnt)
+                  .mul(101)
+                  .div(100)
+              );
+            });
+          });
+
+          describe("WHEN unstaking the last one", () => {
+            beforeEach(async () => {
+              tx = unstakeAndClaim(
+                user,
+                aludel,
+                vault,
+                stakingToken,
+                [2],
+                [stakeAmount]
+              );
+              events = populateEvents(
+                [aludel.interface, stakingToken.interface, vault.interface],
+                (await (await tx).wait()).logs
+              );
+            });
+
+            it("THEN nearly no rewards are realized", async () => {
+              const rewardClaimedEvents = events.filter(
+                (it) => it.name == "RewardClaimed"
+              );
+              expect(rewardClaimedEvents.length).to.eq(1);
+              expect(rewardClaimedEvents[0].args.vault).to.eq(vault.address);
+              expect(rewardClaimedEvents[0].args.token).to.eq(
+                rewardToken.address
+              );
+              // the stake was created and removed right away, at the end of
+              // the fund period, so this shouldn't earn the user anything
+              expect(rewardClaimedEvents[0].args.amount).to.be.gt(0);
+              expect(rewardClaimedEvents[0].args.amount).to.be.lt(1000000);
+            });
+
+            it("AND the nearly no stakeUnits are burnt", async () => {
+              const aludelData = await aludel.getAludelData();
+              // lil buffer since with every block the other stakes accrue one second worth of stakes
+              expect(aludelData.totalStakeUnits).to.gte(
+                totalStakeUnitsCreated.mul(99).div(100)
+              );
+              expect(aludelData.totalStakeUnits).to.lte(totalStakeUnitsCreated);
+            });
+
+            it("AND nearly no rewardShares are burnt", async () => {
+              const aludelData = await aludel.getAludelData();
+              expect(aludelData.rewardSharesOutstanding).to.gte(
+                totalRewardSharesCreated.mul(99).div(100)
+              );
+            });
+          });
         });
 
         describe("WHEN a user stays for the entire rewardScaling.time", () => {
