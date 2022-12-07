@@ -2323,6 +2323,74 @@ describe("AludelV3", function () {
               expect(stakes[1].timestamp).to.eq(stakeTimestamps[2]);
               expect(stakes[1].amount).to.eq(stakeAmount);
             });
+            describe("AND WHEN unstaking the first one", () => {
+              // the rewards already claimed by the first unstake should be subtracted
+              const secondAvailableReward = rewardAmount.sub(expectedReward);
+              const secondExpectedReward = calculateExpectedReward(
+                stakeAmount,
+                stakeDuration,
+                secondAvailableReward,
+                0, // the last stake is up for ~3 seconds, shouldn't accrue many shares
+                disabledRewardScaling
+              );
+              beforeEach(async () => {
+                tx = unstakeAndClaim(
+                  user,
+                  aludel,
+                  vault,
+                  stakingToken,
+                  [0],
+                  [stakeAmount]
+                );
+                events = populateEvents(
+                  [aludel.interface, stakingToken.interface, vault.interface],
+                  (await (await tx).wait()).logs
+                );
+              });
+
+              it("THEN all of its rewards are realized", async () => {
+                const rewardClaimedEvents = events.filter(
+                  (it) => it.name == "RewardClaimed"
+                );
+                expect(rewardClaimedEvents.length).to.eq(1);
+                expect(rewardClaimedEvents[0].args.vault).to.eq(vault.address);
+                expect(rewardClaimedEvents[0].args.token).to.eq(
+                  rewardToken.address
+                );
+                // 1% margin for smol time elapsed by other things
+                expect(rewardClaimedEvents[0].args.amount).to.be.gt(
+                  secondExpectedReward.mul(99).div(100)
+                );
+                expect(rewardClaimedEvents[0].args.amount).to.be.lt(
+                  secondExpectedReward
+                );
+              });
+
+              it("AND nearly all stakeUnits are burnt", async () => {
+                const aludelData = await aludel.getAludelData();
+                // only the stake untis for the last stake should remain, and
+                // it should be 10^20(stakeAmount)*3(time elapsed by
+                // auto-mining 3 blocks). This might give a false negative in a
+                // slower computer.
+                expect(aludelData.totalStakeUnits).to.lte(
+                  ethers.utils.parseUnits("3", 20)
+                );
+              });
+
+              it("AND nearly all rewardShares are burnt", async () => {
+                const aludelData = await aludel.getAludelData();
+                // lil buffer since with every block the last stake accrued one second worth of stakes
+                expect(aludelData.rewardSharesOutstanding).to.lte(
+                  ethers.utils.parseUnits("1", 12)
+                );
+              });
+
+              it("AND the last stake is still present", async () => {
+                const { stakes } = await aludel.getVaultData(vault.address);
+                expect(stakes[0].timestamp).to.eq(stakeTimestamps[2]);
+                expect(stakes[0].amount).to.eq(stakeAmount);
+              });
+            });
           });
 
           describe("WHEN unstaking the last one", () => {
