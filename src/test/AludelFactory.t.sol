@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // solhint-disable func-name-mixedcase
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.17;
 
 import {DSTest} from "ds-test/src/test.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";

@@ -26,8 +26,13 @@ const polyscanApiKey = process.env.POLYGON_MUMBAI_API_KEY || "";
 
 const config: HardhatUserConfig = {
   solidity: {
-    version: "0.8.6",
+    version: "0.8.17",
     settings: {
+      viaIR: true,
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
       outputSelection: {
         "*": {
           "*": ["storageLayout"],
