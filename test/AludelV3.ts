@@ -18,7 +18,7 @@ import {
 } from "./setup";
 import { AludelFactory__factory, AludelV3 } from "../typechain-types";
 import { AbiCoder } from "@ethersproject/abi";
-import { signPermission, populateEvents } from "./utils";
+import { signPermission, populateEvents, getLatestTimestamp } from "./utils";
 import chai from "chai";
 import assert from "assert";
 
@@ -2119,17 +2119,22 @@ describe("AludelV3", function () {
           const stakeDuration = disabledRewardScaling.time;
           let tx: Promise<TransactionResponse>;
           let events: Array<LogDescription>;
+          let stakeTimestamps: Array<number>;
           const totalStakeUnitsCreated = BigNumber.from(
             "777600300000000000000000000"
           );
           const totalRewardSharesCreated =
             rewardAmount.mul(BASE_SHARES_PER_WEI);
           beforeEach(async () => {
+            stakeTimestamps = [];
             await stake(user, aludel, vault, stakingToken, stakeAmount);
+            stakeTimestamps.push(await getLatestTimestamp());
             await increaseTime(stakeDuration / 2);
             await stake(user, aludel, vault, stakingToken, stakeAmount);
+            stakeTimestamps.push(await getLatestTimestamp());
             await increaseTime(stakeDuration / 2);
             await stake(user, aludel, vault, stakingToken, stakeAmount);
+            stakeTimestamps.push(await getLatestTimestamp());
           });
 
           describe("WHEN unstaking the first one", () => {
@@ -2210,6 +2215,19 @@ describe("AludelV3", function () {
                   .mul(101)
                   .div(100)
               );
+            });
+
+            it("AND the other two stakes are still present", async () => {
+              const { stakes } = await aludel.getVaultData(vault.address);
+              // this is a bit of clear-box testing, since the order in which
+              // the stakes end up in the array doesn't really matter, just
+              // that they are there, but I'd rather assert internal behaviour
+              // than do a bunch of .find s, which I guesstimate would be more
+              // fragile
+              expect(stakes[0].timestamp).to.eq(stakeTimestamps[2]);
+              expect(stakes[0].amount).to.eq(stakeAmount);
+              expect(stakes[1].timestamp).to.eq(stakeTimestamps[1]);
+              expect(stakes[1].amount).to.eq(stakeAmount);
             });
           });
 
@@ -2292,6 +2310,19 @@ describe("AludelV3", function () {
                   .div(100)
               );
             });
+
+            it("AND the other two stakes are still present", async () => {
+              const { stakes } = await aludel.getVaultData(vault.address);
+              // this is a bit of clear-box testing, since the order in which
+              // the stakes end up in the array doesn't really matter, just
+              // that they are there, but I'd rather assert internal behaviour
+              // than do a bunch of .find s, which I guesstimate would be more
+              // fragile
+              expect(stakes[0].timestamp).to.eq(stakeTimestamps[0]);
+              expect(stakes[0].amount).to.eq(stakeAmount);
+              expect(stakes[1].timestamp).to.eq(stakeTimestamps[2]);
+              expect(stakes[1].amount).to.eq(stakeAmount);
+            });
           });
 
           describe("WHEN unstaking the last one", () => {
@@ -2339,6 +2370,19 @@ describe("AludelV3", function () {
               expect(aludelData.rewardSharesOutstanding).to.gte(
                 totalRewardSharesCreated.mul(99).div(100)
               );
+            });
+
+            it("AND the other two stakes are still present", async () => {
+              const { stakes } = await aludel.getVaultData(vault.address);
+              // this is a bit of clear-box testing, since the order in which
+              // the stakes end up in the array doesn't really matter, just
+              // that they are there, but I'd rather assert internal behaviour
+              // than do a bunch of .find s, which I guesstimate would be more
+              // fragile
+              expect(stakes[0].timestamp).to.eq(stakeTimestamps[0]);
+              expect(stakes[0].amount).to.eq(stakeAmount);
+              expect(stakes[1].timestamp).to.eq(stakeTimestamps[1]);
+              expect(stakes[1].amount).to.eq(stakeAmount);
             });
           });
         });
