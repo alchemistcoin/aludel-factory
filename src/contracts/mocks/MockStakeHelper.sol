@@ -4,7 +4,6 @@ pragma abicoder v2;
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {Aludel} from "alchemist/contracts/aludel/Aludel.sol";
 import {AludelV3} from "../aludel/AludelV3.sol";
 
 contract MockStakeHelper {
@@ -15,8 +14,17 @@ contract MockStakeHelper {
         bytes calldata lockPermission,
         bytes calldata unstakePermission
     ) external {
-        Aludel(geyser).stake(vault, amount, lockPermission);
-        Aludel(geyser).unstakeAndClaim(vault, amount, unstakePermission);
+        uint256[] memory amounts = new uint256[](1);
+        uint256[] memory indices = new uint256[](1);
+        amounts[0]=amount;
+        indices[0]=0;
+        AludelV3(geyser).stake(vault, amount, lockPermission);
+        AludelV3(geyser).unstakeAndClaim(
+            vault,
+            indices,
+            amounts,
+            unstakePermission
+        );
     }
 
     function stakeBatch(
@@ -26,8 +34,11 @@ contract MockStakeHelper {
         bytes[] calldata permissions
     ) external {
         for (uint256 index = 0; index < vaults.length; index++) {
-            Aludel(geysers[index]).stake(vaults[index], amounts[index], permissions[index]);
+            AludelV3(geysers[index]).stake(
+                vaults[index],
+                amounts[index],
+                permissions[index]
+            );
         }
     }
-
 }

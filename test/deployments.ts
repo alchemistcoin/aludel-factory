@@ -85,9 +85,7 @@ describe("Aludel factory deployments", function () {
             stakingTokenUrl: "http://buy.here",
             startTime: 69,
           })
-        ).to.be.rejectedWith(
-          "HH306: The 'template' parameter expects a value, but none was passed"
-        );
+        ).to.be.rejectedWith("HH306");
       });
 
       describe("WHEN adding it with the add-program task, AND omitting the startTime", () => {

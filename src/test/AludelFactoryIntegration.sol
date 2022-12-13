@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // solhint-disable func-name-mixedcase
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.17;
 
 import {DSTest} from "ds-test/src/test.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
@@ -9,7 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
 import {AludelV3} from "../contracts/aludel/AludelV3.sol";
-import {IAludel} from "../contracts/aludel/IAludel.sol";
+import {IAludelV3} from "../contracts/aludel/IAludelV3.sol";
 import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
 
@@ -25,7 +25,7 @@ import "forge-std/src/console2.sol";
 contract AludelFactoryIntegrationTest is DSTest {
     AludelFactory private factory;
     Hevm private cheats;
-    IAludel private aludel;
+    IAludelV3 private aludel;
 
     MockERC20 private stakingToken;
     MockERC20 private rewardToken;
@@ -107,7 +107,7 @@ contract AludelFactoryIntegrationTest is DSTest {
 
         uint64 startTime = uint64(block.timestamp);
 
-        aludel = IAludel(
+        aludel = IAludelV3(
             factory.launch(
                 address(template),
                 "name",
@@ -120,7 +120,7 @@ contract AludelFactoryIntegrationTest is DSTest {
             )
         );
 
-        IAludel.AludelData memory data = aludel.getAludelData();
+        IAludelV3.AludelData memory data = aludel.getAludelData();
 
         MockERC20(data.rewardToken).mint(owner, 1 ether);
 
@@ -139,7 +139,7 @@ contract AludelFactoryIntegrationTest is DSTest {
     }
 
     function test_aludelLaunchKeepsData() public {
-        aludel = IAludel(
+        aludel = IAludelV3(
             factory.launch(
                 address(template),
                 "name",
@@ -157,7 +157,7 @@ contract AludelFactoryIntegrationTest is DSTest {
         assertEq(factory.programs(address(aludel)).name, "name");
         assertEq(factory.programs(address(aludel)).startTime, block.timestamp);
 
-        IAludel.AludelData memory aludelData = aludel.getAludelData();
+        IAludelV3.AludelData memory aludelData = aludel.getAludelData();
 
         MockERC20(aludelData.rewardToken).mint(owner, 1 ether);
 
@@ -168,7 +168,7 @@ contract AludelFactoryIntegrationTest is DSTest {
         cheats.stopPrank();
 
         aludelData = aludel.getAludelData();
-        IAludel.RewardSchedule[] memory rewardSchedules = aludelData
+        IAludelV3.RewardSchedule[] memory rewardSchedules = aludelData
             .rewardSchedules;
         assertEq(rewardSchedules[0].shares, 0.99 ether * BASE_SHARES_PER_WEI);
     }
@@ -200,7 +200,7 @@ contract AludelFactoryIntegrationTest is DSTest {
     }
 
     function test_unstake() public {
-        IAludel.VaultData memory vault = aludel.getVaultData(crucible);
+        IAludelV3.VaultData memory vault = aludel.getVaultData(crucible);
         assertEq(vault.totalStake, 0);
         assertEq(vault.stakes.length, 0);
 
@@ -221,7 +221,7 @@ contract AludelFactoryIntegrationTest is DSTest {
         assertEq(vault.stakes[0].amount, 1 ether);
         assertEq(vault.stakes[0].timestamp, block.timestamp);
 
-        IAludel.AludelData memory data = aludel.getAludelData();
+        IAludelV3.AludelData memory data = aludel.getAludelData();
 
         assertEq(
             data.rewardSharesOutstanding,
@@ -255,7 +255,11 @@ contract AludelFactoryIntegrationTest is DSTest {
         );
 
         cheats.prank(owner);
-        aludel.unstakeAndClaim(crucible, 1 ether, unlockPermission);
+        uint256[] memory amounts = new uint256[](1);
+        uint256[] memory indices = new uint256[](1);
+        amounts[0]=1 ether;
+        indices[0]=0;
+        aludel.unstakeAndClaim(crucible, indices, amounts, unlockPermission);
 
         data = aludel.getAludelData();
         assertEq(data.rewardSharesOutstanding, 0);
@@ -276,7 +280,7 @@ contract AludelFactoryIntegrationTest is DSTest {
     }
 
     function test_unstake_with_bonus_rewards() public {
-        IAludel.AludelData memory data = aludel.getAludelData();
+        IAludelV3.AludelData memory data = aludel.getAludelData();
         MockERC20(bonusTokens[0]).mint(
             data.rewardPool,
             getTokensAfterFunding(1 ether)
@@ -309,7 +313,11 @@ contract AludelFactoryIntegrationTest is DSTest {
         );
 
         cheats.startPrank(owner);
-        aludel.unstakeAndClaim(crucible, 1 ether, unlockPermission);
+        uint256[] memory amounts = new uint256[](1);
+        uint256[] memory indices = new uint256[](1);
+        amounts[0]=1 ether;
+        indices[0]=0;
+        aludel.unstakeAndClaim(crucible, indices, amounts, unlockPermission);
 
         assertEq(ERC20(data.rewardToken).balanceOf(crucible), 0.99 ether);
         assertEq(ERC20(bonusTokens[0]).balanceOf(crucible), 0.99 ether);

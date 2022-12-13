@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.17;
 
 import {DSTest} from "ds-test/src/test.sol";
 import {Hevm} from "solmate/test/utils/Hevm.sol";

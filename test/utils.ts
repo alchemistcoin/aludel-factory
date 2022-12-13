@@ -2,6 +2,7 @@ import { TypedDataField } from "@ethersproject/abstract-signer";
 import { parseEther } from "@ethersproject/units";
 import { Interface } from "@ethersproject/abi";
 import { BigNumberish, Contract, Wallet } from "ethers";
+import { ethers } from "hardhat";
 
 import { EthereumProvider } from "hardhat/types";
 import { LogDescription } from "ethers/lib/utils";
@@ -10,6 +11,10 @@ export async function takeSnapshot(provider: EthereumProvider) {
   return (await provider.request({
     method: "evm_snapshot",
   })) as string;
+}
+
+export async function getLatestTimestamp() {
+  return (await ethers.provider.getBlock("latest")).timestamp;
 }
 
 export async function revert(provider: EthereumProvider, snapshotId: string) {
@@ -109,10 +114,10 @@ export function revertAfter(title?: string, provider?: EthereumProvider) {
   });
 }
 
-export const populateEvents = (
+export function populateEvents(
   ifaces: Array<Interface>,
   events: Array<{ topics: Array<string>; data: string }>
-): Array<LogDescription> => {
+): Array<LogDescription> {
   const result: Array<LogDescription> = [];
   events.forEach((event: { topics: Array<string>; data: string }) => {
     let parsed;
@@ -126,4 +131,4 @@ export const populateEvents = (
     }
   });
   return result;
-};
+}
