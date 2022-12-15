@@ -4,8 +4,8 @@ out = "out"
 solc-version = "0.8.17"
 verbosity = 3
 ffi = true
-via_ir = true
-optimizer = true
+via_ir = false
+optimizer = false
 optimizer_runs = 1000000
 
 eth-rpc-url = "http://localhost:8545"
