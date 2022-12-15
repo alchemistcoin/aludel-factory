@@ -132,3 +132,14 @@ export function populateEvents(
   });
   return result;
 }
+
+export type AludelInitializationParams = [
+  string,
+  string,
+  string,
+  string,
+  string,
+  BigNumberish,
+  BigNumberish,
+  BigNumberish
+];

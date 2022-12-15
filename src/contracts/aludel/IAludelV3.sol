@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
 
+import {IAludelHooks} from "./IAludelHooks.sol";
+
 pragma abicoder v2;
 
 interface IRageQuit {
@@ -34,6 +36,7 @@ interface IAludelV3 is IRageQuit {
         uint256 totalStake;
         uint256 totalStakeUnits;
         uint256 lastUpdate;
+        IAludelHooks hookContract;
         RewardSchedule[] rewardSchedules;
     }
 

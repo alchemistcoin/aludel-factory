@@ -19,6 +19,7 @@ import {Powered} from "../powerSwitch/Powered.sol";
 
 import {IAludel} from "./IAludel.sol";
 import {IAludelV3} from "./IAludelV3.sol";
+import {IAludelHooks} from "./IAludelHooks.sol";
 import "hardhat/console.sol";
 
 /// @title Aludel
@@ -79,6 +80,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         address powerSwitchFactory;
         address stakingToken;
         address rewardToken;
+        IAludelHooks hookContract;
         RewardScaling rewardScaling;
     }
 
@@ -153,6 +155,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         _aludel.rewardToken = params.rewardToken;
         _aludel.rewardPool = rewardPool;
         _aludel.rewardScaling = params.rewardScaling;
+        _aludel.hookContract = params.hookContract;
 
         // emit event
         emit AludelCreated(rewardPool, powerSwitch);
