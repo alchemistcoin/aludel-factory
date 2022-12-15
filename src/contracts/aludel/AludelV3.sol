@@ -714,11 +714,6 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         onlyOnline
         hasStarted
     {
-        uint256 remainingRewards=0;
-        uint256 unlockedRewards=0;
-        uint256 poppedStakes=0;
-        uint256 amount=0;
-        uint256 reward=0;
         // fetch vault storage reference
         VaultData storage vaultData = _vaults[vault];
 
@@ -726,22 +721,56 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         _updateTotalStakeUnits();
 
         // get reward amount remaining
-        remainingRewards =
+        uint256 remainingRewards =
             IERC20(_aludel.rewardToken).balanceOf(_aludel.rewardPool);
 
         // calculate vested portion of reward pool
-        unlockedRewards = calculateUnlockedRewards(
+        uint256 unlockedRewards = calculateUnlockedRewards(
                 _aludel.rewardSchedules,
                 remainingRewards,
                 _aludel.rewardSharesOutstanding,
                 block.timestamp
             );
 
-        StakeData[] storage stakes = vaultData.stakes; 
-        for (uint256 metaIndex = 0; metaIndex< indices.length; metaIndex++){
-            uint256 computedStakeIndex = indices[metaIndex]-poppedStakes;
+        (uint256 reward, uint256 amount) = _unstake(
+            vaultData.stakes,
+            unlockedRewards,
+            indices,
+            amounts            
+        );
+
+        // verify non-zero amount
+        if (amount == 0) {
+            revert NoAmountUnstaked();
+        }
+
+        // update cached stake totals
+        vaultData.totalStake = vaultData.totalStake.sub(amount);
+        _aludel.totalStake = _aludel.totalStake.sub(amount);
+
+        // unlock staking tokens from vault
+        IUniversalVault(vault).unlock(_aludel.stakingToken, amount, permission);
+
+        // emit event
+        emit Unstaked(vault, amount);
+        // only perform on non-zero reward
+        _claim(vault, reward, remainingRewards);
+
+    }
+
+    function _unstake(
+        StakeData[] storage stakes,
+        uint256 unlockedRewards,
+        uint256[] memory indices,
+        uint256[] memory amounts
+    ) internal returns(uint256 reward, uint256 unstakedAmount) {
+
+        uint256 poppedStakes = 0;
+
+        for (uint256 metaIndex = 0; metaIndex< indices.length; metaIndex++) {
+            uint256 computedStakeIndex = indices[metaIndex] - poppedStakes;
             StakeData memory currentStake = stakes[computedStakeIndex];
-            amount += amounts[metaIndex];
+            unstakedAmount += amounts[metaIndex];
             if (currentStake.amount < amounts[metaIndex]) {
                 revert InvalidAmountArray();
             } 
@@ -757,6 +786,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
                 _aludel.hookContract.unstakeAndClaimPost(currentStake);
             }
             uint256 stakeDuration = block.timestamp - currentStake.timestamp;
+        
             uint256 currentReward = calculateReward(
                 unlockedRewards,
                 currentStake.amount,
@@ -766,24 +796,12 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
             );
             reward += currentReward;
             unlockedRewards -= currentReward;
+
             _aludel.totalStakeUnits -= amounts[metaIndex].mul(stakeDuration);
         }
-        // verify non-zero amount
-        if (amount == 0) {
-            revert NoAmountUnstaked();
-        }
+    }
 
-        // update cached stake totals
-        vaultData.totalStake = vaultData.totalStake.sub(amount);
-        _aludel.totalStake = _aludel.totalStake.sub(amount);
-
-        // unlock staking tokens from vault
-        IUniversalVault(vault).unlock(_aludel.stakingToken, amount, permission);
-
-        // emit event
-        emit Unstaked(vault, amount);
-
-        // only perform on non-zero reward
+    function _claim(address vault, uint256 reward, uint256 remainingRewards) public {
         if (reward > 0) {
 
             // calculate shares to burn
