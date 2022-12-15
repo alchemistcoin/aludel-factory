@@ -18,7 +18,12 @@ import {
 } from "./setup";
 import { AludelFactory__factory, AludelV3 } from "../typechain-types";
 import { AbiCoder } from "@ethersproject/abi";
-import { signPermission, populateEvents, getLatestTimestamp } from "./utils";
+import {
+  signPermission,
+  populateEvents,
+  getLatestTimestamp,
+  AludelInitializationParams,
+} from "./utils";
 import chai from "chai";
 import assert from "assert";
 
@@ -132,10 +137,11 @@ describe("AludelV3", function () {
     startTime: BigNumberish,
     _bonusTokens: Contract[],
     owner: SignerWithAddress,
-    args: any[]
+    args: AludelInitializationParams
   ): Promise<AludelV3> {
     const deployParams = new AbiCoder().encode(
       [
+        "address",
         "address",
         "address",
         "address",
@@ -224,6 +230,7 @@ describe("AludelV3", function () {
           "address",
           "address",
           "address",
+          "address",
           "uint256",
           "uint256",
           "uint256",
@@ -233,6 +240,7 @@ describe("AludelV3", function () {
           powerSwitchFactory.address,
           stakingToken.address,
           rewardToken.address,
+          ethers.constants.AddressZero,
           floor,
           ceiling,
           time,
@@ -296,6 +304,7 @@ describe("AludelV3", function () {
           powerSwitchFactory.address,
           stakingToken.address,
           rewardToken.address,
+          ethers.constants.AddressZero,
           defaultRewardScaling.floor,
           defaultRewardScaling.ceiling,
           defaultRewardScaling.time,
@@ -338,6 +347,7 @@ describe("AludelV3", function () {
         powerSwitchFactory.address,
         stakingToken.address,
         rewardToken.address,
+        ethers.constants.AddressZero,
         defaultRewardScaling.floor,
         defaultRewardScaling.ceiling,
         defaultRewardScaling.time,
@@ -683,6 +693,7 @@ describe("AludelV3", function () {
           powerSwitchFactory.address,
           stakingToken.address,
           rewardToken.address,
+          ethers.constants.AddressZero,
           defaultRewardScaling.floor,
           defaultRewardScaling.ceiling,
           defaultRewardScaling.time,
@@ -1402,6 +1413,7 @@ describe("AludelV3", function () {
         powerSwitchFactory.address,
         stakingToken.address,
         rewardToken.address,
+        ethers.constants.AddressZero,
         defaultRewardScaling.floor,
         defaultRewardScaling.ceiling,
         defaultRewardScaling.time,
@@ -1957,6 +1969,7 @@ describe("AludelV3", function () {
             powerSwitchFactory.address,
             stakingToken.address,
             rewardToken.address,
+            ethers.constants.AddressZero,
             defaultRewardScaling.floor * 2,
             defaultRewardScaling.ceiling * 2,
             defaultRewardScaling.time,
@@ -2084,6 +2097,7 @@ describe("AludelV3", function () {
             powerSwitchFactory.address,
             stakingToken.address,
             rewardToken.address,
+            ethers.constants.AddressZero,
             disabledRewardScaling.floor,
             disabledRewardScaling.ceiling,
             disabledRewardScaling.time,

@@ -9,6 +9,7 @@ import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
 import {AludelV3} from "../contracts/aludel/AludelV3.sol";
+import {IAludelHooks} from "../contracts/aludel/IAludelHooks.sol";
 import {IAludelV3} from "../contracts/aludel/IAludelV3.sol";
 import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
@@ -38,7 +39,7 @@ contract AludelFactoryIntegrationTest is DSTest {
 
     RewardPoolFactory private rewardPoolFactory;
     PowerSwitchFactory private powerSwitchFactory;
-    RewardScaling private rewardScaling;
+    IAludelV3.RewardScaling private rewardScaling;
     AludelV3 private template;
 
     CrucibleFactory private crucibleFactory;
@@ -46,23 +47,9 @@ contract AludelFactoryIntegrationTest is DSTest {
     address private recipient;
     uint16 private bps;
 
-    struct RewardScaling {
-        uint256 floor;
-        uint256 ceiling;
-        uint256 time;
-    }
-
-    struct AludelInitializationParams {
-        address rewardPoolFactory;
-        address powerSwitchFactory;
-        address stakingToken;
-        address rewardToken;
-        RewardScaling rewardScaling;
-    }
-
     uint256 public constant BASE_SHARES_PER_WEI = 1000000;
 
-    AludelInitializationParams private defaultParams;
+    AludelV3.AludelInitializationParams private defaultParams;
 
     function setUp() public {
         cheats = Hevm(HEVM_ADDRESS);
@@ -89,17 +76,18 @@ contract AludelFactoryIntegrationTest is DSTest {
         bonusTokens[0] = address(new MockERC20("", "BonusToken A"));
         bonusTokens[1] = address(new MockERC20("", "BonusToken B"));
 
-        rewardScaling = RewardScaling({
+        rewardScaling = IAludelV3.RewardScaling({
             floor: 1 ether,
             ceiling: 10 ether,
             time: 1 days
         });
 
-        defaultParams = AludelInitializationParams({
+        defaultParams = AludelV3.AludelInitializationParams({
             rewardPoolFactory: address(rewardPoolFactory),
             powerSwitchFactory: address(powerSwitchFactory),
             stakingToken: address(stakingToken),
             rewardToken: address(rewardToken),
+            hookContract: IAludelHooks(address(0)),
             rewardScaling: rewardScaling
         });
 
