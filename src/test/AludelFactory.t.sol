@@ -11,7 +11,7 @@ import {AludelFactory} from "../contracts/AludelFactory.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
-import {Spy} from "./Spy.sol";
+import {Spy} from "../contracts/mocks/Spy.sol";
 
 import "forge-std/src/console2.sol";
 
