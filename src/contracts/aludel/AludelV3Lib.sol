@@ -204,16 +204,16 @@ library AludelV3Lib {
         uint256 start,
         uint256 amount
     ) internal {
-
         // access aludel shares outstanding
         uint256 sharesOutstanding = aludel.rewardSharesOutstanding;
-        
         // calculate new shares
         uint256 newShares = calculateNewShares(
             sharesOutstanding,
             getRemainingRewards(aludel),
             amount
         );
+
+        cleanupExpiredRewardSchedules(aludel);
 
         // push new reward schedule to the store
         aludel.rewardSchedules.push(
@@ -244,4 +244,22 @@ library AludelV3Lib {
         vault.totalStake += amount;
         aludel.totalStake += amount;
     }
+
+    function cleanupExpiredRewardSchedules(
+        IAludelV3.AludelData storage aludel
+    ) internal {
+        // check : measure how much gas this actually saves
+        for (uint index = 0; index < aludel.rewardSchedules.length; index++) {
+            IAludelV3.RewardSchedule memory schedule = aludel.rewardSchedules[index];
+
+            // check if the period is already expired
+            if (block.timestamp - schedule.start >= schedule.duration) {
+                // overwrite current index with last schedule.
+                aludel.rewardSchedules[index] = aludel.rewardSchedules[aludel.rewardSchedules.length - 1];
+                // remove last element, already copied to _index_ 
+                aludel.rewardSchedules.pop();
+            }
+        }
+    }
+
 }
