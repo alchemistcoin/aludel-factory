@@ -16,7 +16,12 @@ import {
   increaseTime,
   deployERC20,
 } from "./setup";
-import { AludelFactory__factory, AludelV3 } from "../typechain-types";
+import {
+  AludelFactory__factory,
+  AludelV3,
+  Spy,
+  TimelockHook,
+} from "../typechain-types";
 import { AbiCoder } from "@ethersproject/abi";
 import {
   signPermission,
@@ -40,6 +45,7 @@ describe("AludelV3", function () {
     rewardToken: Contract,
     bonusToken: Contract,
     aludelFactory: Contract,
+    timelockHook: TimelockHook,
     aludelV3Template: Contract,
     powered: ContractFactory;
 
@@ -211,11 +217,19 @@ describe("AludelV3", function () {
 
     bonusToken = await deployERC20(admin, mockTokenSupply);
 
-    const fixtures = await deployments.fixture(["AludelFactory", "templates"]);
+    const fixtures = await deployments.fixture([
+      "AludelFactory",
+      "templates",
+      "TimelockHook",
+    ]);
     aludelFactory = await ethers.getContractAt(
       "AludelFactory",
       fixtures["AludelFactory"].address
     );
+    timelockHook = (await ethers.getContractAt(
+      "TimelockHook",
+      fixtures["TimelockHook"].address
+    )) as TimelockHook;
     aludelV3Template = await ethers.getContractAt(
       "AludelV3",
       fixtures["AludelV3"].address
@@ -1953,134 +1967,317 @@ describe("AludelV3", function () {
         });
       });
       describe("with floor and ceiling scaled up", function () {
-        const stakeDuration = defaultRewardScaling.time / 2;
         const expectedReward = calculateExpectedReward(
           stakeAmount,
-          stakeDuration,
+          defaultRewardScaling.time,
           rewardAmount,
           0,
           defaultRewardScaling
         );
-
         let vault: Contract;
-        beforeEach(async function () {
-          const args = [
-            rewardPoolFactory.address,
-            powerSwitchFactory.address,
-            stakingToken.address,
-            rewardToken.address,
-            ethers.constants.AddressZero,
-            defaultRewardScaling.floor * 2,
-            defaultRewardScaling.ceiling * 2,
-            defaultRewardScaling.time,
-          ];
-          aludel = await launchProgram(0, [], admin, args);
+        let stakeTimestamp: number;
 
-          powerSwitch = await ethers.getContractAt(
-            "alchemist/contracts/aludel/PowerSwitch.sol:PowerSwitch",
-            await aludel.getPowerSwitch()
-          );
-          rewardPool = await ethers.getContractAt(
-            "RewardPool",
-            (
-              await aludel.getAludelData()
-            ).rewardPool
-          );
+        describe("GIVEN a 90-day TimelockHook contract", () => {
+          describe("AND an aludel configured with it", () => {
+            beforeEach(async () => {
+              const args: AludelInitializationParams = [
+                rewardPoolFactory.address,
+                powerSwitchFactory.address,
+                stakingToken.address,
+                rewardToken.address,
+                timelockHook.address,
+                defaultRewardScaling.floor * 2,
+                defaultRewardScaling.ceiling * 2,
+                defaultRewardScaling.time,
+              ];
+              aludel = await launchProgram(0, [], admin, args);
 
-          await rewardToken
-            .connect(admin)
-            .approve(aludel.address, fundingAmount);
-          await aludel
-            .connect(admin)
-            .fund(fundingAmount, defaultRewardScaling.time);
+              powerSwitch = await ethers.getContractAt(
+                "alchemist/contracts/aludel/PowerSwitch.sol:PowerSwitch",
+                await aludel.getPowerSwitch()
+              );
+              rewardPool = await ethers.getContractAt(
+                "RewardPool",
+                (
+                  await aludel.getAludelData()
+                ).rewardPool
+              );
 
-          await increaseTime(defaultRewardScaling.time);
+              await rewardToken
+                .connect(admin)
+                .approve(aludel.address, fundingAmount);
+              await aludel
+                .connect(admin)
+                .fund(fundingAmount, defaultRewardScaling.time);
 
-          vault = await createInstance("Crucible", vaultFactory, user);
+              await increaseTime(defaultRewardScaling.time);
 
-          await stakingToken
-            .connect(admin)
-            .transfer(vault.address, stakeAmount);
+              vault = await createInstance("Crucible", vaultFactory, user);
 
-          await stake(user, aludel, vault, stakingToken, stakeAmount);
+              await stakingToken
+                .connect(admin)
+                .transfer(vault.address, stakeAmount);
 
-          await increaseTime(stakeDuration);
+              await stake(user, aludel, vault, stakingToken, stakeAmount);
+              stakeTimestamp = await getLatestTimestamp();
+            });
+            describe("WHEN unstaking after accruing all the rewards (60 days)", () => {
+              beforeEach(async function () {
+                await increaseTime(60 * DAY);
+              });
+              it("should fail", async function () {
+                await expect(
+                  unstakeAndClaim(
+                    user,
+                    aludel,
+                    vault,
+                    stakingToken,
+                    [0],
+                    [stakeAmount]
+                  )
+                ).to.be.revertedWithCustomError(
+                  timelockHook,
+                  "TimelockNotElapsed"
+                );
+              });
+              describe("AND WHEN unstaking after the 90-day mark", () => {
+                beforeEach(async function () {
+                  await increaseTime(60 * DAY);
+                });
+
+                it("should update state", async function () {
+                  await unstakeAndClaim(
+                    user,
+                    aludel,
+                    vault,
+                    stakingToken,
+                    [0],
+                    [stakeAmount]
+                  );
+
+                  const aludelData = await aludel.getAludelData();
+                  const vaultData = await aludel.getVaultData(vault.address);
+
+                  expect(aludelData.rewardSharesOutstanding).to.eq(
+                    rewardAmount.sub(expectedReward).mul(BASE_SHARES_PER_WEI)
+                  );
+                  expect(aludelData.totalStake).to.eq(0);
+                  expect(aludelData.totalStakeUnits).to.eq(0);
+                  expect(aludelData.lastUpdate).to.eq(await getTimestamp());
+                  expect(vaultData.totalStake).to.eq(0);
+                  expect(vaultData.stakes.length).to.eq(0);
+                });
+
+                it("should emit event", async function () {
+                  const tx = unstakeAndClaim(
+                    user,
+                    aludel,
+                    vault,
+                    stakingToken,
+                    [0],
+                    [stakeAmount]
+                  );
+                  await expect(tx)
+                    .to.emit(aludel, "Unstaked")
+                    .withArgs(vault.address, stakeAmount);
+                  await expect(tx)
+                    .to.emit(aludel, "RewardClaimed")
+                    .withArgs(
+                      vault.address,
+                      rewardToken.address,
+                      expectedReward
+                    );
+                });
+
+                it("should transfer tokens", async function () {
+                  await expect(
+                    unstakeAndClaim(
+                      user,
+                      aludel,
+                      vault,
+                      stakingToken,
+                      [0],
+                      [stakeAmount]
+                    )
+                  )
+                    .to.emit(rewardToken, "Transfer")
+                    .withArgs(
+                      rewardPool.address,
+                      vault.address,
+                      expectedReward
+                    );
+                });
+
+                it("should unlock tokens", async function () {
+                  await expect(
+                    unstakeAndClaim(
+                      user,
+                      aludel,
+                      vault,
+                      stakingToken,
+                      [0],
+                      [stakeAmount]
+                    )
+                  )
+                    .to.emit(vault, "Unlocked")
+                    .withArgs(
+                      aludel.address,
+                      stakingToken.address,
+                      stakeAmount
+                    );
+                });
+              });
+            });
+          });
         });
-        it("should succeed", async function () {
-          await unstakeAndClaim(
-            user,
-            aludel,
-            vault,
-            stakingToken,
-            [0],
-            [stakeAmount]
-          );
-        });
-        it("should update state", async function () {
-          await unstakeAndClaim(
-            user,
-            aludel,
-            vault,
-            stakingToken,
-            [0],
-            [stakeAmount]
-          );
 
-          const aludelData = await aludel.getAludelData();
-          const vaultData = await aludel.getVaultData(vault.address);
+        describe("GIVEN a Spy hook contract", () => {
+          let spy: Spy;
+          beforeEach(async () => {
+            const spyFactory = await ethers.getContractFactory("Spy");
+            spy = await spyFactory.deploy();
+          });
 
-          expect(aludelData.rewardSharesOutstanding).to.eq(
-            rewardAmount.sub(expectedReward).mul(BASE_SHARES_PER_WEI)
-          );
-          expect(aludelData.totalStake).to.eq(0);
-          expect(aludelData.totalStakeUnits).to.eq(0);
-          expect(aludelData.lastUpdate).to.eq(await getTimestamp());
-          expect(vaultData.totalStake).to.eq(0);
-          expect(vaultData.stakes.length).to.eq(0);
-        });
-        it("should emit event", async function () {
-          const tx = unstakeAndClaim(
-            user,
-            aludel,
-            vault,
-            stakingToken,
-            [0],
-            [stakeAmount]
-          );
-          await expect(tx)
-            .to.emit(aludel, "Unstaked")
-            .withArgs(vault.address, stakeAmount);
-          await expect(tx)
-            .to.emit(aludel, "RewardClaimed")
-            .withArgs(vault.address, rewardToken.address, expectedReward);
-        });
-        it("should transfer tokens", async function () {
-          await expect(
-            unstakeAndClaim(
-              user,
-              aludel,
-              vault,
-              stakingToken,
-              [0],
-              [stakeAmount]
-            )
-          )
-            .to.emit(rewardToken, "Transfer")
-            .withArgs(rewardPool.address, vault.address, expectedReward);
-        });
-        it("should unlock tokens", async function () {
-          await expect(
-            unstakeAndClaim(
-              user,
-              aludel,
-              vault,
-              stakingToken,
-              [0],
-              [stakeAmount]
-            )
-          )
-            .to.emit(vault, "Unlocked")
-            .withArgs(aludel.address, stakingToken.address, stakeAmount);
+          describe("WHEN unstaking after accruing all the rewards", () => {
+            beforeEach(async function () {
+              const args: AludelInitializationParams = [
+                rewardPoolFactory.address,
+                powerSwitchFactory.address,
+                stakingToken.address,
+                rewardToken.address,
+                spy.address,
+                defaultRewardScaling.floor * 2,
+                defaultRewardScaling.ceiling * 2,
+                defaultRewardScaling.time,
+              ];
+              aludel = await launchProgram(0, [], admin, args);
+
+              powerSwitch = await ethers.getContractAt(
+                "alchemist/contracts/aludel/PowerSwitch.sol:PowerSwitch",
+                await aludel.getPowerSwitch()
+              );
+              rewardPool = await ethers.getContractAt(
+                "RewardPool",
+                (
+                  await aludel.getAludelData()
+                ).rewardPool
+              );
+
+              await rewardToken
+                .connect(admin)
+                .approve(aludel.address, fundingAmount);
+              await aludel
+                .connect(admin)
+                .fund(fundingAmount, defaultRewardScaling.time);
+
+              await increaseTime(defaultRewardScaling.time);
+
+              vault = await createInstance("Crucible", vaultFactory, user);
+
+              await stakingToken
+                .connect(admin)
+                .transfer(vault.address, stakeAmount);
+
+              await stake(user, aludel, vault, stakingToken, stakeAmount);
+              stakeTimestamp = await getLatestTimestamp();
+
+              await increaseTime(defaultRewardScaling.time);
+            });
+            it("should succeed", async function () {
+              await unstakeAndClaim(
+                user,
+                aludel,
+                vault,
+                stakingToken,
+                [0],
+                [stakeAmount]
+              );
+            });
+
+            it("should call unstakeAndClaim hook", async () => {
+              await unstakeAndClaim(
+                user,
+                aludel,
+                vault,
+                stakingToken,
+                [0],
+                [stakeAmount]
+              );
+              const call =
+                await timelockHook.populateTransaction.unstakeAndClaimPost({
+                  amount: stakeAmount,
+                  timestamp: stakeTimestamp,
+                });
+              expect(await spy.spyWasCalled(call.data)).to.be.true;
+            });
+
+            it("should update state", async function () {
+              await unstakeAndClaim(
+                user,
+                aludel,
+                vault,
+                stakingToken,
+                [0],
+                [stakeAmount]
+              );
+
+              const aludelData = await aludel.getAludelData();
+              const vaultData = await aludel.getVaultData(vault.address);
+
+              expect(aludelData.rewardSharesOutstanding).to.eq(
+                rewardAmount.sub(expectedReward).mul(BASE_SHARES_PER_WEI)
+              );
+              expect(aludelData.totalStake).to.eq(0);
+              expect(aludelData.totalStakeUnits).to.eq(0);
+              expect(aludelData.lastUpdate).to.eq(await getTimestamp());
+              expect(vaultData.totalStake).to.eq(0);
+              expect(vaultData.stakes.length).to.eq(0);
+            });
+            it("should emit event", async function () {
+              const tx = unstakeAndClaim(
+                user,
+                aludel,
+                vault,
+                stakingToken,
+                [0],
+                [stakeAmount]
+              );
+              await expect(tx)
+                .to.emit(aludel, "Unstaked")
+                .withArgs(vault.address, stakeAmount);
+              await expect(tx)
+                .to.emit(aludel, "RewardClaimed")
+                .withArgs(vault.address, rewardToken.address, expectedReward);
+            });
+            it("should transfer tokens", async function () {
+              await expect(
+                unstakeAndClaim(
+                  user,
+                  aludel,
+                  vault,
+                  stakingToken,
+                  [0],
+                  [stakeAmount]
+                )
+              )
+                .to.emit(rewardToken, "Transfer")
+                .withArgs(rewardPool.address, vault.address, expectedReward);
+            });
+            it("should unlock tokens", async function () {
+              await expect(
+                unstakeAndClaim(
+                  user,
+                  aludel,
+                  vault,
+                  stakingToken,
+                  [0],
+                  [stakeAmount]
+                )
+              )
+                .to.emit(vault, "Unlocked")
+                .withArgs(aludel.address, stakingToken.address, stakeAmount);
+            });
+          });
         });
       });
 
