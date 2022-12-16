@@ -20,6 +20,7 @@ import {Powered} from "../powerSwitch/Powered.sol";
 import {IAludel} from "./IAludel.sol";
 import {IAludelV3} from "./IAludelV3.sol";
 import {IAludelHooks} from "./IAludelHooks.sol";
+import {AludelV3Lib} from "./AludelV3Lib.sol";
 import "hardhat/console.sol";
 
 /// @title Aludel
@@ -262,6 +263,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     {
         // return early if no change
         if (timestamp == _aludel.lastUpdate) return _aludel.totalStakeUnits;
+
         // calculate new stake units
         uint256 newStakeUnits =
             calculateStakeUnits(_aludel.totalStake, _aludel.lastUpdate, timestamp);
@@ -293,15 +295,14 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         override
         returns (uint256 totalStakeUnits)
     {
-        for (uint256 index; index < stakes.length; index++) {
-            // reference stake
-            StakeData memory stakeData = stakes[index];
-            // calculate stake units
-            uint256 stakeUnits =
-            calculateStakeUnits(stakeData.amount, stakeData.timestamp, timestamp);
-            // add to running total
-            totalStakeUnits = totalStakeUnits.add(stakeUnits);
-        }
+        return AludelV3Lib.calculateTotalStakeUnits(stakes, timestamp);
+    }
+
+    function calculateSharesLocked(
+        IAludelV3.RewardSchedule[] memory rewardSchedules,
+        uint256 timestamp
+    ) public pure returns (uint256 sharesLocked) {
+        return AludelV3Lib.calculateSharesLocked(rewardSchedules, timestamp);
     }
 
     function calculateStakeUnits(uint256 amount, uint256 start, uint256 end)
@@ -310,12 +311,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         override
         returns (uint256 stakeUnits)
     {
-        // calculate duration
-        uint256 duration = end.sub(start);
-        // calculate stake units
-        stakeUnits = duration.mul(amount);
-        // explicit return
-        return stakeUnits;
+        return AludelV3Lib.calculateStakeUnits(amount, start, end);
     }
 
     function calculateUnlockedRewards(
@@ -329,44 +325,12 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         override
         returns (uint256 unlockedRewards)
     {
-        // return 0 if no registered schedules
-        if (rewardSchedules.length == 0) {
-            return 0;
-        }
-
-        // calculate reward shares locked across all reward schedules
-        uint256 sharesLocked;
-        for (uint256 index = 0; index < rewardSchedules.length; index++) {
-            // fetch reward schedule storage reference
-            RewardSchedule memory schedule = rewardSchedules[index];
-
-            // caculate amount of shares available on this schedule
-            // if (now - start) < duration
-            //   sharesLocked = shares - (shares * (now - start) / duration)
-            // else
-            //   sharesLocked = 0
-            uint256 currentSharesLocked = 0;
-            if (timestamp.sub(schedule.start) < schedule.duration) {
-                currentSharesLocked = schedule.shares.sub(
-                    schedule.shares.mul(timestamp.sub(schedule.start)).div(schedule.duration)
-                );
-            }
-
-            // add to running total
-            sharesLocked = sharesLocked.add(currentSharesLocked);
-        }
-
-        // convert shares to reward
-        // rewardLocked = sharesLocked * rewardBalance / sharesOutstanding
-        uint256 rewardLocked =
-            sharesLocked.mul(rewardBalance).div(sharesOutstanding);
-
-        // calculate amount available
-        // unlockedRewards = rewardBalance - rewardLocked
-        unlockedRewards = rewardBalance.sub(rewardLocked);
-
-        // explicit return
-        return unlockedRewards;
+        return AludelV3Lib.calculateUnlockedRewards(
+            rewardSchedules,
+            rewardBalance,
+            sharesOutstanding,
+            timestamp
+        );
     }
 
     function calculateReward(
@@ -381,53 +345,16 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         override
         returns (uint256 reward)
     {
-        // calculate time weighted stake
-        uint256 stakeUnits = stakeAmount.mul(stakeDuration);
-
-        // calculate base reward
-        // baseReward = unlockedRewards * stakeUnits / totalStakeUnits
-        uint256 baseReward = 0;
-        if (totalStakeUnits != 0) {
-            // scale reward according to proportional weight
-            baseReward = unlockedRewards.mul(stakeUnits).div(totalStakeUnits);
-        }
-
-        // calculate scaled reward
-        // if no scaling or scaling period completed
-        //   reward = baseReward
-        // else
-        //   minReward = baseReward * scalingFloor / scalingCeiling
-        //   bonusReward = baseReward
-        //                 * (scalingCeiling - scalingFloor) / scalingCeiling
-        //                 * duration / scalingTime
-        //   reward = minReward + bonusReward
-        if (
-            stakeDuration
-                >= rewardScaling.time
-                || rewardScaling.floor
-                == rewardScaling.ceiling
-        ) {
-            // no reward scaling applied
-            reward = baseReward;
-        } else {
-            // calculate minimum reward using scaling floor
-            uint256 minReward =
-                baseReward.mul(rewardScaling.floor).div(rewardScaling.ceiling);
-
-            // calculate bonus reward with vested portion of scaling factor
-            uint256 bonusReward = baseReward
-                    .mul(stakeDuration)
-                    .mul(rewardScaling.ceiling.sub(rewardScaling.floor))
-                    .div(rewardScaling.ceiling)
-                    .div(rewardScaling.time);
-
-            // add minimum reward and bonus reward
-            reward = minReward.add(bonusReward);
-        }
-
-        // explicit return
-        return reward;
+        return AludelV3Lib.calculateReward(
+            unlockedRewards,
+            stakeAmount,
+            stakeDuration,
+            totalStakeUnits,
+            rewardScaling
+        );
     }
+
+    
 
     /* admin functions */
 
@@ -462,31 +389,14 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
             msg.sender,
             _feeRecipient,
             fee
+);
+
+        AludelV3Lib.addRewardSchedule(
+            _aludel,
+            duration,
+            block.timestamp,
+            amount
         );
-        
-        // create new reward shares
-        // if existing rewards on this Aludel
-        //   mint new shares proportional to % change in rewards remaining
-        //   newShares = remainingShares * newReward / remainingRewards
-        // else
-        //   mint new shares with BASE_SHARES_PER_WEI initial conversion rate
-        //   store as fixed point number with same  of decimals as reward token
-        uint256 newRewardShares;
-        if (_aludel.rewardSharesOutstanding > 0) {
-            uint256 remainingRewards =
-                IERC20(_aludel.rewardToken).balanceOf(_aludel.rewardPool);
-            newRewardShares =
-                _aludel.rewardSharesOutstanding.mul(amount).div(remainingRewards);
-        } else {
-            newRewardShares = amount.mul(BASE_SHARES_PER_WEI);
-        }
-
-        // add reward shares to total
-        _aludel.rewardSharesOutstanding =
-            _aludel.rewardSharesOutstanding.add(newRewardShares);
-
-        // store new reward schedule
-        _aludel.rewardSchedules.push(RewardSchedule(duration, block.timestamp, newRewardShares));
 
         // transfer reward tokens to reward pool
         TransferHelper.safeTransferFrom(
@@ -668,12 +578,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         _updateTotalStakeUnits();
         StakeData memory currentStake = StakeData(amount, block.timestamp);
 
-        // store amount and timestamp
-        vaultData.stakes.push(currentStake);
-
-        // update cached total vault and Aludel amounts
-        vaultData.totalStake = vaultData.totalStake.add(amount);
-        _aludel.totalStake = _aludel.totalStake.add(amount);
+        AludelV3Lib.addStake(_aludel, vaultData, amount, block.timestamp);
 
         // call lock on vault
         IUniversalVault(vault).lock(_aludel.stakingToken, amount, permission);
@@ -725,16 +630,15 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         _updateTotalStakeUnits();
 
         // get reward amount remaining
-        uint256 remainingRewards =
-            IERC20(_aludel.rewardToken).balanceOf(_aludel.rewardPool);
+        uint256 remainingRewards = AludelV3Lib.getRemainingRewards(_aludel);
 
         // calculate vested portion of reward pool
-        uint256 unlockedRewards = calculateUnlockedRewards(
-                _aludel.rewardSchedules,
-                remainingRewards,
-                _aludel.rewardSharesOutstanding,
-                block.timestamp
-            );
+        uint256 unlockedRewards = AludelV3Lib.calculateUnlockedRewards(
+            _aludel.rewardSchedules,
+            remainingRewards,
+            _aludel.rewardSharesOutstanding,
+            block.timestamp
+        );
 
         (uint256 reward, uint256 amount) = _unstake(
             vault,
