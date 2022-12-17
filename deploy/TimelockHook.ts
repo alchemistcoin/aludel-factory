@@ -11,12 +11,12 @@ const deployFunc = async function ({
 
   await deploy("TimelockHook", {
     from: deployer,
-    args: [],
+    args: [90 * 86400],
     log: true,
     contract: "src/contracts/aludel/TimelockHook.sol:TimelockHook",
     deterministicDeployment: false,
   });
 };
 
-deployFunc.tags = ["TimelockHook"];
+deployFunc.tags = ["TimelockHook-90DAY"];
 export default deployFunc;

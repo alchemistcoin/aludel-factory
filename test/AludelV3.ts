@@ -220,7 +220,7 @@ describe("AludelV3", function () {
     const fixtures = await deployments.fixture([
       "AludelFactory",
       "templates",
-      "TimelockHook",
+      "TimelockHook-90DAY",
     ]);
     aludelFactory = await ethers.getContractAt(
       "AludelFactory",
