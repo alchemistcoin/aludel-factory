@@ -753,6 +753,9 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
                 stakes[computedStakeIndex].amount -= amounts[metaIndex];
                 currentStake.amount -= amounts[metaIndex];
             }
+            if (address(_aludel.hookContract) != address(0)) {
+                _aludel.hookContract.unstakeAndClaimPost(currentStake);
+            }
             uint256 stakeDuration = block.timestamp - currentStake.timestamp;
             uint256 currentReward = calculateReward(
                 unlockedRewards,

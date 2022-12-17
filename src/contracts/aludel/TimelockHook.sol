@@ -5,7 +5,11 @@ import {IAludelHooks} from "./IAludelHooks.sol";
 import {IAludelV3} from "./IAludelV3.sol";
 
 contract TimelockHook is IAludelHooks {
-  error TimelockNotElapsed();
-  function unstakeAndClaimPost(IAludelV3.StakeData memory stake) external{
-  }
+    error TimelockNotElapsed();
+
+    function unstakeAndClaimPost(IAludelV3.StakeData memory stake) external {
+        if (stake.timestamp + 90 days > block.timestamp) {
+            revert TimelockNotElapsed();
+        }
+    }
 }
