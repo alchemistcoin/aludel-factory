@@ -12,7 +12,7 @@ contract TimelockHook is IAludelHooks {
     }
 
     function unstakeAndClaimPost(IAludelV3.StakeData memory stake) external {
-        if (stake.timestamp + lockPeriod > block.timestamp) {
+        if (stake.timestamp + lockPeriod >= block.timestamp) {
             revert TimelockNotElapsed();
         }
     }
