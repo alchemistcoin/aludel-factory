@@ -313,7 +313,7 @@ describe("AludelV3", function () {
 
     describe("when parameters are valid", function () {
       it("should set contract variables", async function () {
-        const args = [
+        const args: AludelInitializationParams = [
           rewardPoolFactory.address,
           powerSwitchFactory.address,
           stakingToken.address,
@@ -356,7 +356,7 @@ describe("AludelV3", function () {
   describe("admin functions", function () {
     let aludel: AludelV3, powerSwitch: Contract, rewardPool: Contract;
     beforeEach(async function () {
-      const args = [
+      const args: AludelInitializationParams = [
         rewardPoolFactory.address,
         powerSwitchFactory.address,
         stakingToken.address,
@@ -702,7 +702,7 @@ describe("AludelV3", function () {
     describe("isValidVault", function () {
       let vault: Contract;
       beforeEach(async function () {
-        const args = [
+        const args: AludelInitializationParams = [
           rewardPoolFactory.address,
           powerSwitchFactory.address,
           stakingToken.address,
@@ -1422,7 +1422,7 @@ describe("AludelV3", function () {
   describe("user functions", function () {
     let aludel: AludelV3, powerSwitch: Contract, rewardPool: Contract;
     beforeEach(async function () {
-      const args = [
+      const args: AludelInitializationParams = [
         rewardPoolFactory.address,
         powerSwitchFactory.address,
         stakingToken.address,
@@ -2289,7 +2289,7 @@ describe("AludelV3", function () {
           time: 60 * DAY,
         };
         beforeEach(async function () {
-          const args = [
+          const args: AludelInitializationParams = [
             rewardPoolFactory.address,
             powerSwitchFactory.address,
             stakingToken.address,
