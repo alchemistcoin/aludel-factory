@@ -2,7 +2,7 @@
 // solhint-disable func-name-mixedcase
 pragma solidity ^0.8.17;
 
-import {DSTest} from "ds-test/src/test.sol";
+import {DSTest} from "ds-test/test.sol";
 import {ERC20} from "solmate/tokens/ERC20.sol";
 import {Hevm} from "solmate/test/utils/Hevm.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
@@ -13,7 +13,7 @@ import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 import {Spy} from "../contracts/mocks/Spy.sol";
 
-import "forge-std/src/console2.sol";
+import "forge-std/console2.sol";
 
 contract AludelFactoryTest is DSTest {
     AludelFactory private factory;

@@ -1,8 +1,8 @@
 @openzeppelin/=node_modules/@openzeppelin/
 @uniswap/lib/=node_modules/@uniswap/lib/
-ds-test/=node_modules/ds-test/
-ds-auth/=node_modules/ds-auth/
-ds-math/=node_modules/ds-math/
+ds-test/=node_modules/ds-test/src/
+ds-auth/=node_modules/ds-auth/src/
+ds-math/=node_modules/ds-math/src/
 solmate/=node_modules/@rari-capital/solmate/src/
 alchemist/=node_modules/alchemist/
-forge-std/=node_modules/forge-std/
+forge-std/=node_modules/forge-std/src/
