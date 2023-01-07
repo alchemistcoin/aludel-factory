@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.17;
 
-import {ERC20} from "@rari-capital/solmate/src/tokens/ERC20.sol";
+import {ERC20} from "solmate/tokens/ERC20.sol";
 import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol";
 
 contract MockERC20 is ERC20 {
