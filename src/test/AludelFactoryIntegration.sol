@@ -8,8 +8,10 @@ import {Vm} from "forge-std/Vm.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
-import {IAludelV2} from "../contracts/aludel/IAludelV3.sol";
+import {AludelV3} from "../contracts/aludel/AludelV3.sol";
+import {IAludelHooks} from "../contracts/aludel/IAludelHooks.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
+import {IAludelV3} from "../contracts/aludel/IAludelV3.sol";
 import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
 
@@ -47,8 +49,8 @@ contract AludelFactoryIntegrationTest is Test {
 
     RewardPoolFactory private rewardPoolFactory;
     PowerSwitchFactory private powerSwitchFactory;
-    RewardScaling private rewardScaling;
-    IAludel private template;
+    IAludelV3.RewardScaling private rewardScaling;
+    AludelV3 private template;
 
     CrucibleFactory private crucibleFactory;
 
@@ -60,7 +62,7 @@ contract AludelFactoryIntegrationTest is Test {
 
     uint256 public constant SCHEDULE_DURATION = 1 days;
 
-    AludelInitializationParams private defaultParams;
+    AludelV3.AludelInitializationParams private defaultParams;
 
     function setUp() public {
        
@@ -75,7 +77,7 @@ contract AludelFactoryIntegrationTest is Test {
 
         factory = new AludelFactory(recipient.addr(), bps);
 
-        template = new AludelV2();
+        template = new AludelV3();
         template.initializeLock();
         rewardPoolFactory = new RewardPoolFactory();
         powerSwitchFactory = new PowerSwitchFactory();
@@ -91,7 +93,7 @@ contract AludelFactoryIntegrationTest is Test {
         bonusTokens[0] = address(new MockERC20("", "BonusToken A"));
         bonusTokens[1] = address(new MockERC20("", "BonusToken B"));
 
-        rewardScaling = RewardScaling({
+        rewardScaling = IAludelV3.RewardScaling({
             floor: 1,
             ceiling: 1,
             time: SCHEDULE_DURATION
@@ -110,7 +112,7 @@ contract AludelFactoryIntegrationTest is Test {
 
         uint64 startTime = uint64(block.timestamp);
 
-        aludel = IAludel(
+        aludel = IAludelV3(
             factory.launch(
                 address(template),
                 "name",
@@ -123,11 +125,10 @@ contract AludelFactoryIntegrationTest is Test {
             )
         );
 
-        IAludel.AludelData memory data = aludel.getAludelData();
 
         Utils.fundAludel(aludel, admin, rewardToken, REWARD_AMOUNT, SCHEDULE_DURATION);
 
-        data = aludel.getAludelData();
+        IAludelV3.AludelData memory data = aludel.getAludelData();
 
         crucibleA = Utils.createCrucible(user, crucibleFactory);
         crucibleB = Utils.createCrucible(anotherUser, crucibleFactory);
@@ -148,7 +149,7 @@ contract AludelFactoryIntegrationTest is Test {
             stakingToken,
             STAKE_AMOUNT
         );
-        IAludel.AludelData memory data = aludel.getAludelData();
+        IAludelV3.AludelData memory data = aludel.getAludelData();
         assertEq(data.totalStake, STAKE_AMOUNT);
         assertEq(data.lastUpdate, block.timestamp);
     }
@@ -167,12 +168,17 @@ contract AludelFactoryIntegrationTest is Test {
        
         vm.prank(user.addr());
 
+        uint256[] memory indices = new uint256[](1);
+        uint256[] memory amounts = new uint256[](1);
+        indices[0] = 0;
+        amounts[0] = STAKE_AMOUNT;
         Utils.unstake(
             user,
             crucibleA,
             aludel,
             stakingToken,
-            STAKE_AMOUNT
+            indices,
+            amounts
         );
 
         // the only staked gets the full amount of rewards because it completed the schedule duration
@@ -193,8 +199,16 @@ contract AludelFactoryIntegrationTest is Test {
         // Fund Aludel again with the same reward amount and schedule duration.
         Utils.fundAludel(aludel, admin, rewardToken, REWARD_AMOUNT, SCHEDULE_DURATION);
 
+
+        uint256[] memory indices = new uint256[](1);
+        uint256[] memory amounts = new uint256[](1);
+        // first stake (and the only one in this scenario)
+        indices[0] = 0;
+        // full staked amount
+        amounts[0] = STAKE_AMOUNT;
+
         // Unstake should only receive rewards for first reward period.
-        Utils.unstake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
+        Utils.unstake(user, crucibleA, aludel, stakingToken, indices, amounts);
 
         assertEq(rewardToken.balanceOf(address(crucibleA)), REWARD_AMOUNT / 2);
         assertEq(rewardToken.balanceOf(address(crucibleB)), 0);
@@ -212,11 +226,11 @@ contract AludelFactoryIntegrationTest is Test {
         vm.warp(block.timestamp + SCHEDULE_DURATION);
 
         // should get rewards from first and second schedule?
-        Utils.unstake(anotherUser, crucibleB, aludel, stakingToken, STAKE_AMOUNT);
+        Utils.unstake(anotherUser, crucibleB, aludel, stakingToken, indices, amounts);
         // Should only get rewards for the second schedule
-        Utils.unstake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
+        Utils.unstake(user, crucibleA, aludel, stakingToken, indices, amounts);
         // should only get rewards from second schedule
-        Utils.unstake(user, crucibleC, aludel, stakingToken, STAKE_AMOUNT);
+        Utils.unstake(user, crucibleC, aludel, stakingToken, indices, amounts);
 
         // the magic behind these calculations can be explained later :)
         assertEq(rewardToken.balanceOf(address(crucibleA)), REWARD_AMOUNT / 8 * 7);
