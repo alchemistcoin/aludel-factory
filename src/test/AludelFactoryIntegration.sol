@@ -137,6 +137,9 @@ contract AludelFactoryIntegrationTest is Test {
     }
 
 
+    // Given a user with staking token balance, when it stakes coins
+    //  * the aludel has a staked amount
+    //  * aludel's last update timestamp is updated
     function test_stake() public {
         Utils.stake(
             user,
@@ -145,6 +148,9 @@ contract AludelFactoryIntegrationTest is Test {
             stakingToken,
             STAKE_AMOUNT
         );
+        IAludel.AludelData memory data = aludel.getAludelData();
+        assertEq(data.totalStake, STAKE_AMOUNT);
+        assertEq(data.lastUpdate, block.timestamp);
     }
 
     function test_unstake() public {
@@ -157,8 +163,8 @@ contract AludelFactoryIntegrationTest is Test {
             STAKE_AMOUNT
         );
 
-        vm.warp(block.timestamp + 1 days);
-        
+        vm.warp(block.timestamp + SCHEDULE_DURATION);
+       
         vm.prank(user.addr());
 
         Utils.unstake(
@@ -168,8 +174,10 @@ contract AludelFactoryIntegrationTest is Test {
             stakingToken,
             STAKE_AMOUNT
         );
-    }
 
+        // the only staked gets the full amount of rewards because it completed the schedule duration
+        assertEq(rewardToken.balanceOf(address(crucibleA)), REWARD_AMOUNT);
+    }
 
     function test_many_users_multiple_stakes() public {
 
@@ -188,10 +196,14 @@ contract AludelFactoryIntegrationTest is Test {
         // Unstake should only receive rewards for first reward period.
         Utils.unstake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
 
+        assertEq(rewardToken.balanceOf(address(crucibleA)), REWARD_AMOUNT / 2);
+        assertEq(rewardToken.balanceOf(address(crucibleB)), 0);
+        assertEq(rewardToken.balanceOf(address(crucibleC)), 0);
+
         // Stake crucibleA again.
         Utils.stake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
 
-        // user mints crucibleC and then stakes
+        // user mints crucibleC and then stakes it
         crucibleC = Utils.createCrucible(user, crucibleFactory);
         Utils.fundMockToken(address(crucibleC), stakingToken, STAKE_AMOUNT);
         Utils.stake(user, crucibleC, aludel, stakingToken, STAKE_AMOUNT);
@@ -199,12 +211,17 @@ contract AludelFactoryIntegrationTest is Test {
         // Advance time.
         vm.warp(block.timestamp + SCHEDULE_DURATION);
 
-        // Should only get rewards for the second schedule
-        Utils.unstake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
         // should get rewards from first and second schedule?
         Utils.unstake(anotherUser, crucibleB, aludel, stakingToken, STAKE_AMOUNT);
+        // Should only get rewards for the second schedule
+        Utils.unstake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
         // should only get rewards from second schedule
         Utils.unstake(user, crucibleC, aludel, stakingToken, STAKE_AMOUNT);
+
+        // the magic behind these calculations can be explained later :)
+        assertEq(rewardToken.balanceOf(address(crucibleA)), REWARD_AMOUNT / 8 * 7);
+        assertEq(rewardToken.balanceOf(address(crucibleB)), REWARD_AMOUNT / 8 * 6);
+        assertEq(rewardToken.balanceOf(address(crucibleC)), REWARD_AMOUNT / 8 * 3);
 
     }
 
