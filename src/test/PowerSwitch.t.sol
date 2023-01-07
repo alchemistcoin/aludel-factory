@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import {DSTest} from "ds-test/test.sol";
-import {Hevm} from "solmate/test/utils/Hevm.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 import {PowerSwitchFactory} from
     "../contracts/powerSwitch/PowerSwitchFactory.sol";
@@ -11,12 +11,12 @@ import {
 } from "../contracts/powerSwitch/PowerSwitch.sol";
 
 contract PowerSwitchTest is DSTest {
-	Hevm private cheats;
+	Vm private cheats;
 
 	PowerSwitchFactory private powerSwitchFactory;
 
 	function setUp() public {
-		cheats = Hevm(HEVM_ADDRESS);
+		cheats = Vm(HEVM_ADDRESS);
 	}
 
 	function test_getStatus() public {

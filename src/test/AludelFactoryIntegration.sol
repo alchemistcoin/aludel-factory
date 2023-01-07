@@ -3,8 +3,8 @@
 pragma solidity ^0.8.17;
 
 import {DSTest} from "ds-test/test.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {Hevm} from "solmate/test/utils/Hevm.sol";
+import {ERC20} from "solmate/src/tokens/ERC20.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
@@ -25,7 +25,7 @@ import "forge-std/console2.sol";
 
 contract AludelFactoryIntegrationTest is DSTest {
     AludelFactory private factory;
-    Hevm private cheats;
+    Vm private cheats;
     IAludelV3 private aludel;
 
     MockERC20 private stakingToken;
@@ -52,7 +52,7 @@ contract AludelFactoryIntegrationTest is DSTest {
     AludelV3.AludelInitializationParams private defaultParams;
 
     function setUp() public {
-        cheats = Hevm(HEVM_ADDRESS);
+        cheats = Vm(HEVM_ADDRESS);
         owner = cheats.addr(PRIVATE_KEY);
 
         recipient = cheats.addr(PRIVATE_KEY + 1);
