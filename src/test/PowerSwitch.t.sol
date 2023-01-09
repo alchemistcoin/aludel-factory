@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.17;
 
-import {DSTest} from "ds-test/test.sol";
+import {Test} from "forge-std/Test.sol";
 import {Vm} from "forge-std/Vm.sol";
 
 import {PowerSwitchFactory} from
@@ -10,7 +10,7 @@ import {
     PowerSwitch, IPowerSwitch
 } from "../contracts/powerSwitch/PowerSwitch.sol";
 
-contract PowerSwitchTest is DSTest {
+contract PowerSwitchTest is Test {
 	Vm private cheats;
 
 	PowerSwitchFactory private powerSwitchFactory;
