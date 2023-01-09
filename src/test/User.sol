@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.10;
 
-import {Vm} from "forge-std/src/Vm.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {Utils} from "./Utils.sol";
 
 contract User {

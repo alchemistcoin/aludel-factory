@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 pragma solidity ^0.8.10;
 
-import {DSTest} from "ds-test/src/test.sol";
-import {Vm} from "forge-std/src/Vm.sol";
+import {DSTest} from "ds-test/test.sol";
+import {Vm} from "forge-std/Vm.sol";
 
 import {User} from "./User.sol";
 

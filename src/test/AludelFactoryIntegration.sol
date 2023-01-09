@@ -31,7 +31,6 @@ import "forge-std/console2.sol";
 contract AludelFactoryIntegrationTest is Test {
     AludelFactory private factory;
     IAludelV3 private aludel;
-    Vm private vm;
 
     User private user;
     User private anotherUser;
