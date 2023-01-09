@@ -22,4 +22,16 @@ const deployFunc = async function ({
   });
 };
 deployFunc.tags = ["AludelFactory"];
+deployFunc.skip = async function skip({
+  deployments,
+}: HardhatRuntimeEnvironment) {
+  // We want to keep the existing AludelFactory if there's already one
+  // deployed, since it's the root of trust for the frontend and it permissions
+  // Aludel templates, differences in deployed bytecode be damned.
+  if (await deployments.getOrNull("AludelFactory")) {
+    return true;
+  } else {
+    return false;
+  }
+};
 export default deployFunc;

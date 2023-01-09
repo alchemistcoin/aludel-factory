@@ -1,0 +1,113 @@
+{
+  "address": "0x89921eE74165432F7f4e14075061148a09E8d4F6",
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_lockPeriod",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "TimelockNotElapsed",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "lockPeriod",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IAludelV3.StakeData",
+          "name": "stake",
+          "type": "tuple"
+        }
+      ],
+      "name": "unstakeAndClaimPost",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "transactionHash": "0x40fe42d0688c6729b3b49e1018c20957db373978912d2e28113e582887b7c114",
+  "receipt": {
+    "to": null,
+    "from": "0x844eAb6D943B1Db987786a2469D7A0bCCd38ddDc",
+    "contractAddress": "0x89921eE74165432F7f4e14075061148a09E8d4F6",
+    "transactionIndex": 2,
+    "gasUsed": "127841",
+    "logsBloom": "0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008000000000008000000000000000000000000000000000000000000000800000000000000000000100000000004000000000000000000000000000000000000000000000000080000000000000000000000000000000001000000000000000000000000080000000000000000000200000000000000000000000000000000000000000000000000000000000004000000000000000000001000000008000000000000000000000100040000000000000000000000000000000000000000000000000000000000000000000100000",
+    "blockHash": "0xf4364630ad608e05b57d252b9a1377dce3868d2fbb73135acc86c244ffda285d",
+    "transactionHash": "0x40fe42d0688c6729b3b49e1018c20957db373978912d2e28113e582887b7c114",
+    "logs": [
+      {
+        "transactionIndex": 2,
+        "blockNumber": 30743754,
+        "transactionHash": "0x40fe42d0688c6729b3b49e1018c20957db373978912d2e28113e582887b7c114",
+        "address": "0x0000000000000000000000000000000000001010",
+        "topics": [
+          "0x4dfe1bbbcf077ddc3e01291eea2d5c70c2b422b415d95645b9adcfd678cb1d63",
+          "0x0000000000000000000000000000000000000000000000000000000000001010",
+          "0x000000000000000000000000844eab6d943b1db987786a2469d7a0bccd38dddc",
+          "0x000000000000000000000000be188d6641e8b680743a4815dfa0f6208038960f"
+        ],
+        "data": "0x0000000000000000000000000000000000000000000000000000ae67f416cf000000000000000000000000000000000000000000000000000dde8dc330c4992d0000000000000000000000000000000000000000000028c69add6df4fa5720780000000000000000000000000000000000000000000000000ddddf5b3cadca2d0000000000000000000000000000000000000000000028c69ade1c5cee6def78",
+        "logIndex": 19,
+        "blockHash": "0xf4364630ad608e05b57d252b9a1377dce3868d2fbb73135acc86c244ffda285d"
+      }
+    ],
+    "blockNumber": 30743754,
+    "cumulativeGasUsed": "2848595",
+    "status": 1,
+    "byzantium": true
+  },
+  "args": [
+    7776000
+  ],
+  "numDeployments": 1,
+  "solcInputHash": "3ff5fea6dbaf82abf3cebd0f921fb9ca",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.17+commit.8df45f5f\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_lockPeriod\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"TimelockNotElapsed\",\"type\":\"error\"},{\"inputs\":[],\"name\":\"lockPeriod\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"components\":[{\"internalType\":\"uint256\",\"name\":\"amount\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"timestamp\",\"type\":\"uint256\"}],\"internalType\":\"struct IAludelV3.StakeData\",\"name\":\"stake\",\"type\":\"tuple\"}],\"name\":\"unstakeAndClaimPost\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"src/contracts/aludel/TimelockHook.sol\":\"TimelockHook\"},\"evmVersion\":\"london\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\",\"useLiteralContent\":true},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[],\"viaIR\":true},\"sources\":{\"src/contracts/aludel/IAludelHooks.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0\\npragma solidity ^0.8.0;\\n\\nimport {IAludelV3} from \\\"./IAludelV3.sol\\\";\\n\\ninterface IAludelHooks {\\n    function unstakeAndClaimPost(IAludelV3.StakeData memory stake) external;\\n}\\n\",\"keccak256\":\"0x609014969a7031ea4f492550bf3479ffcb96de45c2527d5216fe55cf4659d354\",\"license\":\"GPL-3.0\"},\"src/contracts/aludel/IAludelV3.sol\":{\"content\":\"\\n// SPDX-License-Identifier: GPL-3.0-only\\npragma solidity ^0.8.0;\\n\\nimport {IAludelHooks} from \\\"./IAludelHooks.sol\\\";\\n\\npragma abicoder v2;\\n\\ninterface IRageQuit {\\n    function rageQuit() external;\\n}\\n\\ninterface IAludelV3 is IRageQuit {\\n    /* admin events */\\n\\n    event AludelCreated(address rewardPool, address powerSwitch);\\n    event AludelFunded(uint256 amount, uint256 duration);\\n    event BonusTokenRegistered(address token);\\n    event VaultFactoryRegistered(address factory);\\n    event VaultFactoryRemoved(address factory);\\n\\n    /* user events */\\n\\n    event Staked(address vault, uint256 amount);\\n    event Unstaked(address vault, uint256 amount);\\n    event RewardClaimed(address vault, address token, uint256 amount);\\n\\n    /* data types */\\n\\n    struct AludelData {\\n        address stakingToken;\\n        address rewardToken;\\n        address rewardPool;\\n        RewardScaling rewardScaling;\\n        uint256 rewardSharesOutstanding;\\n        uint256 totalStake;\\n        uint256 totalStakeUnits;\\n        uint256 lastUpdate;\\n        IAludelHooks hookContract;\\n        RewardSchedule[] rewardSchedules;\\n    }\\n\\n    struct RewardSchedule {\\n        uint256 duration;\\n        uint256 start;\\n        uint256 shares;\\n    }\\n\\n    struct VaultData {\\n        uint256 totalStake;\\n        StakeData[] stakes;\\n    }\\n\\n    struct StakeData {\\n        uint256 amount;\\n        uint256 timestamp;\\n    }\\n\\n    struct RewardScaling {\\n        uint256 floor;\\n        uint256 ceiling;\\n        uint256 time;\\n    }\\n\\n    struct RewardOutput {\\n        uint256 lastStakeAmount;\\n        uint256 newStakesCount;\\n        uint256 reward;\\n        uint256 newTotalStakeUnits;\\n    }\\n\\n    function initializeLock() external;\\n\\n    function initialize(\\n        uint64 startTime,\\n        address ownerAddress,\\n        address feeRecipient,\\n        uint16 feeBps,\\n        bytes calldata\\n    ) external;\\n\\n    /* user functions */\\n\\n    function stake(address vault, uint256 amount, bytes calldata permission)\\n        external;\\n\\n    function unstakeAndClaim(\\n        address vault,\\n        uint256[] calldata indices,\\n        uint256[] calldata amounts,\\n        bytes calldata permission\\n    )\\n        external;\\n\\n    /* admin functions */\\n\\n    function fund(uint256 amount, uint256 duration) external;\\n\\n    function registerVaultFactory(address factory) external;\\n\\n    function removeVaultFactory(address factory) external;\\n\\n    function registerBonusToken(address bonusToken) external;\\n\\n    function rescueTokensFromRewardPool(\\n        address token,\\n        address recipient,\\n        uint256 amount\\n    )\\n        external;\\n\\n    /* getter functions */\\n\\n    function getAludelData()\\n        external\\n        view\\n        returns (AludelData memory aludel);\\n\\n    function getBonusTokenSetLength()\\n        external\\n        view\\n        returns (uint256 length);\\n\\n    function getBonusTokenAtIndex(uint256 index)\\n        external\\n        view\\n        returns (address bonusToken);\\n\\n    function getVaultFactorySetLength()\\n        external\\n        view\\n        returns (uint256 length);\\n\\n    function getVaultFactoryAtIndex(uint256 index)\\n        external\\n        view\\n        returns (address factory);\\n\\n    function getVaultData(address vault)\\n        external\\n        view\\n        returns (VaultData memory vaultData);\\n\\n    function isValidAddress(address target)\\n        external\\n        view\\n        returns (bool validity);\\n\\n    function isValidVault(address target)\\n        external\\n        view\\n        returns (bool validity);\\n\\n    function getCurrentTotalStakeUnits()\\n        external\\n        view\\n        returns (uint256 totalStakeUnits);\\n\\n    function getFutureTotalStakeUnits(uint256 timestamp)\\n        external\\n        view\\n        returns (uint256 totalStakeUnits);\\n\\n    /* pure functions */\\n\\n    function calculateTotalStakeUnits(\\n        StakeData[] memory stakes,\\n        uint256 timestamp\\n    )\\n        external\\n        pure\\n        returns (uint256 totalStakeUnits);\\n\\n    function calculateStakeUnits(uint256 amount, uint256 start, uint256 end)\\n        external\\n        pure\\n        returns (uint256 stakeUnits);\\n\\n    function calculateUnlockedRewards(\\n        RewardSchedule[] memory rewardSchedules,\\n        uint256 rewardBalance,\\n        uint256 sharesOutstanding,\\n        uint256 timestamp\\n    )\\n        external\\n        pure\\n        returns (uint256 unlockedRewards);\\n\\n    function calculateReward(\\n        uint256 unlockedRewards,\\n        uint256 stakeAmount,\\n        uint256 stakeDuration,\\n        uint256 totalStakeUnits,\\n        RewardScaling memory rewardScaling\\n    )\\n        external\\n        pure\\n        returns (uint256 reward);\\n}\\n\",\"keccak256\":\"0x2e39c4ecd8e3bc031651c606af71d58396a67f1ef355b7d086411ba8f60428e0\",\"license\":\"GPL-3.0-only\"},\"src/contracts/aludel/TimelockHook.sol\":{\"content\":\"// SPDX-License-Identifier: GPL-3.0\\npragma solidity ^0.8.0;\\n\\nimport {IAludelHooks} from \\\"./IAludelHooks.sol\\\";\\nimport {IAludelV3} from \\\"./IAludelV3.sol\\\";\\n\\ncontract TimelockHook is IAludelHooks {\\n    error TimelockNotElapsed();\\n    uint256 immutable public lockPeriod;\\n    constructor(uint256 _lockPeriod){\\n      lockPeriod = _lockPeriod;\\n    }\\n\\n    function unstakeAndClaimPost(IAludelV3.StakeData memory stake) external {\\n        if (stake.timestamp + lockPeriod >= block.timestamp) {\\n            revert TimelockNotElapsed();\\n        }\\n    }\\n}\\n\",\"keccak256\":\"0xecee6592f7600f6edd9cd05fc21a400fb4985e3c1f4948d51f7e06a1784f86f4\",\"license\":\"GPL-3.0\"}},\"version\":1}",
+  "bytecode": "0x60a03461005f57601f6101cf38819003918201601f19168301916001600160401b038311848410176100645780849260209460405283398101031261005f5751608052604051610154908161007b82396080518181816075015260fb0152f35b600080fd5b634e487b7160e01b600052604160045260246000fdfe60806040818152600436101561001457600080fd5b600091823560e01c9081633fd8b02f146100e4575063c522c2721461003857600080fd5b346100e057806003193601126100e057805181810181811067ffffffffffffffff8211176100cc57906020918352600435815260243591829101527f000000000000000000000000000000000000000000000000000000000000000081018091116100b8574211156100a8575080f35b5163333bd2cb60e11b8152600490fd5b634e487b7160e01b83526011600452602483fd5b634e487b7160e01b84526041600452602484fd5b5080fd5b8390346100e057816003193601126100e0576020907f00000000000000000000000000000000000000000000000000000000000000008152f3fea2646970667358221220c3c497b9237bc8bc5f85aee329e5db15da1b28b5d6c4e7823cc23204de9bb2ee64736f6c63430008110033",
+  "deployedBytecode": "0x60806040818152600436101561001457600080fd5b600091823560e01c9081633fd8b02f146100e4575063c522c2721461003857600080fd5b346100e057806003193601126100e057805181810181811067ffffffffffffffff8211176100cc57906020918352600435815260243591829101527f000000000000000000000000000000000000000000000000000000000000000081018091116100b8574211156100a8575080f35b5163333bd2cb60e11b8152600490fd5b634e487b7160e01b83526011600452602483fd5b634e487b7160e01b84526041600452602484fd5b5080fd5b8390346100e057816003193601126100e0576020907f00000000000000000000000000000000000000000000000000000000000000008152f3fea2646970667358221220c3c497b9237bc8bc5f85aee329e5db15da1b28b5d6c4e7823cc23204de9bb2ee64736f6c63430008110033",
+  "devdoc": {
+    "kind": "dev",
+    "methods": {},
+    "version": 1
+  },
+  "userdoc": {
+    "kind": "user",
+    "methods": {},
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": null
+  }
+}
