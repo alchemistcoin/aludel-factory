@@ -2,22 +2,23 @@
 // solhint-disable func-name-mixedcase
 pragma solidity ^0.8.6;
 
-import {DSTest} from "ds-test/src/test.sol";
+import {Test} from "forge-std/Test.sol";
 import {ERC20} from "solmate/src/tokens/ERC20.sol";
-import {Vm} from "forge-std/src/Vm.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
 import {IAludelV3} from "../contracts/aludel/IAludelV3.sol";
 import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {AludelV3} from "../contracts/aludel/AludelV3.sol";
+import {IAludelHooks} from "../contracts/aludel/IAludelHooks.sol";
 import {AludelV3Lib} from "../contracts/aludel/AludelV3Lib.sol";
 
 import {RewardPoolFactory} from "alchemist/contracts/aludel/RewardPoolFactory.sol";
 import {PowerSwitchFactory} from "../contracts/powerSwitch/PowerSwitchFactory.sol";
 
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
-import {Spy} from "./Spy.sol";
+import {Spy} from "../contracts/mocks/Spy.sol";
 
 import {Crucible, IUniversalVault} from "alchemist/contracts/crucible/Crucible.sol";
 import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol";
@@ -26,12 +27,11 @@ import {User} from "./User.sol";
 import {Utils} from "./Utils.sol";
 import {UserFactory} from "./UserFactory.sol";
 
-import "forge-std/src/console2.sol";
+import "forge-std/console2.sol";
 
-contract AludelV3Test is DSTest {
+contract AludelV3Test is Test {
     
     AludelFactory private factory;
-    Vm private vm;
     AludelV3 private aludel;
     Spy private spyTemplate;
 
@@ -75,8 +75,6 @@ contract AludelV3Test is DSTest {
 
     function setUp() public {
 
-        vm = Utils.vm();
-
         UserFactory userFactory = new UserFactory();
         user = userFactory.createUser("user", 0);
         anotherUser = userFactory.createUser("anotherUser", 1);
@@ -118,7 +116,8 @@ contract AludelV3Test is DSTest {
             powerSwitchFactory: address(powerSwitchFactory),
             stakingToken: address(stakingToken),
             rewardToken: address(rewardToken),
-            rewardScaling: rewardScaling
+            rewardScaling: rewardScaling,
+            hookContract: IAludelHooks(address(0))
         });
 
         defaultLaunchParams = Utils.LaunchParams({
@@ -136,6 +135,7 @@ contract AludelV3Test is DSTest {
         vm.warp(START_TIME);
     }
 
+    // When the aludel has no outstanding shares the minted shares are linearly scaled.
     function test_calculate_new_shares_no_previous_shares(
         uint128 sharesOutstanding,
         uint128 remainingRewards,
@@ -303,6 +303,78 @@ contract AludelV3Test is DSTest {
         );   
     }
 
+    function test_stakes_no_amount_staked() public {
+        Crucible crucible = Utils.createCrucible(user, crucibleFactory);
 
+        vm.warp(block.timestamp + 15);
+        bytes memory lockSig = Utils.getLockPermission(
+            user, crucible, address(aludel), stakingToken, 0
+        );
+        vm.expectRevert(AludelV3.NoAmountStaked.selector);
+        aludel.stake(address(crucible), 0, lockSig);    
+    }
+
+    function test_stakes_invalid_vault() public {
+
+        Crucible crucibleTemplate = new Crucible();
+        CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
+        Crucible crucible = Utils.createCrucible(user, crucibleFactory);
+
+        Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+
+        vm.warp(block.timestamp + 15);
+        bytes memory lockSig = Utils.getLockPermission(
+            user, crucible, address(aludel), stakingToken, 1
+        );
+        vm.expectRevert(AludelV3.InvalidVault.selector);
+        aludel.stake(address(crucible), 1, lockSig); 
+    }
+
+    function test_stakes_max_stakes_reached() public {
+
+        Crucible crucible = Utils.createCrucible(user, crucibleFactory);
+        Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+        bytes memory lockSig;
+
+        // stake 30 times 1 wei
+        for (uint i = 0; i < 30; i++) {
+            vm.warp(block.timestamp + 15);
+            lockSig = Utils.getLockPermission(
+                user, crucible, address(aludel), stakingToken, 1
+            );
+            aludel.stake(address(crucible), 1, lockSig); 
+        }
+
+        // 31th stake should revert
+        lockSig = Utils.getLockPermission(user, crucible, address(aludel), stakingToken, 1);
+        vm.expectRevert(AludelV3.MaxStakesReached.selector);
+        aludel.stake(address(crucible), 1, lockSig);
+    }
+
+    function test_aludel_stake_not_enough_balance() public {
+
+        Crucible crucible = Utils.createCrucible(user, crucibleFactory);
+        Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+        vm.warp(block.timestamp + 15);
+        bytes memory lockSig = Utils.getLockPermission(
+            user, crucible, address(aludel), stakingToken, STAKE_AMOUNT + 1
+        );
+        vm.expectRevert(bytes("UniversalVault: insufficient balance"));
+        aludel.stake(address(crucible), STAKE_AMOUNT + 1, lockSig);
+    }
+
+    function test_aludel_stake_invalid_permission() public {
+
+        Crucible crucible = Utils.createCrucible(user, crucibleFactory);
+        Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+        
+        vm.startPrank(user.addr());
+        vm.warp(block.timestamp + 15);
+        bytes memory lockSig = Utils.getLockPermission(
+            user, crucible, address(aludel), stakingToken, STAKE_AMOUNT
+        );
+        vm.expectRevert(bytes("ERC1271: Invalid signature"));
+        aludel.stake(address(crucible), STAKE_AMOUNT + 1, lockSig);
+    }
 
 }
