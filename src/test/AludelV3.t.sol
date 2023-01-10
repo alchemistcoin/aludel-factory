@@ -338,11 +338,7 @@ contract AludelV3Test is Test {
 
         // stake 30 times 1 wei
         for (uint i = 0; i < 30; i++) {
-            vm.warp(block.timestamp + 15);
-            lockSig = Utils.getLockPermission(
-                user, crucible, address(aludel), stakingToken, 1
-            );
-            aludel.stake(address(crucible), 1, lockSig); 
+            Utils.stake(user, crucible, aludel, stakingToken, 1);
         }
 
         // 31th stake should revert
@@ -377,4 +373,37 @@ contract AludelV3Test is Test {
         aludel.stake(address(crucible), STAKE_AMOUNT + 1, lockSig);
     }
 
+    function test_stakes_total_stakes_units_calculations() public {
+        Crucible crucible = Utils.createCrucible(user, crucibleFactory);
+        Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT * 2);
+
+        IAludelV3.AludelData memory data = aludel.getAludelData();
+        
+        assertEq(data.totalStake, 0);
+        assertEq(data.totalStakeUnits, 0);
+        assertEq(data.lastUpdate, 0);
+
+        vm.warp(block.timestamp + 15);
+        Utils.stake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+
+        data = aludel.getAludelData();
+        // new stake units = aludel total stake * time delta, previous to the stake execution
+        // so total stake is currently 0
+        assertEq(data.totalStakeUnits, 0);
+        // this is updated after the total stake units calculation.
+        assertEq(data.totalStake, STAKE_AMOUNT);
+        assertEq(data.lastUpdate, block.timestamp);
+
+        vm.warp(block.timestamp + 15);
+        Utils.stake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
+
+        data = aludel.getAludelData();
+        data = aludel.getAludelData();
+        // new stake units = aludel total stake * time delta, previous to the stake execution
+        // so total stake == STAKE_AMOUNT and time delta is 15
+        assertEq(data.totalStakeUnits, STAKE_AMOUNT * 15);
+        // total stakes is updated after the stake execution
+        assertEq(data.totalStake, STAKE_AMOUNT * 2);
+        assertEq(data.lastUpdate, block.timestamp);
+    }
 }
