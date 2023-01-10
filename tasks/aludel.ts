@@ -101,37 +101,32 @@ task("launch-program")
     ).wait();
   });
 
-task("update-template")
-  .addParam("aludelFactory", "address of the aludel factory")
-  .addParam("template", "address of a template")
-  .addFlag("disable")
-  .setAction(async (args, { ethers, network }) => {
-    // log config
-
-    log("Network");
-    log("  ", network.name);
-    log("Task Args");
-    log(args);
-
-    // get signer
-
-    const signer = (await ethers.getSigners())[0];
-    log("Signer");
-    log("  at", signer.address);
-    log("  ETH", formatEther(await signer.getBalance()));
-
-    // get factory instance
+task("update-template", "update an already added template")
+  .addParam("template", "address of the template to update")
+  .addFlag("disable", "disable the template")
+  .addFlag("enable", "enable the template")
+  .setAction(async (args, { ethers, deployments }) => {
+    if (args.enable == args.disable) {
+      throw new Error("pass *either* --disable or --enable");
+    }
+    const factoryAddress = (await deployments.get("AludelFactory")).address;
     const factory = await ethers.getContractAt(
       "src/contracts/AludelFactory.sol:AludelFactory",
-      args.aludelFactory
+      factoryAddress
     );
 
-    log(factory);
+    const templateData = await factory.getTemplate(args.template);
+    log(
+      `updating template ${templateData.name} at ${args.template} on factory ${factoryAddress}`
+    );
+    const currentlyDisabled = templateData.disabled;
+    if (currentlyDisabled && args.disable) {
+      throw new Error("Template is already disabled");
+    } else if (!currentlyDisabled && args.enable) {
+      throw new Error("Template is already enabled");
+    }
 
-    // deploy minimal proxy using `params` as init params
-    await (
-      await factory.updateTemplate(args.template, args.disable ? true : false)
-    ).wait();
+    await (await factory.updateTemplate(args.template, !!args.disable)).wait();
   });
 
 task("add-template")

@@ -15,12 +15,14 @@ import { DAYS } from "./utils";
 chai.use(chaiAsPromised);
 
 describe("Aludel factory deployments", function () {
+  beforeEach(async function () {
+    await deployments.fixture(["templates"], {
+      keepExistingDeployments: true,
+    });
+  });
   describe("WHEN deploying a template set", () => {
     let factory: AludelFactory;
     beforeEach(async () => {
-      await deployments.fixture(["templates"], {
-        keepExistingDeployments: true,
-      });
       const deployedFactory = await deployments.get("AludelFactory");
       factory = (await ethers.getContractAt(
         deployedFactory.abi,
@@ -46,6 +48,63 @@ describe("Aludel factory deployments", function () {
       );
       expect(aludelTemplate.disabled).to.be.false;
       expect(aludelTemplate.name).to.be.equal("AludelV2");
+    });
+
+    describe("WHEN disabling a template with the update-template task ", function () {
+      let templateAddress: string;
+      beforeEach(async function () {
+        templateAddress = (await deployments.get("AludelV3")).address;
+        await run("update-template", {
+          disable: true,
+          template: templateAddress,
+        });
+      });
+      it("THEN the template is disabled", async function () {
+        const aludelTemplate = await factory.getTemplate(templateAddress);
+        expect(aludelTemplate.disabled).to.be.true;
+      });
+      it("AND WHEN disabling it again, THEN it throws", async function () {
+        await expect(
+          run("update-template", { disable: true, template: templateAddress })
+        ).to.be.rejectedWith("Template is already disabled");
+      });
+
+      it("WHEN pasing both enable and disable flags to update-template, THEN it throws", async function () {
+        await expect(
+          run("update-template", {
+            disable: true,
+            enable: true,
+            template: templateAddress,
+          })
+        ).to.be.rejectedWith("pass *either* --disable or --enable");
+      });
+      it("WHEN pasing no enable or disable flags to update-template, THEN it throws", async function () {
+        await expect(
+          run("update-template", {
+            disable: true,
+            enable: true,
+            template: templateAddress,
+          })
+        ).to.be.rejectedWith("pass *either* --disable or --enable");
+      });
+
+      describe("AND WHEN enabling it again", function () {
+        beforeEach(async function () {
+          await run("update-template", {
+            enable: true,
+            template: templateAddress,
+          });
+        });
+        it("THEN the template is enabled", async function () {
+          const aludelTemplate = await factory.getTemplate(templateAddress);
+          expect(aludelTemplate.disabled).to.be.false;
+        });
+        it("AND WHEN trying to enable it again, THEN it throws", async function () {
+          await expect(
+            run("update-template", { enable: true, template: templateAddress })
+          ).to.be.rejectedWith("Template is already enabled");
+        });
+      });
     });
 
     async function deployMockERC20(name: string): Promise<MockERC20> {
