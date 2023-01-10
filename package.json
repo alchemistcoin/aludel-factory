@@ -61,7 +61,7 @@
     "@ethersproject/units": "5.7.0",
     "@ethersproject/wallet": "5.7.0",
     "@openzeppelin/contracts": "4.6.0",
-    "solmate": "https://github.com/transmissions11/solmate",
+    "solmate": "https://github.com/transmissions11/solmate#3998897acb502fa7b480f505138a6ae1842e8d10",
     "@types/chai-as-promised": "^7.1.5",
     "@uniswap/lib": "https://github.com/Uniswap/solidity-lib",
     "@uniswap/v2-periphery": "https://github.com/Uniswap/v2-periphery",
