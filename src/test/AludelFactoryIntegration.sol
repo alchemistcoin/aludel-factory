@@ -2,9 +2,9 @@
 // solhint-disable func-name-mixedcase
 pragma solidity ^0.8.17;
 
-import {DSTest} from "ds-test/test.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {Hevm} from "solmate/test/utils/Hevm.sol";
+import {Test} from "forge-std/Test.sol";
+import {ERC20} from "solmate/src/tokens/ERC20.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
@@ -23,9 +23,8 @@ import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
 import "forge-std/console2.sol";
 
-contract AludelFactoryIntegrationTest is DSTest {
+contract AludelFactoryIntegrationTest is Test {
     AludelFactory private factory;
-    Hevm private cheats;
     IAludelV3 private aludel;
 
     MockERC20 private stakingToken;
@@ -52,10 +51,10 @@ contract AludelFactoryIntegrationTest is DSTest {
     AludelV3.AludelInitializationParams private defaultParams;
 
     function setUp() public {
-        cheats = Hevm(HEVM_ADDRESS);
-        owner = cheats.addr(PRIVATE_KEY);
 
-        recipient = cheats.addr(PRIVATE_KEY + 1);
+        owner = vm.addr(PRIVATE_KEY);
+
+        recipient = vm.addr(PRIVATE_KEY + 1);
         // 100 / 10000 => 1%
         bps = 100;
         factory = new AludelFactory(recipient, bps);
@@ -112,16 +111,16 @@ contract AludelFactoryIntegrationTest is DSTest {
 
         MockERC20(data.rewardToken).mint(owner, 1 ether);
 
-        cheats.startPrank(owner);
+        vm.startPrank(owner);
         MockERC20(data.rewardToken).approve(address(aludel), 1 ether);
         aludel.fund(1 ether, 1 days);
         aludel.registerVaultFactory(address(template));
-        cheats.stopPrank();
+        vm.stopPrank();
 
         data = aludel.getAludelData();
         MockERC20(data.stakingToken).mint(owner, 1 ether);
 
-        cheats.prank(owner);
+        vm.prank(owner);
         crucible = crucibleFactory.create("");
         MockERC20(data.stakingToken).mint(crucible, 1 ether);
     }
@@ -149,11 +148,11 @@ contract AludelFactoryIntegrationTest is DSTest {
 
         MockERC20(aludelData.rewardToken).mint(owner, 1 ether);
 
-        cheats.startPrank(owner);
+        vm.startPrank(owner);
         MockERC20(aludelData.rewardToken).approve(address(aludel), 1 ether);
         aludel.fund(1 ether, 1 days);
         aludel.registerVaultFactory(address(template));
-        cheats.stopPrank();
+        vm.stopPrank();
 
         aludelData = aludel.getAludelData();
         IAludelV3.RewardSchedule[] memory rewardSchedules = aludelData
@@ -170,7 +169,7 @@ contract AludelFactoryIntegrationTest is DSTest {
     function testFail_template_double_initialization() public {
         AludelV3 template = new AludelV3();
         template.initializeLock();
-        cheats.expectRevert(new bytes(0));
+        vm.expectRevert(new bytes(0));
         template.initializeLock();
     }
 
@@ -183,7 +182,7 @@ contract AludelFactoryIntegrationTest is DSTest {
             address(stakingToken),
             1 ether
         );
-        cheats.prank(owner);
+        vm.prank(owner);
         aludel.stake(crucible, 1 ether, permission);
     }
 
@@ -200,7 +199,7 @@ contract AludelFactoryIntegrationTest is DSTest {
             address(stakingToken),
             1 ether
         );
-        cheats.prank(owner);
+        vm.prank(owner);
         aludel.stake(crucible, 1 ether, lockPermission);
 
         vault = aludel.getVaultData(crucible);
@@ -218,12 +217,12 @@ contract AludelFactoryIntegrationTest is DSTest {
         assertEq(data.totalStake, 1 ether);
         assertEq(data.totalStakeUnits, 0);
 
-        cheats.warp(block.timestamp + 1);
+        vm.warp(block.timestamp + 1);
         data = aludel.getAludelData();
         assertEq(data.totalStake, 1 ether);
         assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 1);
 
-        cheats.warp(block.timestamp + 4);
+        vm.warp(block.timestamp + 4);
         data = aludel.getAludelData();
         assertEq(
             data.rewardSharesOutstanding,
@@ -232,7 +231,7 @@ contract AludelFactoryIntegrationTest is DSTest {
         assertEq(data.totalStake, 1 ether);
         assertEq(aludel.getCurrentTotalStakeUnits(), data.totalStake * 5);
 
-        cheats.warp(block.timestamp + 1 days - 5);
+        vm.warp(block.timestamp + 1 days - 5);
         bytes memory unlockPermission = getPermission(
             PRIVATE_KEY,
             "Unlock",
@@ -242,7 +241,7 @@ contract AludelFactoryIntegrationTest is DSTest {
             1 ether
         );
 
-        cheats.prank(owner);
+        vm.prank(owner);
         uint256[] memory amounts = new uint256[](1);
         uint256[] memory indices = new uint256[](1);
         amounts[0]=1 ether;
@@ -287,10 +286,10 @@ contract AludelFactoryIntegrationTest is DSTest {
             1 ether
         );
 
-        cheats.prank(owner);
+        vm.prank(owner);
         aludel.stake(crucible, 1 ether, lockPermission);
 
-        cheats.warp(block.timestamp + 1 days);
+        vm.warp(block.timestamp + 1 days);
         bytes memory unlockPermission = getPermission(
             PRIVATE_KEY,
             "Unlock",
@@ -300,7 +299,7 @@ contract AludelFactoryIntegrationTest is DSTest {
             1 ether
         );
 
-        cheats.startPrank(owner);
+        vm.startPrank(owner);
         uint256[] memory amounts = new uint256[](1);
         uint256[] memory indices = new uint256[](1);
         amounts[0]=1 ether;
@@ -352,7 +351,7 @@ contract AludelFactoryIntegrationTest is DSTest {
             abi.encodePacked("\x19\x01", domainSeparator, structHash)
         );
 
-        (uint8 v, bytes32 r, bytes32 s) = cheats.sign(privateKey, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(privateKey, digest);
 
         return joinSignature(r, s, v);
     }

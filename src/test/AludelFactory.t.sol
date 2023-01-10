@@ -2,9 +2,9 @@
 // solhint-disable func-name-mixedcase
 pragma solidity ^0.8.17;
 
-import {DSTest} from "ds-test/test.sol";
-import {ERC20} from "solmate/tokens/ERC20.sol";
-import {Hevm} from "solmate/test/utils/Hevm.sol";
+import {ERC20} from "solmate/src/tokens/ERC20.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {Test} from "forge-std/Test.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
 import {AludelFactory} from "../contracts/AludelFactory.sol";
@@ -15,9 +15,9 @@ import {Spy} from "../contracts/mocks/Spy.sol";
 
 import "forge-std/console2.sol";
 
-contract AludelFactoryTest is DSTest {
+contract AludelFactoryTest is Test {
     AludelFactory private factory;
-    Hevm private cheats;
+
     IAludel private aludel;
     Spy private spyTemplate;
 
@@ -39,10 +39,10 @@ contract AludelFactoryTest is DSTest {
     uint256 public constant BASE_SHARES_PER_WEI = 1000000;
 
     function setUp() public {
-        cheats = Hevm(HEVM_ADDRESS);
-        owner = cheats.addr(PRIVATE_KEY);
 
-        recipient = cheats.addr(PRIVATE_KEY + 1);
+        owner = vm.addr(PRIVATE_KEY);
+
+        recipient = vm.addr(PRIVATE_KEY + 1);
         // 100 / 10000 => 1%
         bps = 100;
         factory = new AludelFactory(recipient, bps);
@@ -165,10 +165,10 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_WHEN_calling_permissioned_methods_with_a_non_owner_account_THEN_it_reverts() public{
-        cheats.startPrank(recipient);
-        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        vm.startPrank(recipient);
+        vm.expectRevert(bytes("Ownable: caller is not the owner"));
         factory.updateProgram(address(aludel), "othername", "http://stake.other");
-        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        vm.expectRevert(bytes("Ownable: caller is not the owner"));
         factory.addProgram(
             address(preexistingAludel),
             address(listedTemplate),
@@ -176,19 +176,19 @@ contract AludelFactoryTest is DSTest {
             "http://stake.me",
             123
         );
-        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        vm.expectRevert(bytes("Ownable: caller is not the owner"));
         factory.addTemplate(address(preexistingAludel), "test template", false);
-        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        vm.expectRevert(bytes("Ownable: caller is not the owner"));
         factory.updateTemplate(address(listedTemplate), true);
-        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        vm.expectRevert(bytes("Ownable: caller is not the owner"));
         factory.setFeeBps(69);
-        cheats.expectRevert(bytes("Ownable: caller is not the owner"));
+        vm.expectRevert(bytes("Ownable: caller is not the owner"));
         factory.setFeeRecipient(recipient);
-        cheats.stopPrank();
+        vm.stopPrank();
     }
 
     function test_WHEN_delisting_a_non_listed_program_THEN_it_reverts() public{
-        cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
+        vm.expectRevert(AludelFactory.AludelNotRegistered.selector);
         factory.delistProgram(address(preexistingAludel));
     }
     function test_WHEN_delisting_a_listed_program_THEN_data_for_it_isnt_available() public{
@@ -201,7 +201,7 @@ contract AludelFactoryTest is DSTest {
     }
     function test_GIVEN_a_delisted_program_THEN_it_CANNOT_be_updated() public{
         factory.delistProgram(address(aludel));
-        cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
+        vm.expectRevert(AludelFactory.AludelNotRegistered.selector);
         factory.updateProgram(address(aludel), "othername", "http://stake.other");
     }
     function test_GIVEN_a_delisted_program_THEN_it_CAN_be_added_again() public{
@@ -221,7 +221,7 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_WHEN_adding_a_program_manually_AND_using_template_zero_THEN_it_reverts() public {
-        cheats.expectRevert(AludelFactory.TemplateNotRegistered.selector);
+        vm.expectRevert(AludelFactory.TemplateNotRegistered.selector);
         factory.addProgram(
             address(preexistingAludel),
             address(0),
@@ -232,7 +232,7 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_GIVEN_an_already_added_program_WHEN_adding_it_manually_THEN_it_reverts() public {
-        cheats.expectRevert(AludelFactory.AludelAlreadyRegistered.selector);
+        vm.expectRevert(AludelFactory.AludelAlreadyRegistered.selector);
         factory.addProgram(
             address(aludel),
             address(listedTemplate),
@@ -255,7 +255,7 @@ contract AludelFactoryTest is DSTest {
         factory.updateProgram(address(preexistingAludel), "othername", "http://stake.other");
         assertEq(factory.programs(address(preexistingAludel)).name, "othername");
         assertEq(factory.programs(address(preexistingAludel)).stakingTokenUrl, "http://stake.other");
-        cheats.expectRevert(AludelFactory.AludelAlreadyRegistered.selector);
+        vm.expectRevert(AludelFactory.AludelAlreadyRegistered.selector);
         factory.addProgram(
             address(preexistingAludel),
             address(listedTemplate),
@@ -266,7 +266,7 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_GIVEN_a_program_wasnt_added_THEN_metadata_for_it_CANNOT_be_set() public {
-        cheats.expectRevert(AludelFactory.AludelNotRegistered.selector);
+        vm.expectRevert(AludelFactory.AludelNotRegistered.selector);
         factory.updateProgram(address(preexistingAludel), "othername", "http://stake.other");
     }
 
@@ -279,7 +279,7 @@ contract AludelFactoryTest is DSTest {
             "http://stake.me",
             123
         );
-        cheats.expectRevert(AludelFactory.TemplateNotRegistered.selector);
+        vm.expectRevert(AludelFactory.TemplateNotRegistered.selector);
         aludel = IAludel(
             factory.launch(
                 address(preexistingAludel),
@@ -299,12 +299,12 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_WHEN_adding_address_zero_as_template_THEN_it_reverts() public {
-        cheats.expectRevert(AludelFactory.InvalidTemplate.selector);
+        vm.expectRevert(AludelFactory.InvalidTemplate.selector);
         factory.addTemplate(address(0), "idk", true);
     }
 
     function test_WHEN_launching_an_aludel_with_an_unlisted_template_THEN_it_reverts_with_TemplateNotRegistered() public {
-        cheats.expectRevert(AludelFactory.TemplateNotRegistered.selector);
+        vm.expectRevert(AludelFactory.TemplateNotRegistered.selector);
         factory.launch(
             address(unlistedTemplate),
             "name",
@@ -340,7 +340,7 @@ contract AludelFactoryTest is DSTest {
             true
         );
         assertTrue(factory.getTemplate(address(unlistedTemplate)).disabled);
-        cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
+        vm.expectRevert(AludelFactory.TemplateDisabled.selector);
         factory.launch(
             address(unlistedTemplate),
             "name",
@@ -362,7 +362,7 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_GIVEN_an_unlisted_template_WHEN_adding_a_program_with_it_THEN_it_reverts() public {
-        cheats.expectRevert(AludelFactory.TemplateNotRegistered.selector);
+        vm.expectRevert(AludelFactory.TemplateNotRegistered.selector);
         factory.addProgram(
             address(preexistingAludel),
             address(unlistedTemplate),
@@ -390,14 +390,14 @@ contract AludelFactoryTest is DSTest {
     }
 
     function test_WHEN_updating_an_unlisted_template_THEN_it_reverts() public {
-        cheats.expectRevert(AludelFactory.InvalidTemplate.selector);
+        vm.expectRevert(AludelFactory.InvalidTemplate.selector);
         factory.updateTemplate(address(0), true);
-        cheats.expectRevert(AludelFactory.InvalidTemplate.selector);
+        vm.expectRevert(AludelFactory.InvalidTemplate.selector);
         factory.updateTemplate(address(preexistingAludel), true);
     }
 
     function test_WHEN_adding_an_already_added_tempalte_THEN_it_reverts() public {
-        cheats.expectRevert(AludelFactory.TemplateAlreadyAdded.selector);
+        vm.expectRevert(AludelFactory.TemplateAlreadyAdded.selector);
         factory.addTemplate(
             address(listedTemplate),
             "bloop",
@@ -410,7 +410,7 @@ contract AludelFactoryTest is DSTest {
         // disable template
         factory.updateTemplate(address(unlistedTemplate), true);
 
-        cheats.expectRevert(AludelFactory.TemplateDisabled.selector);
+        vm.expectRevert(AludelFactory.TemplateDisabled.selector);
         factory.launch(
             address(unlistedTemplate),
             "name",
