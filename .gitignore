@@ -1,6 +1,9 @@
 /out
 lib
 node_modules
+deployments/localhost
+deployments/*/solcInputs
+tags
 
 .env
 coverage
