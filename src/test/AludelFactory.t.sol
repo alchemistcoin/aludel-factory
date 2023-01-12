@@ -17,7 +17,6 @@ import "forge-std/console2.sol";
 
 contract AludelFactoryTest is Test {
     AludelFactory private factory;
-
     IAludel private aludel;
     Spy private spyTemplate;
 
