@@ -78,7 +78,7 @@ describe("AludelV3", function () {
       vaultNonce
     );
     // stake on aludel
-    return aludel.stake(vault.address, amount, signedPermission);
+    return aludel.connect(user).stake(vault.address, amount, signedPermission);
   };
 
   const unstakeAndClaim = async (
@@ -104,12 +104,9 @@ describe("AludelV3", function () {
       vaultNonce
     );
     // unstake on aludel
-    return aludel.unstakeAndClaim(
-      vault.address,
-      indices,
-      amounts,
-      signedPermission
-    );
+    return aludel
+      .connect(user)
+      .unstakeAndClaim(vault.address, indices, amounts, signedPermission);
   };
 
   function calculateExpectedReward(
@@ -1727,9 +1724,14 @@ describe("AludelV3", function () {
         });
         describe("with permissioned not signed by owner", function () {
           it("should fail", async function () {
+            const wallet = Wallet.createRandom().connect(ethers.provider);
+            await accounts[2].sendTransaction({
+              to: wallet.address,
+              value: ethers.utils.parseEther("0.1"),
+            });
             await expect(
               unstakeAndClaim(
-                Wallet.createRandom().connect(ethers.provider),
+                wallet,
                 aludel,
                 vault,
                 stakingToken,
