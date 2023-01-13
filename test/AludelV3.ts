@@ -2206,10 +2206,13 @@ describe("AludelV3", function () {
                 [stakeAmount]
               );
               const call =
-                await timelockHook.populateTransaction.unstakeAndClaimPost({
-                  amount: stakeAmount,
-                  timestamp: stakeTimestamp,
-                });
+                await timelockHook.populateTransaction.unstakeAndClaimPost(
+                  {
+                    amount: stakeAmount,
+                    timestamp: stakeTimestamp,
+                  },
+                  vault.address
+                );
               expect(await spy.spyWasCalled(call.data)).to.be.true;
             });
 

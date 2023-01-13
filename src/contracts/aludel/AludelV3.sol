@@ -733,7 +733,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
             );
 
         (uint256 reward, uint256 amount) = _unstake(
-            vaultData.stakes,
+            vault,
             unlockedRewards,
             indices,
             amounts            
@@ -759,13 +759,14 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     }
 
     function _unstake(
-        StakeData[] storage stakes,
+        address vault,
         uint256 unlockedRewards,
         uint256[] memory indices,
         uint256[] memory amounts
     ) internal returns(uint256 reward, uint256 unstakedAmount) {
 
         uint256 poppedStakes = 0;
+        StakeData[] storage stakes = _vaults[vault].stakes;
 
         for (uint256 metaIndex = 0; metaIndex< indices.length; metaIndex++) {
             uint256 computedStakeIndex = indices[metaIndex] - poppedStakes;
@@ -783,7 +784,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
                 currentStake.amount -= amounts[metaIndex];
             }
             if (address(_aludel.hookContract) != address(0)) {
-                _aludel.hookContract.unstakeAndClaimPost(currentStake);
+                _aludel.hookContract.unstakeAndClaimPost(currentStake, vault);
             }
             uint256 stakeDuration = block.timestamp - currentStake.timestamp;
         
