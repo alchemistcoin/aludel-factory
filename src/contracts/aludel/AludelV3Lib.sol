@@ -1,19 +1,17 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity ^0.8.0;
 
-pragma abicoder v2;
-
-import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {TransferHelper} from "@uniswap/lib/contracts/libraries/TransferHelper.sol";
 
 import {IAludel} from "./IAludel.sol";
 import {IAludelV3} from "./IAludelV3.sol";
-import "hardhat/console.sol";
 
 /// @title AludelV3Lib
-/// @notice 
+/// @notice This library contains all the accounting logic for AludelV3.
+///         The main reason for this lib is to extract LoC from AludelV3
+///         and to make it easier to test.
 library AludelV3Lib {
 
     /* constants */
@@ -27,7 +25,6 @@ library AludelV3Lib {
         returns (uint256 remainingRewards)
     {
         remainingRewards = IERC20(aludel.rewardToken).balanceOf(aludel.rewardPool);
-
     }
 
     /* pure functions */
@@ -55,7 +52,6 @@ library AludelV3Lib {
         uint256 remainingRewards,
         uint256 newRewards
     ) internal pure returns (uint256 shares) {
-        // shares = sharesOutstanding;
 
         // create new reward shares
         // if existing rewards on this Aludel
@@ -91,16 +87,11 @@ library AludelV3Lib {
             // fetch reward schedule storage reference
             IAludelV3.RewardSchedule memory schedule = rewardSchedules[index];
 
-            // caculate amount of shares available on this schedule
-            // if (now - start) < duration
-            //   sharesLocked = shares - (shares * (now - start) / duration)
-            // else
-            //   sharesLocked = 0
+            // calculate amount of shares available on this schedule
             uint256 currentSharesLocked = 0;
             uint256 diff = timestamp - schedule.start;
-            currentSharesLocked = diff < schedule.duration
-                ? schedule.shares -
-                    ((schedule.shares * diff) / schedule.duration)
+            currentSharesLocked = diff < schedule.duration 
+                ? schedule.shares - ((schedule.shares * diff) / schedule.duration)
                 : 0;
 
             // add to running total
@@ -126,12 +117,9 @@ library AludelV3Lib {
         );
 
         // convert shares to reward
-        // rewardLocked = sharesLocked * rewardBalance / sharesOutstanding
-        uint256 rewardLocked = (sharesLocked * rewardBalance) /
-            sharesOutstanding;
+        uint256 rewardLocked = (sharesLocked * rewardBalance) / sharesOutstanding;
 
         // calculate amount available
-        // unlockedRewards = rewardBalance - rewardLocked
         unlockedRewards = rewardBalance - rewardLocked;
 
         // explicit return
@@ -149,7 +137,6 @@ library AludelV3Lib {
         uint256 stakeUnits = stakeAmount * stakeDuration;
 
         // calculate base reward
-        // baseReward = unlockedRewards * stakeUnits / totalStakeUnits
         uint256 baseReward = 0;
         if (totalStakeUnits != 0) {
             // scale reward according to proportional weight
@@ -157,14 +144,6 @@ library AludelV3Lib {
         }
 
         // calculate scaled reward
-        // if no scaling or scaling period completed
-        //   reward = baseReward
-        // else
-        //   minReward = baseReward * scalingFloor / scalingCeiling
-        //   bonusReward = baseReward
-        //                 * (scalingCeiling - scalingFloor) / scalingCeiling
-        //                 * duration / scalingTime
-        //   reward = minReward + bonusReward
         if (
             stakeDuration >= rewardScaling.time ||
             rewardScaling.floor == rewardScaling.ceiling
@@ -240,5 +219,4 @@ library AludelV3Lib {
         vault.totalStake += amount;
         aludel.totalStake += amount;
     }
-
 }

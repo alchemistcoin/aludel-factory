@@ -166,39 +166,73 @@ contract AludelV3Test is Test {
         );
     }
 
-    function test_funding() public {
+    function test_funding_shares() public {
+        // Scenario: Aludel is funded several times. 
+        //           Shares should unlock linearly.
+        //  ______________________________________________
+        // |  Outstanding  |  Locked      |  Unlocked     |
+        // |==============================================|
+        // | 1. Admin funds 600 ether, for 1 minute       |
+        // |---------------|--------------|---------------|
+        // |    6e26       | 6e26         |   0           |
+        // |---------------|--------------|---------------|
+        // | 2. 1 minute elapses                          |
+        // |---------------|--------------|---------------|
+        // |    6e26       |        0     | 6e25          |
+        // |---------------|--------------|---------------|
+        // | 3. Admin funds 600 ether, for 1 minute       |
+        // |---------------|--------------|---------------|
+        // |  6e26 *  2    | 6e25         | 6e25          |
+        // |---------------|--------------|---------------|
+        // | 4. 1 minute elapses                          |
+        // |---------------|--------------|---------------|
+        // |  6e26 * 2     |       0      | 6e25 * 2      |
+        // |---------------|--------------|---------------|
+        // | 4. Admin funds 600 ether, for 1 minute       |
+        // |---------------|--------------|---------------|
+        // |  6e26 * 3     |   6e25 * 5   | 6e25 * 2      |
+        // |---------------|--------------|---------------|
+        // | 5. 1 minute elapses                          |
+        // |---------------|--------------|---------------|
+        // |  6e26 * 3     |        0     | 6e25 * 3      |
+        // |---------------|--------------|---------------|
+        // | 6. Admin funds 600 ether, for 1 minute       |
+        // |    Admin funds 600 ether, for 2 minute       |
+        // |    1 minute elapses                          |
+        // |    Forth schedule is fully unlocked          |
+        // |    Fifth is half unlocked                    |
+        // |---------------|--------------|---------------|
+        // |  6e26 * 5     | 6e25 * 0.5   | 6e25 * 4.5    |
+        // |---------------|--------------|---------------|
+        // | 7. 1 minute elapses                          |
+        // |    Fifth schedule is now fully unlocked      |
+        // |---------------|--------------|---------------|
+        // |  6e26 * 5     | 0            | 6e25 * 5      |
+        // |---------------|--------------|---------------|
 
         AludelV3.AludelData memory data = aludel.getAludelData();
-
+        
         Utils.fundMockToken(admin.addr(), rewardToken, REWARD_AMOUNT * 5);
 
         vm.startPrank(admin.addr());
         rewardToken.approve(address(aludel), REWARD_AMOUNT * 5);
 
-        // schedule 0, default schedule (reward amount, schedule duration)
+        // 1. Admin funds 600 eth * 5 for 1 minute
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION);
 
         data = aludel.getAludelData();
         assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI);
 
+        // 2. 1 minute elapses
         vm.warp(block.timestamp + SCHEDULE_DURATION);
 
-        // schedule 0 shares are now fully unlocked
-        assertEq(
-            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp),
-            0
-        );
+        assertEq(aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp), 0);
 
-        // check: if shares are not redeemed shares should be scaled linearly 
-        uint256 base_shares = data.rewardSharesOutstanding;
-
-        // schedule 1, idem schedule 0, default schedule
+        // 3. Admin funds 600 eth * 5 for 1 minute
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION);
 
         data = aludel.getAludelData();
-        // shares are linearly scaled
-        assertEq(data.rewardSharesOutstanding, base_shares * 2);
-        // 
+        assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 2);
         assertEq(
             aludel.calculateUnlockedRewards(
                 data.rewardSchedules,
@@ -208,20 +242,16 @@ contract AludelV3Test is Test {
             ),
             REWARD_AMOUNT
         );
-        // 
         assertEq(
-            aludel.calculateSharesLocked(
-                data.rewardSchedules, block.timestamp
-            ),
-            base_shares
+            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp),
+            REWARD_AMOUNT * BASE_SHARES_PER_WEI
         );
 
-        // schedule 2
+        // 4. Admin funds 600 eth * 5 for 1 minute
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION);
 
         data = aludel.getAludelData();
-        // schedules 0, 1 and 2 shares.
-        assertEq(data.rewardSharesOutstanding, base_shares * 3);
+        assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 3);
         assertEq(
             aludel.calculateUnlockedRewards(
                 data.rewardSchedules,
@@ -232,10 +262,8 @@ contract AludelV3Test is Test {
             REWARD_AMOUNT * 2
         );
         assertEq(
-            aludel.calculateSharesLocked(
-                data.rewardSchedules, block.timestamp
-            ),
-            base_shares * 2
+            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp),
+            REWARD_AMOUNT * BASE_SHARES_PER_WEI * 2
         );
 
         data = aludel.getAludelData();
@@ -251,11 +279,12 @@ contract AludelV3Test is Test {
             REWARD_AMOUNT * 3
         );
 
+        // 5. 1 minute elapses
         vm.warp(block.timestamp + SCHEDULE_DURATION);
 
         data = aludel.getAludelData();
         
-        assertEq(data.rewardSharesOutstanding, base_shares * 3);
+        assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 3);
 
         assertEq(
             aludel.calculateUnlockedRewards(
@@ -266,24 +295,19 @@ contract AludelV3Test is Test {
             ),
             REWARD_AMOUNT * 3
         );
-        // shares locked now
-        assertEq(
-            aludel.calculateSharesLocked(
-                data.rewardSchedules, block.timestamp
-            ),
-            0
-        );
+        assertEq(aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp), 0);
 
-        // schedule 3, default schedule
+        // 6. Admin funds 600 eth * 5 for 1 minute
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION);
 
-        // schedule 4 takes two periods to fully unlock rewards 
+        // 6. Admin funds 600 eth * 5 for 2 minute
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION * 2);
-
+        
+        // 6. 1 minute elapses
         vm.warp(block.timestamp + SCHEDULE_DURATION);
 
         data = aludel.getAludelData();
-        assertEq(data.rewardSharesOutstanding, base_shares * 5);
+        assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 5);
         // previous four periods amounts and half of the fifth.
         assertEq(
             aludel.calculateUnlockedRewards(
@@ -296,11 +320,27 @@ contract AludelV3Test is Test {
         );
         // fifth schedule shares are half-locked
         assertEq(
-            aludel.calculateSharesLocked(
-                data.rewardSchedules, block.timestamp
+            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp),
+            REWARD_AMOUNT * BASE_SHARES_PER_WEI / 2
+        );
+
+        // 6. 1 minute elapses
+        vm.warp(block.timestamp + SCHEDULE_DURATION);
+
+        data = aludel.getAludelData();
+        assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 5);
+        assertEq(
+            aludel.calculateUnlockedRewards(
+                data.rewardSchedules,
+                REWARD_AMOUNT * 5,
+                data.rewardSharesOutstanding,
+                block.timestamp
             ),
-            base_shares / 2
-        );   
+            REWARD_AMOUNT * 5
+        );
+
+        // Fifth schedule shares are now fully unlocked
+        assertEq(aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp), 0);
     }
 
     function test_stakes_no_amount_staked() public {

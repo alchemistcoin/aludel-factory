@@ -389,7 +389,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
             msg.sender,
             _feeRecipient,
             fee
-);
+        );
 
         AludelV3Lib.addRewardSchedule(
             _aludel,
