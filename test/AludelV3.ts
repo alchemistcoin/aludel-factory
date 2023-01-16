@@ -21,6 +21,7 @@ import {
   AludelV3,
   Spy,
   TimelockHook,
+  WhitelistHook,
 } from "../typechain-types";
 import { AbiCoder } from "@ethersproject/abi";
 import {
@@ -46,6 +47,7 @@ describe("AludelV3", function () {
     bonusToken: Contract,
     aludelFactory: Contract,
     timelockHook: TimelockHook,
+    whitelistHook: WhitelistHook,
     aludelV3Template: Contract,
     powered: ContractFactory;
 
@@ -218,6 +220,7 @@ describe("AludelV3", function () {
       "AludelFactory",
       "templates",
       "TimelockHook-90DAY",
+      "WhitelistHook",
     ]);
     aludelFactory = await ethers.getContractAt(
       "AludelFactory",
@@ -227,6 +230,10 @@ describe("AludelV3", function () {
       "TimelockHook",
       fixtures["TimelockHook"].address
     )) as TimelockHook;
+    whitelistHook = (await ethers.getContractAt(
+      "WhitelistHook",
+      fixtures["WhitelistHook"].address
+    )) as WhitelistHook;
     aludelV3Template = await ethers.getContractAt(
       "AludelV3",
       fixtures["AludelV3"].address
@@ -1452,6 +1459,52 @@ describe("AludelV3", function () {
         vault = await createInstance("Crucible", vaultFactory, user);
         await stakingToken.connect(admin).transfer(vault.address, stakeAmount);
       });
+      describe("GIVEN an aludel with a WhitelistHook", function () {
+        beforeEach(async function () {
+          const args: AludelInitializationParams = [
+            rewardPoolFactory.address,
+            powerSwitchFactory.address,
+            stakingToken.address,
+            rewardToken.address,
+            whitelistHook.address,
+            defaultRewardScaling.floor,
+            defaultRewardScaling.ceiling,
+            defaultRewardScaling.time,
+          ];
+          // overriding the variable of the previous beforeEach hook
+          aludel = await launchProgram(0, [], admin, args);
+        });
+
+        it("WHEN staking as a non-whitelisted user THEN it should revert with a NotInWhitelist Error", async function () {
+          await expect(
+            stake(user, aludel, vault, stakingToken, stakeAmount)
+          ).to.be.revertedWithCustomError(whitelistHook, "NotInWhitelist");
+        });
+        describe("GIVEN a whitelisted user", function () {
+          beforeEach(async function () {
+            await whitelistHook.addToList(vault.address);
+          });
+          describe("WHEN creating a stake", function () {
+            beforeEach(async function () {
+              await stake(user, aludel, vault, stakingToken, stakeAmount);
+            });
+            it("THEN the stake is created", async function () {
+              const aludelData = await aludel.getAludelData();
+              const vaultData = await aludel.getVaultData(vault.address);
+
+              expect(aludelData.totalStake).to.eq(stakeAmount);
+              expect(aludelData.totalStakeUnits).to.eq(0);
+              expect(aludelData.lastUpdate).to.eq(await getTimestamp());
+
+              expect(vaultData.totalStake).to.eq(stakeAmount);
+              expect(vaultData.stakes.length).to.eq(1);
+              expect(vaultData.stakes[0].amount).to.eq(stakeAmount);
+              expect(vaultData.stakes[0].timestamp).to.eq(await getTimestamp());
+            });
+          });
+        });
+      });
+
       describe("when offline", function () {
         it("should fail", async function () {
           await powerSwitch.connect(admin).powerOff();
