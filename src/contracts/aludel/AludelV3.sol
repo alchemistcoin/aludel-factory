@@ -666,9 +666,10 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
 
         // update cached sum of stake units across all vaults
         _updateTotalStakeUnits();
+        StakeData memory currentStake = StakeData(amount, block.timestamp);
 
         // store amount and timestamp
-        vaultData.stakes.push(StakeData(amount, block.timestamp));
+        vaultData.stakes.push(currentStake);
 
         // update cached total vault and Aludel amounts
         vaultData.totalStake = vaultData.totalStake.add(amount);
@@ -679,6 +680,9 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
 
         // emit event
         emit Staked(vault, amount);
+        if (address(_aludel.hookContract) != address(0)) {
+            _aludel.hookContract.stakePost(currentStake, vault);
+        }
     }
 
     /// @notice Unstake staking tokens and claim reward
