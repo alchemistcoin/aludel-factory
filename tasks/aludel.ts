@@ -233,22 +233,23 @@ task("update-program", "update an already added template")
   .addOptionalParam("newName", "a new name for the program. Optional.", "")
   .addOptionalParam("newUrl", "a new URL for the program. Optional.", "")
   .setAction(async (args, { ethers, deployments }) => {
-
     const factoryAddress = (await deployments.get("AludelFactory")).address;
-    const factory = await ethers.getContractAt(
+    const factory = (await ethers.getContractAt(
       "src/contracts/AludelFactory.sol:AludelFactory",
       factoryAddress
-    ) as AludelFactory;
+    )) as AludelFactory;
 
     const programData = await factory.programs(args.program);
     log(`updating program ${programData.name} on factory ${factoryAddress}`);
 
     if (args.newName) {
-      log(`program's new name: ${args.newName}`)
+      log(`program's new name: ${args.newName}`);
     }
     if (args.newUrl) {
-      log(`program's new URL: ${args.newUrl}`)
+      log(`program's new URL: ${args.newUrl}`);
     }
 
-    await (await factory.updateProgram(args.program, args.newName, args.newUrl)).wait();
+    await (
+      await factory.updateProgram(args.program, args.newName, args.newUrl)
+    ).wait();
   });
