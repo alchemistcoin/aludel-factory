@@ -7,7 +7,7 @@ import {IAludelV3} from "../contracts/aludel/AludelV3.sol";
 import {TimelockHook} from "../contracts/aludel/TimelockHook.sol";
 import "forge-std/console2.sol";
 
-contract PowerSwitchTest is Test {
+contract TimelockHookTest is Test {
 
     function test_n_days(uint8 n) public {
         uint256 lockTime = uint256(n) * 1 days;
