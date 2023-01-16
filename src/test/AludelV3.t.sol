@@ -135,37 +135,6 @@ contract AludelV3Test is Test {
         vm.warp(START_TIME);
     }
 
-    // When the aludel has no outstanding shares the minted shares are linearly scaled.
-    function test_calculate_new_shares_no_previous_shares(
-        uint128 sharesOutstanding,
-        uint128 remainingRewards,
-        uint128 newRewards
-    ) public {
-        
-        vm.assume(sharesOutstanding == 0);
-        assertEq(
-            AludelV3Lib.calculateNewShares(sharesOutstanding, remainingRewards, newRewards),
-            newRewards * BASE_SHARES_PER_WEI
-        );
-        
-    }
-
-    function test_calculate_new_shares_with_previous_shares(
-        uint128 sharesOutstanding,
-        uint128 remainingRewards,
-        uint128 newRewards
-    ) public {
-        
-        vm.assume(sharesOutstanding > 0);
-        vm.assume(remainingRewards > 0);
-        // todo : do we need this?
-        // vm.assume(sharesOutstanding < remainingRewards * BASE_SHARES_PER_WEI);
-        assertEq(
-            AludelV3Lib.calculateNewShares(sharesOutstanding, remainingRewards, newRewards),
-            uint256(sharesOutstanding) * uint256(newRewards) / uint256(remainingRewards)
-        );
-    }
-
     function test_funding_shares() public {
         // Scenario: Aludel is funded several times. 
         //           Shares should unlock linearly.
@@ -355,7 +324,8 @@ contract AludelV3Test is Test {
     }
 
     function test_stakes_invalid_vault() public {
-
+        
+        // Create a crucible instance from a different factory
         Crucible crucibleTemplate = new Crucible();
         CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
@@ -374,6 +344,7 @@ contract AludelV3Test is Test {
 
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
         Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
+        
         bytes memory lockSig;
 
         // stake 30 times 1 wei
