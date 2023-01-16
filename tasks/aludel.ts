@@ -3,6 +3,7 @@ import { formatEther } from "ethers/lib/utils";
 import { task, types } from "hardhat/config";
 import "@nomiclabs/hardhat-ethers";
 import { parseEther } from "@ethersproject/units";
+import { AludelFactory } from "../typechain-types";
 
 // this function is meant to avoid polluting the tests with console output, and
 // log on every other scenario
@@ -226,3 +227,28 @@ task("add-program", "add a pre-existing aludel to the network's aludel factory")
       ).wait();
     }
   );
+
+task("update-program", "update an already added template")
+  .addParam("program", "address of the program to update")
+  .addOptionalParam("newName", "a new name for the program. Optional.", "")
+  .addOptionalParam("newUrl", "a new URL for the program. Optional.", "")
+  .setAction(async (args, { ethers, deployments }) => {
+
+    const factoryAddress = (await deployments.get("AludelFactory")).address;
+    const factory = await ethers.getContractAt(
+      "src/contracts/AludelFactory.sol:AludelFactory",
+      factoryAddress
+    ) as AludelFactory;
+
+    const programData = await factory.programs(args.program);
+    log(`updating program ${programData.name} on factory ${factoryAddress}`);
+
+    if (args.newName) {
+      log(`program's new name: ${args.newName}`)
+    }
+    if (args.newUrl) {
+      log(`program's new URL: ${args.newUrl}`)
+    }
+
+    await (await factory.updateProgram(args.program, args.newName, args.newUrl)).wait();
+  });
