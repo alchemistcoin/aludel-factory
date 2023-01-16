@@ -84,6 +84,13 @@ const config: HardhatUserConfig = {
       },
       saveDeployments: true,
     },
+    polygon: {
+      url: process.env.POLYGON_URL || "",
+      accounts: {
+        mnemonic,
+      },
+      saveDeployments: true,
+    },
     avalanche: {
       url: "https://api.avax.network/ext/bc/C/rpc",
       chainId: 43114,
