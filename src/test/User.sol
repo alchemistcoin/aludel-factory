@@ -5,7 +5,6 @@ import {Vm} from "forge-std/Vm.sol";
 import {Utils} from "./Utils.sol";
 
 contract User {
-
     Vm internal vm;
     uint256 public privateKey;
     address public addr;
@@ -17,14 +16,7 @@ contract User {
         vm.label(addr, name);
     }
 
-    function sign(bytes32 digest)
-        public
-        returns (
-            uint8 v,
-            bytes32 r,
-            bytes32 s
-        )
-    {
+    function sign(bytes32 digest) public returns (uint8 v, bytes32 r, bytes32 s) {
         (v, r, s) = vm.sign(privateKey, digest);
     }
 }

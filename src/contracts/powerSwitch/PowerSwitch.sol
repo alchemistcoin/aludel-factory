@@ -39,14 +39,11 @@ interface IPowerSwitch {
 
     function getStartTime() external view returns (uint64 startTime);
 
-    function getPowerController()
-        external
-        view
-        returns (address controller);
+    function getPowerController() external view returns (address controller);
 }
 
 /// @title PowerSwitch
-/// @notice This power switch contract receives a uint256 
+/// @notice This power switch contract receives a uint256
 ///         to enforce powering a switch only after a particular timestamp.
 /// @notice Standalone pausing and emergency stop functionality
 contract PowerSwitch is IPowerSwitch, Ownable {
@@ -130,12 +127,7 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         return _status == State.Shutdown;
     }
 
-    function getStatus()
-        external
-        view
-        override
-        returns (IPowerSwitch.State status)
-    {
+    function getStatus() external view override returns (IPowerSwitch.State status) {
         // if the current timestamp is greater than _startTimestamp or status is not online
         // we return the switch' status
         if (block.timestamp >= uint256(_startTimestamp) || _status != State.Online) {
@@ -145,21 +137,11 @@ contract PowerSwitch is IPowerSwitch, Ownable {
         }
     }
 
-    function getStartTime()
-        external
-        view
-        override
-        returns (uint64 startTime)
-    {
+    function getStartTime() external view override returns (uint64 startTime) {
         return _startTimestamp;
     }
 
-    function getPowerController()
-        external
-        view
-        override
-        returns (address controller)
-    {
+    function getPowerController() external view override returns (address controller) {
         return Ownable.owner();
     }
 }

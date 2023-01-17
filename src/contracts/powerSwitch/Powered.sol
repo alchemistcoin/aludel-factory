@@ -14,10 +14,7 @@ interface IPowered {
 
     function getPowerSwitch() external view returns (address powerSwitch);
 
-    function getPowerController()
-        external
-        view
-        returns (address controller);
+    function getPowerController() external view returns (address controller);
 }
 
 /// @title Powered
@@ -86,21 +83,11 @@ contract Powered is IPowered {
         return IPowerSwitch(_powerSwitch).getStatus() != IPowerSwitch.State.NotStarted;
     }
 
-    function getPowerSwitch()
-        public
-        view
-        override
-        returns (address powerSwitch)
-    {
+    function getPowerSwitch() public view override returns (address powerSwitch) {
         return _powerSwitch;
     }
 
-    function getPowerController()
-        public
-        view
-        override
-        returns (address controller)
-    {
+    function getPowerController() public view override returns (address controller) {
         return IPowerSwitch(_powerSwitch).getPowerController();
     }
 

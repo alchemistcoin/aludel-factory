@@ -24,5 +24,4 @@ contract UserFactory {
         vm.label(wallet, name);
         return user;
     }
-
 }

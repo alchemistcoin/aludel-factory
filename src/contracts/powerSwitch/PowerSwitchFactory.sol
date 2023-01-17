@@ -9,24 +9,14 @@ import {PowerSwitch} from "./PowerSwitch.sol";
 
 /// @title Power Switch Factory
 contract PowerSwitchFactory is IFactory, InstanceRegistry {
-    function create(bytes calldata args)
-        external
-        override
-        returns (address)
-    {
-        (address owner, uint64 startTimestamp) =
-            abi.decode(args, (address, uint64));
+    function create(bytes calldata args) external override returns (address) {
+        (address owner, uint64 startTimestamp) = abi.decode(args, (address, uint64));
         PowerSwitch powerSwitch = new PowerSwitch(owner, startTimestamp);
         InstanceRegistry._register(address(powerSwitch));
         return address(powerSwitch);
     }
 
-    function create2(bytes calldata, bytes32)
-        external
-        pure
-        override
-        returns (address)
-    {
+    function create2(bytes calldata, bytes32) external pure override returns (address) {
         revert("PowerSwitchFactory: unused function");
     }
 }

@@ -1,4 +1,3 @@
-
 // SPDX-License-Identifier: GPL-3.0-only
 pragma solidity ^0.8.0;
 
@@ -71,26 +70,19 @@ interface IAludelV3 is IRageQuit {
 
     function initializeLock() external;
 
-    function initialize(
-        uint64 startTime,
-        address ownerAddress,
-        address feeRecipient,
-        uint16 feeBps,
-        bytes calldata
-    ) external;
+    function initialize(uint64 startTime, address ownerAddress, address feeRecipient, uint16 feeBps, bytes calldata)
+        external;
 
     /* user functions */
 
-    function stake(address vault, uint256 amount, bytes calldata permission)
-        external;
+    function stake(address vault, uint256 amount, bytes calldata permission) external;
 
     function unstakeAndClaim(
         address vault,
         uint256[] calldata indices,
         uint256[] calldata amounts,
         bytes calldata permission
-    )
-        external;
+    ) external;
 
     /* admin functions */
 
@@ -102,71 +94,33 @@ interface IAludelV3 is IRageQuit {
 
     function registerBonusToken(address bonusToken) external;
 
-    function rescueTokensFromRewardPool(
-        address token,
-        address recipient,
-        uint256 amount
-    )
-        external;
+    function rescueTokensFromRewardPool(address token, address recipient, uint256 amount) external;
 
     /* getter functions */
 
-    function getAludelData()
-        external
-        view
-        returns (AludelData memory aludel);
+    function getAludelData() external view returns (AludelData memory aludel);
 
-    function getBonusTokenSetLength()
-        external
-        view
-        returns (uint256 length);
+    function getBonusTokenSetLength() external view returns (uint256 length);
 
-    function getBonusTokenAtIndex(uint256 index)
-        external
-        view
-        returns (address bonusToken);
+    function getBonusTokenAtIndex(uint256 index) external view returns (address bonusToken);
 
-    function getVaultFactorySetLength()
-        external
-        view
-        returns (uint256 length);
+    function getVaultFactorySetLength() external view returns (uint256 length);
 
-    function getVaultFactoryAtIndex(uint256 index)
-        external
-        view
-        returns (address factory);
+    function getVaultFactoryAtIndex(uint256 index) external view returns (address factory);
 
-    function getVaultData(address vault)
-        external
-        view
-        returns (VaultData memory vaultData);
+    function getVaultData(address vault) external view returns (VaultData memory vaultData);
 
-    function isValidAddress(address target)
-        external
-        view
-        returns (bool validity);
+    function isValidAddress(address target) external view returns (bool validity);
 
-    function isValidVault(address target)
-        external
-        view
-        returns (bool validity);
+    function isValidVault(address target) external view returns (bool validity);
 
-    function getCurrentTotalStakeUnits()
-        external
-        view
-        returns (uint256 totalStakeUnits);
+    function getCurrentTotalStakeUnits() external view returns (uint256 totalStakeUnits);
 
-    function getFutureTotalStakeUnits(uint256 timestamp)
-        external
-        view
-        returns (uint256 totalStakeUnits);
+    function getFutureTotalStakeUnits(uint256 timestamp) external view returns (uint256 totalStakeUnits);
 
     /* pure functions */
 
-    function calculateTotalStakeUnits(
-        StakeData[] memory stakes,
-        uint256 timestamp
-    )
+    function calculateTotalStakeUnits(StakeData[] memory stakes, uint256 timestamp)
         external
         pure
         returns (uint256 totalStakeUnits);
@@ -181,10 +135,7 @@ interface IAludelV3 is IRageQuit {
         uint256 rewardBalance,
         uint256 sharesOutstanding,
         uint256 timestamp
-    )
-        external
-        pure
-        returns (uint256 unlockedRewards);
+    ) external pure returns (uint256 unlockedRewards);
 
     function calculateReward(
         uint256 unlockedRewards,
@@ -192,8 +143,5 @@ interface IAludelV3 is IRageQuit {
         uint256 stakeDuration,
         uint256 totalStakeUnits,
         RewardScaling memory rewardScaling
-    )
-        external
-        pure
-        returns (uint256 reward);
+    ) external pure returns (uint256 reward);
 }
