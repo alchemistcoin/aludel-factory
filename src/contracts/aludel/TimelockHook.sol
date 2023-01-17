@@ -6,9 +6,11 @@ import {IAludelV3} from "./IAludelV3.sol";
 
 contract TimelockHook is IAludelHooks {
     error TimelockNotElapsed();
-    uint256 immutable public lockPeriod;
-    constructor(uint256 _lockPeriod){
-      lockPeriod = _lockPeriod;
+
+    uint256 public immutable lockPeriod;
+
+    constructor(uint256 _lockPeriod) {
+        lockPeriod = _lockPeriod;
     }
 
     function unstakeAndClaimPost(IAludelV3.StakeData memory stake) external {

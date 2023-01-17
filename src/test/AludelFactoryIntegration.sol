@@ -39,7 +39,7 @@ contract AludelFactoryIntegrationTest is Test {
 
     MockERC20 private stakingToken;
     MockERC20 private rewardToken;
-    
+
     Crucible private crucibleA;
     Crucible private crucibleB;
     Crucible private crucibleC;
@@ -64,7 +64,6 @@ contract AludelFactoryIntegrationTest is Test {
     AludelV3.AludelInitializationParams private defaultParams;
 
     function setUp() public {
-       
         // feeBps set 0 to make calculations easier to comprehend
         bps = 0;
 
@@ -92,11 +91,7 @@ contract AludelFactoryIntegrationTest is Test {
         bonusTokens[0] = address(new MockERC20("", "BonusToken A"));
         bonusTokens[1] = address(new MockERC20("", "BonusToken B"));
 
-        rewardScaling = IAludelV3.RewardScaling({
-            floor: 1,
-            ceiling: 1,
-            time: SCHEDULE_DURATION
-        });
+        rewardScaling = IAludelV3.RewardScaling({floor: 1, ceiling: 1, time: SCHEDULE_DURATION});
 
         defaultParams = AludelV3.AludelInitializationParams({
             rewardPoolFactory: address(rewardPoolFactory),
@@ -124,7 +119,6 @@ contract AludelFactoryIntegrationTest is Test {
             )
         );
 
-
         Utils.fundAludel(aludel, admin, rewardToken, REWARD_AMOUNT, SCHEDULE_DURATION);
 
         IAludelV3.AludelData memory data = aludel.getAludelData();
@@ -136,68 +130,45 @@ contract AludelFactoryIntegrationTest is Test {
         Utils.fundMockToken(address(crucibleB), stakingToken, STAKE_AMOUNT);
     }
 
-
     // Given a user with staking token balance, when it stakes coins
     //  * the aludel has a staked amount
     //  * aludel's last update timestamp is updated
     function test_stake() public {
-        Utils.stake(
-            user,
-            crucibleA,
-            aludel,
-            stakingToken,
-            STAKE_AMOUNT
-        );
+        Utils.stake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
         IAludelV3.AludelData memory data = aludel.getAludelData();
         assertEq(data.totalStake, STAKE_AMOUNT);
         assertEq(data.lastUpdate, block.timestamp);
     }
 
     function test_unstake() public {
-
-        Utils.stake(
-            user,
-            crucibleA,
-            aludel,
-            stakingToken,
-            STAKE_AMOUNT
-        );
+        Utils.stake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
 
         vm.warp(block.timestamp + SCHEDULE_DURATION);
-       
+
         vm.prank(user.addr());
 
         uint256[] memory indices = new uint256[](1);
         uint256[] memory amounts = new uint256[](1);
         indices[0] = 0;
         amounts[0] = STAKE_AMOUNT;
-        Utils.unstake(
-            user,
-            crucibleA,
-            aludel,
-            stakingToken,
-            indices,
-            amounts
-        );
+        Utils.unstake(user, crucibleA, aludel, stakingToken, indices, amounts);
 
         // the only staked gets the full amount of rewards because it completed the schedule duration
         assertEq(rewardToken.balanceOf(address(crucibleA)), REWARD_AMOUNT);
     }
 
     function test_many_users_multiple_stakes() public {
-
         // Two stakers, two crucibles, equal staked amount at the same time.
 
         Utils.stake(user, crucibleA, aludel, stakingToken, STAKE_AMOUNT);
         Utils.stake(anotherUser, crucibleB, aludel, stakingToken, STAKE_AMOUNT);
         // Utils.stake(anotherUser, crucibleC, aludel, stakingToken, STAKE_AMOUNT);
 
-        // This fully unlock shares for this current period. 
+        // This fully unlock shares for this current period.
         vm.warp(block.timestamp + SCHEDULE_DURATION);
-    
+
         // Fund Aludel again with the same reward amount and schedule duration.
         Utils.fundAludel(aludel, admin, rewardToken, REWARD_AMOUNT, SCHEDULE_DURATION);
-
 
         uint256[] memory indices = new uint256[](1);
         uint256[] memory amounts = new uint256[](1);
@@ -235,9 +206,5 @@ contract AludelFactoryIntegrationTest is Test {
         assertEq(rewardToken.balanceOf(address(crucibleA)), REWARD_AMOUNT / 8 * 7);
         assertEq(rewardToken.balanceOf(address(crucibleB)), REWARD_AMOUNT / 8 * 6);
         assertEq(rewardToken.balanceOf(address(crucibleC)), REWARD_AMOUNT / 8 * 3);
-
     }
-
-    
-
 }

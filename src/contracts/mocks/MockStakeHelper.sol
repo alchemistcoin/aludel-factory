@@ -16,15 +16,10 @@ contract MockStakeHelper {
     ) external {
         uint256[] memory amounts = new uint256[](1);
         uint256[] memory indices = new uint256[](1);
-        amounts[0]=amount;
-        indices[0]=0;
+        amounts[0] = amount;
+        indices[0] = 0;
         AludelV3(geyser).stake(vault, amount, lockPermission);
-        AludelV3(geyser).unstakeAndClaim(
-            vault,
-            indices,
-            amounts,
-            unstakePermission
-        );
+        AludelV3(geyser).unstakeAndClaim(vault, indices, amounts, unstakePermission);
     }
 
     function stakeBatch(
@@ -34,11 +29,7 @@ contract MockStakeHelper {
         bytes[] calldata permissions
     ) external {
         for (uint256 index = 0; index < vaults.length; index++) {
-            AludelV3(geysers[index]).stake(
-                vaults[index],
-                amounts[index],
-                permissions[index]
-            );
+            AludelV3(geysers[index]).stake(vaults[index], amounts[index], permissions[index]);
         }
     }
 }

@@ -71,7 +71,6 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     EnumerableSet.AddressSet internal _bonusTokenSet;
     EnumerableSet.AddressSet internal _vaultFactorySet;
 
-
     address private _feeRecipient;
     uint16 private _feeBps;
 
@@ -113,15 +112,8 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         address feeRecipient,
         uint16 feeBps,
         bytes calldata data
-    )
-        external
-        override
-        initializer
-    {
-      
-        (AludelInitializationParams memory params) = abi.decode(
-            data, (AludelInitializationParams)
-        );
+    ) external override initializer {
+        (AludelInitializationParams memory params) = abi.decode(data, (AludelInitializationParams));
 
         _feeRecipient = feeRecipient;
         _feeBps = feeBps;
@@ -138,13 +130,10 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         }
 
         // deploy power switch
-        address powerSwitch = IFactory(params.powerSwitchFactory).create(
-            abi.encode(ownerAddress, startTime)
-        );
+        address powerSwitch = IFactory(params.powerSwitchFactory).create(abi.encode(ownerAddress, startTime));
 
         // // deploy reward pool
-        address rewardPool =
-            IFactory(params.rewardPoolFactory).create(abi.encode(powerSwitch));
+        address rewardPool = IFactory(params.rewardPoolFactory).create(abi.encode(powerSwitch));
 
         // // set internal configs
         _transferOwnership(msg.sender);
@@ -163,53 +152,26 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
 
     /* getter functions */
 
-    function getBonusTokenSetLength()
-        external
-        view
-        override
-        returns (uint256 length)
-    {
+    function getBonusTokenSetLength() external view override returns (uint256 length) {
         return _bonusTokenSet.length();
     }
 
-    function getBonusTokenAtIndex(uint256 index)
-        external
-        view
-        override
-        returns (address bonusToken)
-    {
+    function getBonusTokenAtIndex(uint256 index) external view override returns (address bonusToken) {
         return _bonusTokenSet.at(index);
     }
 
-    function getVaultFactorySetLength()
-        external
-        view
-        override
-        returns (uint256 length)
-    {
+    function getVaultFactorySetLength() external view override returns (uint256 length) {
         return _vaultFactorySet.length();
     }
 
-    function getVaultFactoryAtIndex(uint256 index)
-        external
-        view
-        override
-        returns (address factory)
-    {
+    function getVaultFactoryAtIndex(uint256 index) external view override returns (address factory) {
         return _vaultFactorySet.at(index);
     }
 
-    function isValidVault(address target)
-        public
-        view
-        override
-        returns (bool validity)
-    {
+    function isValidVault(address target) public view override returns (bool validity) {
         // validate target is created from whitelisted vault factory
         for (uint256 index = 0; index < _vaultFactorySet.length(); index++) {
-            if (
-                IInstanceRegistry(_vaultFactorySet.at(index)).isInstance(target)
-            ) {
+            if (IInstanceRegistry(_vaultFactorySet.at(index)).isInstance(target)) {
                 return true;
             }
         }
@@ -217,54 +179,28 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         return false;
     }
 
-    function isValidAddress(address target)
-        public
-        view
-        override
-        returns (bool validity)
-    {
+    function isValidAddress(address target) public view override returns (bool validity) {
         // sanity check target for potential input errors
-        return
-            target != address(this) &&
-            target != address(0) &&
-            target != _aludel.stakingToken &&
-            target != _aludel.rewardToken &&
-            target != _aludel.rewardPool &&
-            !_bonusTokenSet.contains(target);
+        return target != address(this) && target != address(0) && target != _aludel.stakingToken
+            && target != _aludel.rewardToken && target != _aludel.rewardPool && !_bonusTokenSet.contains(target);
     }
 
     /* Aludel getters */
 
-    function getAludelData()
-        external
-        view
-        override
-        returns (AludelData memory aludel)
-    {
+    function getAludelData() external view override returns (AludelData memory aludel) {
         return _aludel;
     }
 
-    function getCurrentTotalStakeUnits()
-        public
-        view
-        override
-        returns (uint256 totalStakeUnits)
-    {
+    function getCurrentTotalStakeUnits() public view override returns (uint256 totalStakeUnits) {
         // calculate new stake units
         return getFutureTotalStakeUnits(block.timestamp);
     }
 
-    function getFutureTotalStakeUnits(uint256 timestamp)
-        public
-        view
-        override
-        returns (uint256 totalStakeUnits)
-    {
+    function getFutureTotalStakeUnits(uint256 timestamp) public view override returns (uint256 totalStakeUnits) {
         // return early if no change
         if (timestamp == _aludel.lastUpdate) return _aludel.totalStakeUnits;
         // calculate new stake units
-        uint256 newStakeUnits =
-            calculateStakeUnits(_aludel.totalStake, _aludel.lastUpdate, timestamp);
+        uint256 newStakeUnits = calculateStakeUnits(_aludel.totalStake, _aludel.lastUpdate, timestamp);
         // add to cached total
         totalStakeUnits = _aludel.totalStakeUnits.add(newStakeUnits);
         // explicit return
@@ -273,21 +209,13 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
 
     /* vault getters */
 
-    function getVaultData(address vault)
-        external
-        view
-        override
-        returns (VaultData memory vaultData)
-    {
+    function getVaultData(address vault) external view override returns (VaultData memory vaultData) {
         return _vaults[vault];
     }
 
     /* pure functions */
 
-    function calculateTotalStakeUnits(
-        StakeData[] memory stakes,
-        uint256 timestamp
-    )
+    function calculateTotalStakeUnits(StakeData[] memory stakes, uint256 timestamp)
         public
         pure
         override
@@ -297,8 +225,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
             // reference stake
             StakeData memory stakeData = stakes[index];
             // calculate stake units
-            uint256 stakeUnits =
-            calculateStakeUnits(stakeData.amount, stakeData.timestamp, timestamp);
+            uint256 stakeUnits = calculateStakeUnits(stakeData.amount, stakeData.timestamp, timestamp);
             // add to running total
             totalStakeUnits = totalStakeUnits.add(stakeUnits);
         }
@@ -323,12 +250,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         uint256 rewardBalance,
         uint256 sharesOutstanding,
         uint256 timestamp
-    )
-        public
-        pure
-        override
-        returns (uint256 unlockedRewards)
-    {
+    ) public pure override returns (uint256 unlockedRewards) {
         // return 0 if no registered schedules
         if (rewardSchedules.length == 0) {
             return 0;
@@ -347,9 +269,8 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
             //   sharesLocked = 0
             uint256 currentSharesLocked = 0;
             if (timestamp.sub(schedule.start) < schedule.duration) {
-                currentSharesLocked = schedule.shares.sub(
-                    schedule.shares.mul(timestamp.sub(schedule.start)).div(schedule.duration)
-                );
+                currentSharesLocked =
+                    schedule.shares.sub(schedule.shares.mul(timestamp.sub(schedule.start)).div(schedule.duration));
             }
 
             // add to running total
@@ -358,8 +279,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
 
         // convert shares to reward
         // rewardLocked = sharesLocked * rewardBalance / sharesOutstanding
-        uint256 rewardLocked =
-            sharesLocked.mul(rewardBalance).div(sharesOutstanding);
+        uint256 rewardLocked = sharesLocked.mul(rewardBalance).div(sharesOutstanding);
 
         // calculate amount available
         // unlockedRewards = rewardBalance - rewardLocked
@@ -375,12 +295,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         uint256 stakeDuration,
         uint256 totalStakeUnits,
         RewardScaling memory rewardScaling
-    )
-        public
-        pure
-        override
-        returns (uint256 reward)
-    {
+    ) public pure override returns (uint256 reward) {
         // calculate time weighted stake
         uint256 stakeUnits = stakeAmount.mul(stakeDuration);
 
@@ -401,25 +316,17 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         //                 * (scalingCeiling - scalingFloor) / scalingCeiling
         //                 * duration / scalingTime
         //   reward = minReward + bonusReward
-        if (
-            stakeDuration
-                >= rewardScaling.time
-                || rewardScaling.floor
-                == rewardScaling.ceiling
-        ) {
+        if (stakeDuration >= rewardScaling.time || rewardScaling.floor == rewardScaling.ceiling) {
             // no reward scaling applied
             reward = baseReward;
         } else {
             // calculate minimum reward using scaling floor
-            uint256 minReward =
-                baseReward.mul(rewardScaling.floor).div(rewardScaling.ceiling);
+            uint256 minReward = baseReward.mul(rewardScaling.floor).div(rewardScaling.ceiling);
 
             // calculate bonus reward with vested portion of scaling factor
-            uint256 bonusReward = baseReward
-                    .mul(stakeDuration)
-                    .mul(rewardScaling.ceiling.sub(rewardScaling.floor))
-                    .div(rewardScaling.ceiling)
-                    .div(rewardScaling.time);
+            uint256 bonusReward = baseReward.mul(stakeDuration).mul(rewardScaling.ceiling.sub(rewardScaling.floor)).div(
+                rewardScaling.ceiling
+            ).div(rewardScaling.time);
 
             // add minimum reward and bonus reward
             reward = minReward.add(bonusReward);
@@ -442,12 +349,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     /// token transfer: transfer staking tokens from msg.sender to reward pool
     /// @param amount uint256 Amount of reward tokens to deposit
     /// @param duration uint256 Duration over which to linearly unlock rewards
-    function fund(uint256 amount, uint256 duration)
-        external
-        override
-        onlyOwner
-        onlyOnline
-    {
+    function fund(uint256 amount, uint256 duration) external override onlyOwner onlyOnline {
         // validate duration
         if (duration == 0) {
             revert InvalidDuration();
@@ -456,14 +358,9 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         uint256 fee = amount.mul(_feeBps).div(10000);
         amount = amount.sub(fee);
 
-        // transfer reward tokens to `_feeRecipient` 
-        TransferHelper.safeTransferFrom(
-            _aludel.rewardToken,
-            msg.sender,
-            _feeRecipient,
-            fee
-        );
-        
+        // transfer reward tokens to `_feeRecipient`
+        TransferHelper.safeTransferFrom(_aludel.rewardToken, msg.sender, _feeRecipient, fee);
+
         // create new reward shares
         // if existing rewards on this Aludel
         //   mint new shares proportional to % change in rewards remaining
@@ -473,28 +370,20 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         //   store as fixed point number with same  of decimals as reward token
         uint256 newRewardShares;
         if (_aludel.rewardSharesOutstanding > 0) {
-            uint256 remainingRewards =
-                IERC20(_aludel.rewardToken).balanceOf(_aludel.rewardPool);
-            newRewardShares =
-                _aludel.rewardSharesOutstanding.mul(amount).div(remainingRewards);
+            uint256 remainingRewards = IERC20(_aludel.rewardToken).balanceOf(_aludel.rewardPool);
+            newRewardShares = _aludel.rewardSharesOutstanding.mul(amount).div(remainingRewards);
         } else {
             newRewardShares = amount.mul(BASE_SHARES_PER_WEI);
         }
 
         // add reward shares to total
-        _aludel.rewardSharesOutstanding =
-            _aludel.rewardSharesOutstanding.add(newRewardShares);
+        _aludel.rewardSharesOutstanding = _aludel.rewardSharesOutstanding.add(newRewardShares);
 
         // store new reward schedule
         _aludel.rewardSchedules.push(RewardSchedule(duration, block.timestamp, newRewardShares));
 
         // transfer reward tokens to reward pool
-        TransferHelper.safeTransferFrom(
-            _aludel.rewardToken,
-            msg.sender,
-            _aludel.rewardPool,
-            amount
-        );
+        TransferHelper.safeTransferFrom(_aludel.rewardToken, msg.sender, _aludel.rewardPool, amount);
 
         // emit event
         emit AludelFunded(amount, duration);
@@ -511,13 +400,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     ///   - append to _vaultFactorySet
     /// token transfer: none
     /// @param factory address The address of the vault factory
-    function registerVaultFactory(address factory)
-        external
-        virtual
-        override
-        onlyOwner
-        notShutdown
-    {
+    function registerVaultFactory(address factory) external virtual override onlyOwner notShutdown {
         // add factory to set
         if (!_vaultFactorySet.add(factory)) {
             revert VaultAlreadyRegistered();
@@ -538,13 +421,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     ///   - remove from _vaultFactorySet
     /// token transfer: none
     /// @param factory address The address of the vault factory
-    function removeVaultFactory(address factory)
-        external
-        virtual
-        override
-        onlyOwner
-        notShutdown
-    {
+    function removeVaultFactory(address factory) external virtual override onlyOwner notShutdown {
         // remove factory from set
         if (!_vaultFactorySet.remove(factory)) {
             revert VaultFactoryNotRegistered();
@@ -563,13 +440,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     ///   - append to _bonusTokenSet
     /// token transfer: none
     /// @param bonusToken address The address of the bonus token
-    function registerBonusToken(address bonusToken)
-        external
-        virtual
-        override
-        onlyOwner
-        onlyOnline
-    {
+    function registerBonusToken(address bonusToken) external virtual override onlyOwner onlyOnline {
         // verify valid bonus token
         _validateAddress(bonusToken);
 
@@ -596,11 +467,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     /// @param token address The address of the token to rescue
     /// @param recipient address The address of the recipient
     /// @param amount uint256 The amount of tokens to rescue
-    function rescueTokensFromRewardPool(
-        address token,
-        address recipient,
-        uint256 amount
-    )
+    function rescueTokensFromRewardPool(address token, address recipient, uint256 amount)
         external
         override
         onlyOwner
@@ -641,12 +508,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
     /// @param amount uint256 The amount of staking tokens to stake
     /// @param permission bytes The signed lock permission for the universal vault
 
-    function stake(address vault, uint256 amount, bytes calldata permission)
-        external
-        override
-        onlyOnline
-        hasStarted
-    {
+    function stake(address vault, uint256 amount, bytes calldata permission) external override onlyOnline hasStarted {
         // verify vault is valid
         if (!isValidVault(vault)) {
             revert InvalidVault();
@@ -708,12 +570,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         uint256[] calldata indices,
         uint256[] calldata amounts,
         bytes calldata permission
-    )
-        external
-        override
-        onlyOnline
-        hasStarted
-    {
+    ) external override onlyOnline hasStarted {
         // fetch vault storage reference
         VaultData storage vaultData = _vaults[vault];
 
@@ -721,23 +578,14 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         _updateTotalStakeUnits();
 
         // get reward amount remaining
-        uint256 remainingRewards =
-            IERC20(_aludel.rewardToken).balanceOf(_aludel.rewardPool);
+        uint256 remainingRewards = IERC20(_aludel.rewardToken).balanceOf(_aludel.rewardPool);
 
         // calculate vested portion of reward pool
         uint256 unlockedRewards = calculateUnlockedRewards(
-                _aludel.rewardSchedules,
-                remainingRewards,
-                _aludel.rewardSharesOutstanding,
-                block.timestamp
-            );
-
-        (uint256 reward, uint256 amount) = _unstake(
-            vaultData.stakes,
-            unlockedRewards,
-            indices,
-            amounts            
+            _aludel.rewardSchedules, remainingRewards, _aludel.rewardSharesOutstanding, block.timestamp
         );
+
+        (uint256 reward, uint256 amount) = _unstake(vaultData.stakes, unlockedRewards, indices, amounts);
 
         // verify non-zero amount
         if (amount == 0) {
@@ -755,7 +603,6 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         emit Unstaked(vault, amount);
         // only perform on non-zero reward
         _claim(vault, reward, remainingRewards);
-
     }
 
     function _unstake(
@@ -763,20 +610,19 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         uint256 unlockedRewards,
         uint256[] memory indices,
         uint256[] memory amounts
-    ) internal returns(uint256 reward, uint256 unstakedAmount) {
-
+    ) internal returns (uint256 reward, uint256 unstakedAmount) {
         uint256 poppedStakes = 0;
 
-        for (uint256 metaIndex = 0; metaIndex< indices.length; metaIndex++) {
+        for (uint256 metaIndex = 0; metaIndex < indices.length; metaIndex++) {
             uint256 computedStakeIndex = indices[metaIndex] - poppedStakes;
             StakeData memory currentStake = stakes[computedStakeIndex];
             unstakedAmount += amounts[metaIndex];
             if (currentStake.amount < amounts[metaIndex]) {
                 revert InvalidAmountArray();
-            } 
-            if(currentStake.amount == amounts[metaIndex]){
-                stakes[computedStakeIndex] = stakes[stakes.length-1];
-                poppedStakes+=1;
+            }
+            if (currentStake.amount == amounts[metaIndex]) {
+                stakes[computedStakeIndex] = stakes[stakes.length - 1];
+                poppedStakes += 1;
                 stakes.pop();
             } else {
                 stakes[computedStakeIndex].amount -= amounts[metaIndex];
@@ -786,13 +632,9 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
                 _aludel.hookContract.unstakeAndClaimPost(currentStake);
             }
             uint256 stakeDuration = block.timestamp - currentStake.timestamp;
-        
+
             uint256 currentReward = calculateReward(
-                unlockedRewards,
-                currentStake.amount,
-                stakeDuration,
-                _aludel.totalStakeUnits,
-                _aludel.rewardScaling
+                unlockedRewards, currentStake.amount, stakeDuration, _aludel.totalStakeUnits, _aludel.rewardScaling
             );
             reward += currentReward;
             unlockedRewards -= currentReward;
@@ -803,30 +645,23 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
 
     function _claim(address vault, uint256 reward, uint256 remainingRewards) public {
         if (reward > 0) {
-
             // calculate shares to burn
             // sharesToBurn = sharesOutstanding * reward / remainingRewards
-            uint256 sharesToBurn =
-            _aludel.rewardSharesOutstanding.mul(reward).div(remainingRewards);
+            uint256 sharesToBurn = _aludel.rewardSharesOutstanding.mul(reward).div(remainingRewards);
 
             // burn claimed shares
-            _aludel.rewardSharesOutstanding =
-                _aludel.rewardSharesOutstanding.sub(sharesToBurn);
+            _aludel.rewardSharesOutstanding = _aludel.rewardSharesOutstanding.sub(sharesToBurn);
 
             // transfer bonus tokens from reward pool to vault
             if (_bonusTokenSet.length() > 0) {
-                for (
-                    uint256 index = 0; index < _bonusTokenSet.length(); index++
-                ) {
+                for (uint256 index = 0; index < _bonusTokenSet.length(); index++) {
                     // fetch bonus token address reference
                     address bonusToken = _bonusTokenSet.at(index);
 
                     // calculate bonus token amount
                     // bonusAmount = bonusRemaining * reward / remainingRewards
                     uint256 bonusAmount =
-                    IERC20(bonusToken).balanceOf(_aludel.rewardPool).mul(reward).div(
-                            remainingRewards
-                        );
+                        IERC20(bonusToken).balanceOf(_aludel.rewardPool).mul(reward).div(remainingRewards);
 
                     // transfer bonus token
                     IRewardPool(_aludel.rewardPool).sendERC20(bonusToken, vault, bonusAmount);
@@ -876,9 +711,8 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
 
         // update cached totals
         _aludel.totalStake = _aludel.totalStake.sub(_vaultData.totalStake);
-        _aludel.totalStakeUnits = _aludel.totalStakeUnits.sub(
-            calculateTotalStakeUnits(_vaultData.stakes, block.timestamp)
-        );
+        _aludel.totalStakeUnits =
+            _aludel.totalStakeUnits.sub(calculateTotalStakeUnits(_vaultData.stakes, block.timestamp));
 
         // delete stake data
         delete _vaults[msg.sender];

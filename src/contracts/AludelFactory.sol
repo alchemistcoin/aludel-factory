@@ -12,6 +12,7 @@ contract AludelFactory is Ownable {
         string name;
         string stakingTokenUrl;
     }
+
     struct TemplateData {
         bool listed;
         bool disabled;
@@ -44,7 +45,6 @@ contract AludelFactory is Ownable {
     /// @dev emitted when a program is delisted
     event ProgramDelisted(address program);
 
-
     error InvalidTemplate();
     error TemplateNotRegistered();
     error TemplateDisabled();
@@ -52,7 +52,6 @@ contract AludelFactory is Ownable {
     error ProgramAlreadyRegistered();
     error AludelNotRegistered();
     error AludelAlreadyRegistered();
-
 
     constructor(address recipient, uint16 bps) {
         feeRecipient = recipient;
@@ -74,10 +73,7 @@ contract AludelFactory is Ownable {
         address[] memory bonusTokens,
         address ownerAddress,
         bytes calldata data
-    )
-        public
-        returns (address aludel)
-    {
+    ) public returns (address aludel) {
         if (!_templates[template].listed) {
             revert TemplateNotRegistered();
         }
@@ -90,23 +86,12 @@ contract AludelFactory is Ownable {
         // create clone and initialize
         aludel = ProxyFactory._create(
             template,
-            abi.encodeWithSelector(
-                IAludel.initialize.selector,
-                startTime,
-                ownerAddress,
-                feeRecipient,
-                feeBps,
-                data
-            )
+            abi.encodeWithSelector(IAludel.initialize.selector, startTime, ownerAddress, feeRecipient, feeBps, data)
         );
 
         // add program's data to the storage
-        _programs[aludel] = ProgramData({
-            startTime: startTime,
-            template: template,
-            name: name,
-            stakingTokenUrl: stakingTokenUrl
-        });
+        _programs[aludel] =
+            ProgramData({startTime: startTime, template: template, name: name, stakingTokenUrl: stakingTokenUrl});
 
         // register vault factory
         IAludel(aludel).registerVaultFactory(vaultFactory);
@@ -129,10 +114,7 @@ contract AludelFactory is Ownable {
     /* admin */
 
     /// @notice adds a new template to the factory
-    function addTemplate(address template, string memory name, bool disabled)
-        public
-        onlyOwner
-    {
+    function addTemplate(address template, string memory name, bool disabled) public onlyOwner {
         // cannot add address(0) as template
         if (template == address(0)) {
             revert InvalidTemplate();
@@ -142,11 +124,7 @@ contract AludelFactory is Ownable {
         if (_templates[template].listed) {
             revert TemplateAlreadyAdded();
         } else {
-            _templates[template] = TemplateData({
-                listed: true,
-                disabled: disabled,
-                name: name
-            });
+            _templates[template] = TemplateData({listed: true, disabled: disabled, name: name});
         }
 
         // emit event
@@ -156,15 +134,12 @@ contract AludelFactory is Ownable {
     // @dev function to check if an arbitrary address is a registered program
     // @notice programs cant have a null template, so this should be enough to
     // know if storage is occupied or not
-    function isAludel(address who) public view returns(bool){
-      return _programs[who].template != address(0);
+    function isAludel(address who) public view returns (bool) {
+        return _programs[who].template != address(0);
     }
 
     /// @notice sets a template as disable or enabled
-    function updateTemplate(address template, bool disabled)
-        external
-        onlyOwner
-    {
+    function updateTemplate(address template, bool disabled) external onlyOwner {
         if (!_templates[template].listed) {
             revert InvalidTemplate();
         }
@@ -176,16 +151,16 @@ contract AludelFactory is Ownable {
     /// @notice updates both name and url of a program at once
     /// @dev to set only one of them, you can pass an empty string as the other
     /// and then you'll save some gas
-    function updateProgram(address program, string memory newName,string memory newUrl) external onlyOwner {
+    function updateProgram(address program, string memory newName, string memory newUrl) external onlyOwner {
         // check if the address is already registered
-        if(!isAludel(program)){
-          revert AludelNotRegistered();
+        if (!isAludel(program)) {
+            revert AludelNotRegistered();
         }
         // update storage
-        if(bytes(newName).length != 0){
+        if (bytes(newName).length != 0) {
             _programs[program].name = newName;
         }
-        if(bytes(newUrl).length != 0){
+        if (bytes(newUrl).length != 0) {
             _programs[program].stakingTokenUrl = newUrl;
         }
         // emit event
@@ -200,34 +175,26 @@ contract AludelFactory is Ownable {
         string memory name,
         string memory stakingTokenUrl,
         uint64 startTime
-    )
-        external
-        onlyOwner
-    {
-        if(isAludel(program)){
-          revert AludelAlreadyRegistered();
+    ) external onlyOwner {
+        if (isAludel(program)) {
+            revert AludelAlreadyRegistered();
         }
         if (!_templates[template].listed) {
             revert TemplateNotRegistered();
         }
 
         // add program's data to the storage
-        _programs[program] = ProgramData({
-            startTime: startTime,
-            template: template,
-            name: name,
-            stakingTokenUrl: stakingTokenUrl
-        });
+        _programs[program] =
+            ProgramData({startTime: startTime, template: template, name: name, stakingTokenUrl: stakingTokenUrl});
 
         emit ProgramAdded(program, name, stakingTokenUrl);
-
     }
 
     /// @notice delist a program
     /// @dev removes `program` as a registered instance of the factory
     function delistProgram(address program) external onlyOwner {
-        if(!isAludel(program)){
-          revert AludelNotRegistered();
+        if (!isAludel(program)) {
+            revert AludelNotRegistered();
         }
         delete _programs[program];
 
@@ -235,11 +202,7 @@ contract AludelFactory is Ownable {
     }
 
     /// @notice retrieves a template's data
-    function getTemplate(address template)
-        external
-        view
-        returns (TemplateData memory)
-    {
+    function getTemplate(address template) external view returns (TemplateData memory) {
         return _templates[template];
     }
 
@@ -248,7 +211,7 @@ contract AludelFactory is Ownable {
     // but it's more readable to access fields by name, so this is used to
     // force returning a struct
     function programs(address program) external view returns (ProgramData memory) {
-      return _programs[program];
+        return _programs[program];
     }
 
     function setFeeRecipient(address newRecipient) external onlyOwner {

@@ -34,12 +34,9 @@ library Utils {
         return Vm(address(0x7109709ECfa91a80626fF3989D68f67F5b1DD12D));
     }
 
-    function launchProgram(
-        AludelFactory factory,
-        LaunchParams memory params
-    ) internal returns(address program) {
+    function launchProgram(AludelFactory factory, LaunchParams memory params) internal returns (address program) {
         program = factory.launch(
-        params.template,
+            params.template,
             params.name,
             params.stakingTokenUrl,
             params.startTime,
@@ -60,87 +57,45 @@ library Utils {
         return Crucible(payable(crucibleFactory.create("")));
     }
 
-    function getLockPermission(
-        User signer,
-        IUniversalVault crucible,
-        address delegate,
-        ERC20 token,
-        uint256 amount
-    ) internal returns (bytes memory) {
+    function getLockPermission(User signer, IUniversalVault crucible, address delegate, ERC20 token, uint256 amount)
+        internal
+        returns (bytes memory)
+    {
         return getPermission(
-            signer,
-    		LOCK_EVENT,
-    		address(crucible),
-    		address(delegate),
-    		address(token),
-    		amount,
-    		crucible.getNonce()
+            signer, LOCK_EVENT, address(crucible), address(delegate), address(token), amount, crucible.getNonce()
         );
     }
 
-    function getUnlockPermission(
-        User signer,
-        IUniversalVault crucible,
-        address delegate,
-        ERC20 token,
-        uint256 amount
-    ) internal returns (bytes memory) {
+    function getUnlockPermission(User signer, IUniversalVault crucible, address delegate, ERC20 token, uint256 amount)
+        internal
+        returns (bytes memory)
+    {
         return getPermission(
-    		signer,
-    		UNLOCK_EVENT,
-    		address(crucible),
-    		address(delegate),
-    		address(token),
-    		amount,
-    		crucible.getNonce()
+            signer, UNLOCK_EVENT, address(crucible), address(delegate), address(token), amount, crucible.getNonce()
         );
     }
 
-    function stake(
-        User staker,
-        IUniversalVault crucible,
-        IAludel aludel,
-        ERC20 token,
-        uint256 amount
-    ) internal {
-        bytes memory lockSig = getLockPermission(
-            staker, crucible, address(aludel), token, amount
-        );
+    function stake(User staker, IUniversalVault crucible, IAludel aludel, ERC20 token, uint256 amount) internal {
+        bytes memory lockSig = getLockPermission(staker, crucible, address(aludel), token, amount);
 
         aludel.stake(address(crucible), amount, lockSig);
     }
 
-    function unstake(
-        User staker,
-        IUniversalVault crucible,
-        IAludel aludel,
-        ERC20 token,
-        uint256 amount
-    ) internal {
-        bytes memory unlockSig = getUnlockPermission(
-            staker, crucible, address(aludel), token, amount
-        );
+    function unstake(User staker, IUniversalVault crucible, IAludel aludel, ERC20 token, uint256 amount) internal {
+        bytes memory unlockSig = getUnlockPermission(staker, crucible, address(aludel), token, amount);
 
         aludel.unstakeAndClaim(address(crucible), amount, unlockSig);
     }
 
     function sum(uint256[] memory numbers) internal pure returns (uint256 total) {
         uint256 length = numbers.length;
-        for (uint i = 0; i < length; i++) {
+        for (uint256 i = 0; i < length; i++) {
             total += numbers[i];
         }
     }
 
-    function stake(
-        User staker,
-        IUniversalVault crucible,
-        IAludelV3 aludel,
-        ERC20 token,
-        uint256 amount
-    ) internal {
-        bytes memory lockSig = getLockPermission(
-            staker, crucible, address(aludel), token, amount
-        );
+    function stake(User staker, IUniversalVault crucible, IAludelV3 aludel, ERC20 token, uint256 amount) internal {
+        bytes memory lockSig = getLockPermission(staker, crucible, address(aludel), token, amount);
 
         aludel.stake(address(crucible), amount, lockSig);
     }
@@ -153,28 +108,16 @@ library Utils {
         uint256[] memory indices,
         uint256[] memory amounts
     ) internal {
-        bytes memory unlockSig = getUnlockPermission(
-            staker, crucible, address(aludel), token, sum(amounts)
-        );
-        
+        bytes memory unlockSig = getUnlockPermission(staker, crucible, address(aludel), token, sum(amounts));
+
         aludel.unstakeAndClaim(address(crucible), indices, amounts, unlockSig);
     }
 
-    
-
-    function fundMockToken(
-        address receiver,
-        ERC20 token,
-        uint256 amount
-    ) internal {
+    function fundMockToken(address receiver, ERC20 token, uint256 amount) internal {
         fundMockToken(receiver, address(token), amount);
     }
 
-    function fundMockToken(
-        address receiver,
-        address token,
-        uint256 amount
-    ) internal {
+    function fundMockToken(address receiver, address token, uint256 amount) internal {
         MockERC20(token).mint(receiver, amount);
     }
 
@@ -209,9 +152,7 @@ library Utils {
                 // domain separator hash
                 keccak256(
                     abi.encode(
-                        keccak256(
-                            "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
-                        ),
+                        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
                         keccak256("UniversalVault"),
                         keccak256("1.0.0"),
                         block.chainid,
@@ -222,10 +163,7 @@ library Utils {
                 keccak256(
                     abi.encode(
                         keccak256(
-                            abi.encodePacked(
-                                method,
-                                "(address delegate,address token,uint256 amount,uint256 nonce)"
-                            )
+                            abi.encodePacked(method, "(address delegate,address token,uint256 amount,uint256 nonce)")
                         ),
                         address(delegate),
                         address(token),
@@ -241,11 +179,7 @@ library Utils {
         return joinSignature(r, s, v);
     }
 
-    function joinSignature(
-        bytes32 r,
-        bytes32 s,
-        uint8 v
-    ) internal returns (bytes memory) {
+    function joinSignature(bytes32 r, bytes32 s, uint8 v) internal returns (bytes memory) {
         bytes memory sig = new bytes(65);
         assembly {
             mstore(add(sig, 0x20), r)
