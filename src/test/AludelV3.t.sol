@@ -143,7 +143,7 @@ contract AludelV3Test is Test {
         vm.startPrank(admin.addr());
         rewardToken.approve(address(aludel), REWARD_AMOUNT * 5);
 
-        // 1. Admin funds 600 eth * 5 for 1 minute
+        // 1. Admin funds 600 eth for 1 minute
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION);
         data = aludel.getAludelData();
         assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI);
@@ -159,7 +159,7 @@ contract AludelV3Test is Test {
         assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI);
         assertEq(aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp), 0);
 
-        // 3. Admin funds 600 eth * 5 for 1 minute
+        // 3. Admin funds 600 eth for 1 minute
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION);
         data = aludel.getAludelData();
         assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 2);
@@ -179,7 +179,7 @@ contract AludelV3Test is Test {
             0
         );
 
-        // 5. Admin funds 600 eth * 5 for 1 minute
+        // 5. Admin funds 600 eth for 1 minute
         //    1 minute elapses
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION);
         vm.warp(block.timestamp + SCHEDULE_DURATION);
@@ -192,8 +192,8 @@ contract AludelV3Test is Test {
             0
         );
 
-        // 6. Admin funds 600 eth * 5 for 1 minute
-        //    Admin funds 600 eth * 5 for 2 minute
+        // 6. Admin funds 600 eth for 1 minute
+        //    Admin funds 600 eth for 2 minute
         //    1 minute elapses
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION);
         aludel.fund(REWARD_AMOUNT, SCHEDULE_DURATION * 2);
