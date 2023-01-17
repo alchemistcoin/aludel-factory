@@ -314,23 +314,11 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         return AludelV3Lib.calculateStakeUnits(amount, start, end);
     }
 
-    function calculateUnlockedRewards(
-        RewardSchedule[] memory rewardSchedules,
-        uint256 rewardBalance,
-        uint256 sharesOutstanding,
-        uint256 timestamp
-    )
+    function calculateUnlockedRewards(uint256 timestamp)
         public
-        pure
-        override
-        returns (uint256 unlockedRewards)
-    {
-        return AludelV3Lib.calculateUnlockedRewards(
-            rewardSchedules,
-            rewardBalance,
-            sharesOutstanding,
-            timestamp
-        );
+        view
+        returns (uint256 unlockedRewards) {
+        return AludelV3Lib.calculateUnlockedRewards(_aludel, timestamp);
     }
 
     function calculateReward(
@@ -633,12 +621,7 @@ contract AludelV3 is IAludelV3, Ownable, Initializable, Powered {
         uint256 remainingRewards = AludelV3Lib.getRemainingRewards(_aludel);
 
         // calculate vested portion of reward pool
-        uint256 unlockedRewards = AludelV3Lib.calculateUnlockedRewards(
-            _aludel.rewardSchedules,
-            remainingRewards,
-            _aludel.rewardSharesOutstanding,
-            block.timestamp
-        );
+        uint256 unlockedRewards = calculateUnlockedRewards(block.timestamp);
 
         (uint256 reward, uint256 amount) = _unstake(
             vault,

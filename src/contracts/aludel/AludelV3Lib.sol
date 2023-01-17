@@ -126,6 +126,29 @@ library AludelV3Lib {
         return unlockedRewards;
     }
 
+    function calculateCurrentUnlockedRewards(
+        IAludelV3.AludelData storage aludel
+    ) internal view returns(uint256 unlockedRewards) {
+        unlockedRewards = AludelV3Lib.calculateUnlockedRewards(
+            aludel.rewardSchedules,
+            getRemainingRewards(aludel),
+            aludel.rewardSharesOutstanding,
+            block.timestamp
+        );
+    }
+
+    function calculateUnlockedRewards(
+        IAludelV3.AludelData storage aludel,
+        uint256 timestamp
+    ) internal view returns(uint256 unlockedRewards) {
+        unlockedRewards = AludelV3Lib.calculateUnlockedRewards(
+            aludel.rewardSchedules,
+            getRemainingRewards(aludel),
+            aludel.rewardSharesOutstanding,
+            timestamp
+        );
+    }
+
     function calculateReward(
         uint256 unlockedRewards,
         uint256 stakeAmount,
@@ -169,6 +192,8 @@ library AludelV3Lib {
         // explicit return
         return reward;
     }
+
+
 
 
     /* state mutating functions */
