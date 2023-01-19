@@ -33,16 +33,11 @@ contract AludelV3Test is Test {
     
     AludelFactory private factory;
     AludelV3 private aludel;
-    Spy private spyTemplate;
 
     User private user;
     User private anotherUser;
     User private admin;
     User private recipient;
-
-    Crucible private crucibleA;
-    Crucible private crucibleB;
-    Crucible private crucibleC;
 
     MockERC20 private stakingToken;
     MockERC20 private rewardToken;
@@ -52,20 +47,14 @@ contract AludelV3Test is Test {
     IAludelV3.RewardScaling private rewardScaling;
 
     CrucibleFactory private crucibleFactory;
-    Crucible private crucible;
-
-    address[] private bonusTokens;
 
     AludelV3 private template;
 
     uint16 private bps;
-    address private constant CRUCIBLE_FACTORY = address(0xcc1b13);
     uint64 private constant START_TIME = 10000 seconds;
     uint64 private constant SCHEDULE_DURATION = 1 minutes;
 
     uint256 public constant BASE_SHARES_PER_WEI = 1000000;
-    uint256 public constant MILLION = 1e6;
-
 
     uint256 public constant STAKE_AMOUNT = 60 ether;
     uint256 public constant REWARD_AMOUNT = 600 ether;
@@ -85,8 +74,6 @@ contract AludelV3Test is Test {
         crucibleTemplate.initializeLock();
         crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
 
-        crucible = Utils.createCrucible(user, crucibleFactory);
-
         // feeBps set 0 to make calculations easier to comprehend
         bps = 0;
         factory = new AludelFactory(recipient.addr(), bps);
@@ -104,10 +91,6 @@ contract AludelV3Test is Test {
             ceiling: 1 ether,
             time: 1 days
         });
-
-        bonusTokens = new address[](2);
-        bonusTokens[0] = address(new MockERC20("", "BonusToken A"));
-        bonusTokens[1] = address(new MockERC20("", "BonusToken B"));
 
         factory.addTemplate(address(template), "aludel v3", false);
 

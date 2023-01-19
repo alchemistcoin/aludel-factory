@@ -22,8 +22,6 @@ contract AludelV3LibTest is Test {
     uint64 private constant SCHEDULE_DURATION = 1 minutes;
 
     uint256 public constant BASE_SHARES_PER_WEI = 1000000;
-    uint256 public constant MILLION = 1e6;
-
 
     uint256 public constant STAKE_AMOUNT = 60 ether;
     uint256 public constant REWARD_AMOUNT = 600 ether;
