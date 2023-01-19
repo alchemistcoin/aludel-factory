@@ -247,7 +247,7 @@ task("update-program", "update an already added template")
     log(`updating program ${programData.name} on factory ${factoryAddress}`);
 
     if (args.newName) {
-      log(`program's new name: ${args.newName}`);
+      log(`rename ${programData.name} to ${args.newName}`);
     }
     if (args.newUrl) {
       log(`update URL ${programData.name} to ${args.newName}`);

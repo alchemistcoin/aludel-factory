@@ -143,13 +143,17 @@ describe("Aludel factory deployments", function () {
             beforeEach(async () => {
               await run("update-program", {
                 program: preexistingProgram.address,
-                newName: "a brave new name"
+                newName: "a brave new name",
               });
             });
             it("THEN only the name is changed", async () => {
-              const updatedProgram = await factory.programs(preexistingProgram.address);
+              const updatedProgram = await factory.programs(
+                preexistingProgram.address
+              );
               expect(updatedProgram.name).to.eq("a brave new name");
-              expect(updatedProgram.stakingTokenUrl).to.eq(program.stakingTokenUrl);
+              expect(updatedProgram.stakingTokenUrl).to.eq(
+                program.stakingTokenUrl
+              );
               expect(updatedProgram.template).to.eq(program.template);
               expect(updatedProgram.startTime).to.eq(program.startTime);
             });
