@@ -196,8 +196,8 @@ describe("Aludel factory deployments", function () {
           describe("BUT updates nothing", async () => {
             it("THEN it throws", async () => {
               await expect(
-                run("update-program", {program: preexistingProgram.address})
-              ).to.be.rejectedWith("pass *either* --newName or --newUrl");
+                run("update-program", { program: preexistingProgram.address })
+              ).to.be.rejectedWith("pass --newName and/or --newUrl");
             });
           });
         });

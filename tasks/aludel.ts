@@ -240,13 +240,17 @@ task("update-program", "update an already added template")
     )) as AludelFactory;
 
     const programData = await factory.programs(args.program);
+    if (args.newName.length == 0 && args.newUrl.length == 0) {
+      throw new Error("pass --newName and/or --newUrl");
+    }
+
     log(`updating program ${programData.name} on factory ${factoryAddress}`);
 
     if (args.newName) {
       log(`program's new name: ${args.newName}`);
     }
     if (args.newUrl) {
-      log(`program's new URL: ${args.newUrl}`);
+      log(`update URL ${programData.name} to ${args.newName}`);
     }
 
     await (
