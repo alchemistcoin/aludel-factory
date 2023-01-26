@@ -6,14 +6,15 @@ import { ALUDEL_V1_VANITY_ADDRESS } from "../constants";
 const deployFunc = async function ({
   ethers,
   deployments,
+  getNamedAccounts,
 }: HardhatRuntimeEnvironment) {
   const { get, log } = deployments;
+  const { deployer } = await getNamedAccounts();
 
   const deployedFactory = await get("AludelFactory");
-  const factory = await ethers.getContractAt(
-    deployedFactory.abi,
-    deployedFactory.address
-  );
+  const factory = (
+    await ethers.getContractAt(deployedFactory.abi, deployedFactory.address)
+  ).connect(await ethers.getSigner(deployer));
 
   log("Adding disabled AludelV1 empty template to factory");
   // this is only meant to add previous programs, therefore it's disabled from the start
@@ -21,8 +22,13 @@ const deployFunc = async function ({
     await (
       await factory.addTemplate(ALUDEL_V1_VANITY_ADDRESS, "AludelV1", true)
     ).wait();
-  } catch {
-    log("WARNING: AludelV1 was already added");
+  } catch (err) {
+    // cast sig 'TemplateAlreadyAdded()'
+    if (err.data === "0xf298693e") {
+      log("WARNING: AludelV1 was already added");
+    } else {
+      throw err;
+    }
   }
 };
 
