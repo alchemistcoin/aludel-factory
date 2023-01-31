@@ -30,12 +30,11 @@ contract AludelV3LibTest is Test {
 
     // new shares are scaled using BASE_SHARES_PER_WEI when outstanding shares == 0
     function test_calculateNewShares_no_previous_shares(
-        uint128 sharesOutstanding,
         uint128 remainingRewards,
         uint128 newRewards
     ) public {
-        
-        vm.assume(sharesOutstanding == 0);
+        // this happens before the aludel is funded or after the rewards are exhausted
+        uint128 sharesOutstanding = 0;
         assertEq(
             AludelV3Lib.calculateNewShares(sharesOutstanding, remainingRewards, newRewards),
             newRewards * BASE_SHARES_PER_WEI
