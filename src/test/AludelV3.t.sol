@@ -208,7 +208,6 @@ contract AludelV3Test is Test {
     }
 
     function test_stakes_invalid_vault() public {
-        
         // Create a crucible instance from a different factory
         Crucible crucibleTemplate = new Crucible();
         CrucibleFactory crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
@@ -225,7 +224,6 @@ contract AludelV3Test is Test {
     }
 
     function test_stakes_max_stakes_reached() public {
-
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
         Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
         
@@ -243,7 +241,6 @@ contract AludelV3Test is Test {
     }
 
     function test_aludel_stake_not_enough_balance() public {
-
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
         Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
         vm.warp(block.timestamp + 15);
@@ -255,7 +252,6 @@ contract AludelV3Test is Test {
     }
 
     function test_aludel_stake_invalid_permission() public {
-
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
         Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
         
@@ -292,7 +288,6 @@ contract AludelV3Test is Test {
         vm.warp(block.timestamp + 15);
         Utils.stake(user, crucible, aludel, stakingToken, STAKE_AMOUNT);
 
-        data = aludel.getAludelData();
         data = aludel.getAludelData();
         // new stake units = aludel total stake * time delta, previous to the stake execution
         // so total stake == STAKE_AMOUNT and time delta is 15
