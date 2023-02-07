@@ -176,14 +176,9 @@ interface IAludelV3 is IRageQuit {
         pure
         returns (uint256 stakeUnits);
 
-    function calculateUnlockedRewards(
-        RewardSchedule[] memory rewardSchedules,
-        uint256 rewardBalance,
-        uint256 sharesOutstanding,
-        uint256 timestamp
-    )
+    function calculateUnlockedRewards(uint256 timestamp)
         external
-        pure
+        view
         returns (uint256 unlockedRewards);
 
     function calculateReward(
