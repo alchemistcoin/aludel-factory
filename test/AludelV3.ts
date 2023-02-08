@@ -654,20 +654,12 @@ describe("AludelV3", function () {
                   .mul(BASE_SHARES_PER_WEI)
                   .div(2)
               );
-              expect(data.rewardSchedules.length).to.eq(2);
+              expect(data.rewardSchedules.length).to.eq(1);
               expect(data.rewardSchedules[0].duration).to.eq(
                 defaultRewardScaling.time
               );
+              expect(data.rewardSchedules[0].start).to.eq(await getTimestamp());
               expect(data.rewardSchedules[0].shares).to.eq(
-                subtractFundingFee(amplInitialSupply)
-                  .mul(BASE_SHARES_PER_WEI)
-                  .div(2)
-              );
-              expect(data.rewardSchedules[1].duration).to.eq(
-                defaultRewardScaling.time
-              );
-              expect(data.rewardSchedules[1].start).to.eq(await getTimestamp());
-              expect(data.rewardSchedules[1].shares).to.eq(
                 subtractFundingFee(amplInitialSupply)
                   .mul(BASE_SHARES_PER_WEI)
                   .div(2)
