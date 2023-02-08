@@ -330,4 +330,53 @@ contract AludelV3Test is Test {
         
         Utils.unstake(user, crucible, aludel, stakingToken, indices, amounts);
     }
+
+    function test_fund_without_approval(uint64 reward, uint32 duration) public {
+        vm.assume(reward > 0);
+        vm.assume(duration > 0);
+
+        Utils.fundMockToken(admin.addr(), rewardToken, uint256(reward));
+
+        vm.startPrank(admin.addr());
+
+        // before call fund we should approve the aludel to transfer the reward tokens
+
+        vm.expectRevert("TransferHelper::transferFrom: transferFrom failed");
+        aludel.fund(reward, duration);
+
+        assertEq(rewardToken.allowance(admin.addr(), address(aludel)), 0);
+    }
+
+    function test_fund_remove_expired_schedules(uint64 reward, uint32 duration) public {
+        vm.assume(reward > 0);
+        vm.assume(duration > 1);
+
+        Utils.fundMockToken(admin.addr(), rewardToken, uint256(reward) * 3);
+
+        vm.startPrank(admin.addr());
+
+        rewardToken.approve(address(aludel), uint256(reward) * 3);
+
+        IAludelV3.AludelData memory data = aludel.getAludelData();
+        // before fund there should be no schedules
+        assertEq(data.rewardSchedules.length, 0);
+
+        aludel.fund(reward, duration);
+        
+        // after fund there should be one schedule
+        assertEq(aludel.getAludelData().rewardSchedules.length, 1);
+
+        // fund again right before the previous schedule expires
+        vm.warp(block.timestamp + duration - 1);
+        aludel.fund(reward, duration);
+
+        // so there should be two schedules
+        assertEq(aludel.getAludelData().rewardSchedules.length, 2);
+
+        // now the first schedule should expired
+        vm.warp(block.timestamp + 1);
+        aludel.fund(reward, duration);
+        // so there should be two schedules
+        assertEq(aludel.getAludelData().rewardSchedules.length, 2);
+    }
 }
