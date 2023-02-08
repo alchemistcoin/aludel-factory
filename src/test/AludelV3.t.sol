@@ -28,6 +28,7 @@ import {Utils} from "./Utils.sol";
 import {UserFactory} from "./UserFactory.sol";
 
 import "forge-std/console2.sol";
+import "forge-std/StdUtils.sol";
 
 contract AludelV3Test is Test {
     
@@ -295,5 +296,38 @@ contract AludelV3Test is Test {
         // total stakes is updated after the stake execution
         assertEq(data.totalStake, STAKE_AMOUNT * 2);
         assertEq(data.lastUpdate, block.timestamp);
+    }
+
+    function test_single_unstake(
+        uint8 schedules,
+        uint40 scheduleDuration,
+        uint256 rewardAmount,
+        uint256 stakingAmount
+    ) public {
+        vm.assume(schedules > 0);
+        vm.assume(scheduleDuration > 0);
+
+        // I'm capping the amounts to avoid shares overflow
+        stakingAmount = bound(stakingAmount, 1, 1_000_000_000_000 ether);
+        rewardAmount = bound(rewardAmount, 1, 1_000_000_000_000 ether);
+        
+        Crucible crucible = Utils.createCrucible(user, crucibleFactory);
+        Utils.fundMockToken(address(crucible), stakingToken, stakingAmount * schedules);
+
+        AludelV3.AludelData memory data = aludel.getAludelData();
+
+        Utils.stake(user, crucible, aludel, stakingToken, stakingAmount);
+
+        for (uint i = 0; i < schedules; i++) {
+            Utils.fundAludel(aludel, admin, rewardToken, rewardAmount, scheduleDuration);
+            vm.warp(block.timestamp + scheduleDuration);
+        }
+
+        uint256[] memory indices = new uint256[](1);
+        uint256[] memory amounts = new uint256[](1);
+        indices[0] = 0;
+        amounts[0] = stakingAmount;
+        
+        Utils.unstake(user, crucible, aludel, stakingToken, indices, amounts);
     }
 }
