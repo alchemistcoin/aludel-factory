@@ -248,14 +248,17 @@ library AludelV3Lib {
     function cleanupExpiredRewardSchedules(
         IAludelV3.AludelData storage aludel
     ) internal {
-        // check : measure how much gas this actually saves
-        for (uint index = 0; index < aludel.rewardSchedules.length; index++) {
+        uint256 length = aludel.rewardSchedules.length;
+        for (uint index = 0; index < length; index++) {
             IAludelV3.RewardSchedule memory schedule = aludel.rewardSchedules[index];
+
+            // we manage the length of the array manually to avoid accessing the array's length multiple times
+            length--;
 
             // check if the period is already expired
             if (block.timestamp - schedule.start >= schedule.duration) {
                 // overwrite current index with last schedule.
-                aludel.rewardSchedules[index] = aludel.rewardSchedules[aludel.rewardSchedules.length - 1];
+                aludel.rewardSchedules[index] = aludel.rewardSchedules[length];
                 // remove last element, already copied to _index_ 
                 aludel.rewardSchedules.pop();
             }
