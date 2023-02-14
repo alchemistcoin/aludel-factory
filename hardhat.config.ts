@@ -8,7 +8,6 @@ import "@typechain/hardhat";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-deploy";
-
 import "hardhat-contract-sizer";
 import "hardhat-storage-layout";
 import "./tasks/aludel";
@@ -105,12 +104,8 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: {
       default: 0,
-    },
-    dev: {
-      // Default to 1
-      default: 1,
-      // dev address mainnet
-      // 1: "",
+      mainnet: "0x4f58d2f4DF18A35AAcd09aE03a3088F5B360BDD9",
+      polygon: "0x4f58d2f4DF18A35AAcd09aE03a3088F5B360BDD9",
     },
   },
   etherscan: {

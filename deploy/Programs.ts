@@ -11,16 +11,17 @@ const deployFunc = async function ({
   getChainId,
   deployments,
   ethers,
+  getNamedAccounts,
 }: HardhatRuntimeEnvironment) {
   const { get, log } = deployments;
   const chainId: string = await getChainId();
   const programsToAdd = preExistingPrograms[chainId];
+  const { deployer } = await getNamedAccounts();
 
   const deployedFactory = await get("AludelFactory");
-  const factory = await ethers.getContractAt(
-    deployedFactory.abi,
-    deployedFactory.address
-  );
+  const factory = (
+    await ethers.getContractAt(deployedFactory.abi, deployedFactory.address)
+  ).connect(await ethers.getSigner(deployer));
   const aludelV2Deployment = await get("AludelV2");
 
   for (const item of programsToAdd) {
@@ -37,8 +38,15 @@ const deployFunc = async function ({
           0
         )
       ).wait();
-    } catch {
-      log(`WARNING: couldnt add program ${name} at ${program}`);
+    } catch (err) {
+      // cast sig 'ProgramAlreadyRegistered()'
+      if (err.data === "0xaa519d3c") {
+        log(
+          `WARNING: couldnt add program ${name} at ${program} since it was already added`
+        );
+      } else {
+        throw err;
+      }
     }
   }
 
