@@ -380,3 +380,279 @@ contract AludelV3Test is Test {
         assertEq(aludel.getAludelData().rewardSchedules.length, 2);
     }
 }
+
+contract Given_A_New_Aludel_Is_Being_Funded is Test {
+    AludelFactory private factory;
+    AludelV3 private aludel;
+
+    User private user;
+    User private anotherUser;
+    User private admin;
+    User private recipient;
+
+    MockERC20 private stakingToken;
+    MockERC20 private rewardToken;
+    RewardPoolFactory private rewardPoolFactory;
+    PowerSwitchFactory private powerSwitchFactory;
+    
+    IAludelV3.RewardScaling private rewardScaling;
+
+    CrucibleFactory private crucibleFactory;
+
+    uint16 private bps;
+    uint64 private constant START_TIME = 10000 seconds;
+    uint64 private constant SCHEDULE_DURATION = 1 minutes;
+
+    uint256 public constant BASE_SHARES_PER_WEI = 1000000;
+
+    uint256 public constant STAKE_AMOUNT = 60 ether;
+    uint256 public constant REWARD_AMOUNT = 600 ether;
+
+    // we should find whats the maximum possible to fund 
+    // without causing an overflow in the shares accounting
+    // but i think a trillion ether is enough for now
+    uint256 public constant MAX_REWARD = 1e12 ether;
+
+    AludelV3.AludelInitializationParams private defaultInitParams;
+    Utils.LaunchParams private defaultLaunchParams;
+
+    event AludelFunded(uint256 amount, uint256 duration);
+
+    function setUp() public {
+
+        UserFactory userFactory = new UserFactory();
+        user = userFactory.createUser("user", 0);
+        anotherUser = userFactory.createUser("anotherUser", 1);
+        admin = userFactory.createUser("admin", 2);
+        recipient = userFactory.createUser("recipient", 3);
+
+        Crucible crucibleTemplate = new Crucible();
+        crucibleTemplate.initializeLock();
+        crucibleFactory = new CrucibleFactory(address(crucibleTemplate));
+
+        // feeBps set to 0 so accounting calculations are easier to comprehend
+        bps = 0;
+        factory = new AludelFactory(recipient.addr(), bps);
+
+        AludelV3 template = new AludelV3();
+        template.initializeLock();
+
+        rewardPoolFactory = new RewardPoolFactory();
+        powerSwitchFactory = new PowerSwitchFactory();
+        stakingToken = new MockERC20("", "STK");
+        rewardToken = new MockERC20("", "RWD");
+
+        rewardScaling = IAludelV3.RewardScaling({
+            floor: 1,
+            ceiling: 1,
+            time: 1 days
+        });
+
+        factory.addTemplate(address(template), "aludel v3", false);
+
+        defaultInitParams = AludelV3.AludelInitializationParams({
+            rewardPoolFactory: address(rewardPoolFactory),
+            powerSwitchFactory: address(powerSwitchFactory),
+            stakingToken: address(stakingToken),
+            rewardToken: address(rewardToken),
+            rewardScaling: rewardScaling,
+            hookContract: IAludelHooks(address(0))
+        });
+
+        defaultLaunchParams = Utils.LaunchParams({
+            template: address(template),
+            name: "name",
+            stakingTokenUrl: "https://staking.token",
+            startTime: START_TIME,
+            vaultFactory: address(crucibleFactory),
+            bonusTokens: new address[](0),
+            owner: admin.addr(),
+            initParams: abi.encode(defaultInitParams)
+        });
+
+        aludel = AludelV3(Utils.launchProgram(factory, defaultLaunchParams));   
+        vm.warp(START_TIME);
+    }
+
+    modifier callerOwner() {
+        vm.startPrank(admin.addr());
+        _;
+    }
+
+    function test_revert_when_caller_is_not_owner(uint256 reward, uint256 duration) public {
+        reward = bound(reward, 1, MAX_REWARD);
+        duration = bound(duration, 1, 1000 days);
+
+        Utils.fundMockToken(admin.addr(), rewardToken, uint256(reward));
+
+        // start prank as user (not the owner)
+        vm.startPrank(user.addr());
+
+        rewardToken.approve(address(aludel), uint256(reward));
+
+        vm.expectRevert("Ownable: caller is not the owner");
+        aludel.fund(reward, duration);
+    }
+
+    function test_revert_when_aludel_has_not_enough_allowance(
+        uint256 reward,
+        uint256 duration,
+        uint256 allowance
+    ) public callerOwner {
+
+        reward = bound(reward, 1, MAX_REWARD);
+        duration = bound(duration, 1, 1000 days);
+        vm.assume(allowance < reward);
+
+        Utils.fundMockToken(admin.addr(), rewardToken, reward);
+
+        // before call fund we should approve the aludel to transfer the reward tokens
+        rewardToken.approve(address(aludel), allowance);
+
+        vm.expectRevert("TransferHelper::transferFrom: transferFrom failed");
+        aludel.fund(reward, duration);
+
+        assertEq(rewardToken.allowance(admin.addr(), address(aludel)), allowance);
+    }
+
+    function test_revert_when_duration_is_zero(uint256 reward) public callerOwner {
+        reward = bound(reward, 1, MAX_REWARD);
+
+        Utils.fundMockToken(admin.addr(), rewardToken, reward);
+
+        rewardToken.approve(address(aludel), reward);
+
+        vm.expectRevert(AludelV3.InvalidDuration.selector);
+        aludel.fund(reward, 0);
+    }
+
+    // function test_when_fund_params_are_valid_and_fund_is_called_multiple_times_then_adds_new_schedule(uint256 reward, uint256 duration) public callerOwner {
+
+    function test_when_fund_params_are_valid_then_fund_succeeds(uint256 reward, uint256 duration) public callerOwner {
+        reward = bound(reward, 1, MAX_REWARD);
+        duration = bound(duration, 1, 1000 days);
+        uint256 iterations = type(uint8).max;
+
+        console2.log(reward, duration, iterations);
+        Utils.fundMockToken(admin.addr(), rewardToken, reward * iterations);
+        rewardToken.approve(address(aludel), reward * iterations);
+
+        assertEq(aludel.getAludelData().rewardSchedules.length, 0);
+        
+        aludel.fund(reward, duration);
+
+        IAludelV3.RewardSchedule[] memory schedules = aludel.getAludelData().rewardSchedules;
+        assertEq(schedules.length, 1);
+        assertEq(schedules[0].duration, duration);
+        assertEq(schedules[0].shares, reward * BASE_SHARES_PER_WEI);
+        assertEq(schedules[0].start, block.timestamp);
+    }
+
+
+    // function test_when_fund_params_are_valid_then_adds_new_schedule(uint256 reward, uint256 duration) public callerOwner {
+    function test_when_fund_succeeds_then_adds_new_schedule(uint256 reward, uint256 duration) public callerOwner {
+        reward = bound(reward, 1, MAX_REWARD);
+        duration = bound(duration, 1, 1000 days);
+        uint256 iterations = type(uint8).max;
+
+        console2.log(reward, duration, iterations);
+        Utils.fundMockToken(admin.addr(), rewardToken, reward * iterations);
+        rewardToken.approve(address(aludel), reward * iterations);
+
+        assertEq(aludel.getAludelData().rewardSchedules.length, 0);
+        
+        aludel.fund(reward, duration);
+
+        IAludelV3.RewardSchedule[] memory schedules = aludel.getAludelData().rewardSchedules;
+        assertEq(schedules.length, 1);
+        assertEq(schedules[0].duration, duration);
+        assertEq(schedules[0].shares, reward * BASE_SHARES_PER_WEI);
+        assertEq(schedules[0].start, block.timestamp);
+    }
+
+    // test_when_fund_params_are_valid_and_is_already_funded_then_adds_new_schedule
+    // test_when_fund_params_are_valid_and_is_already_funded_but__then_adds_new_schedule
+    
+    function test_when_fund_succeeds_then_transfer_funds_to_reward_pool(uint256 reward, uint256 duration) public callerOwner {
+        reward = bound(reward, 1, MAX_REWARD);
+        duration = bound(duration, 1, 1000 days);
+
+        Utils.fundMockToken(admin.addr(), rewardToken, reward);
+
+        rewardToken.approve(address(aludel), reward);
+
+        aludel.fund(reward, duration);
+
+        // the reward pool should have the reward tokens
+        assertEq(rewardToken.balanceOf(aludel.getAludelData().rewardPool), reward);
+        // the admin should not have any reward tokens left
+        assertEq(rewardToken.balanceOf(admin.addr()), 0);
+    }
+
+    function test_when_fund_succeeds_then_emits_event(uint256 reward, uint256 duration) public callerOwner {
+        reward = bound(reward, 1, MAX_REWARD);
+        duration = bound(duration, 1, 1000 days);
+
+        Utils.fundMockToken(admin.addr(), rewardToken, reward);
+
+        rewardToken.approve(address(aludel), reward);
+
+        vm.expectEmit(true, true, true, true, address(aludel));
+        emit AludelFunded(reward, duration);
+
+
+        aludel.fund(reward, duration);
+    }
+
+    function test_when_fund_succeeds_then_single_fund_mints_shares(uint256 reward, uint256 duration) public callerOwner {
+        reward = bound(reward, 1, MAX_REWARD);
+        duration = bound(duration, 1, 1000 days);
+
+        Utils.fundMockToken(admin.addr(), rewardToken, reward);
+
+        rewardToken.approve(address(aludel), reward);
+
+        aludel.fund(reward, duration);
+
+        assertEq(aludel.getAludelData().rewardSharesOutstanding, reward * BASE_SHARES_PER_WEI);
+    }
+
+    function test_when_a_schedule_expires_and_funds_again_then_removes_expired_schedule(uint256 reward, uint256 duration) public callerOwner {
+        reward = bound(reward, 1, MAX_REWARD);
+        duration = bound(duration, 1, 1000 days);
+
+        Utils.fundMockToken(admin.addr(), rewardToken, uint256(reward) * 3);
+
+        rewardToken.approve(address(aludel), uint256(reward) * 3);
+
+        IAludelV3.AludelData memory data = aludel.getAludelData();
+        // before fund there should be no schedules
+        assertEq(data.rewardSchedules.length, 0);
+
+        aludel.fund(reward, duration);
+        
+        // after fund there should be one schedule
+        assertEq(aludel.getAludelData().rewardSchedules.length, 1);
+
+        // fund again right before the previous schedule expires
+        vm.warp(block.timestamp + duration - 1);
+        aludel.fund(reward, duration);
+
+        // so there should be two schedules
+        assertEq(aludel.getAludelData().rewardSchedules.length, 2);
+
+        // now the first schedule should expired
+        vm.warp(block.timestamp + 1);
+
+        // but since the aludel hasn't been funded again 
+        // the reward schedules is still length 2 because the expired schedule hasn't been removed yet
+        assertEq(aludel.getAludelData().rewardSchedules.length, 2);
+
+        aludel.fund(reward, duration);
+
+        // the expired schedule is removed but we added another one, there should be still two schedules
+        assertEq(aludel.getAludelData().rewardSchedules.length, 2);
+    }
+
+    // todo : test transfer funds to fee recipient
+}
