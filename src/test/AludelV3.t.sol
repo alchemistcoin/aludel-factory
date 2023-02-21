@@ -31,7 +31,6 @@ import "forge-std/console2.sol";
 import "forge-std/StdUtils.sol";
 
 contract AludelV3Test is Test {
-    
     AludelFactory private factory;
     AludelV3 private aludel;
 
@@ -44,7 +43,7 @@ contract AludelV3Test is Test {
     MockERC20 private rewardToken;
     RewardPoolFactory private rewardPoolFactory;
     PowerSwitchFactory private powerSwitchFactory;
-    
+
     IAludelV3.RewardScaling private rewardScaling;
 
     CrucibleFactory private crucibleFactory;
@@ -64,7 +63,6 @@ contract AludelV3Test is Test {
     Utils.LaunchParams private defaultLaunchParams;
 
     function setUp() public {
-
         UserFactory userFactory = new UserFactory();
         user = userFactory.createUser("user", 0);
         anotherUser = userFactory.createUser("anotherUser", 1);
@@ -87,11 +85,7 @@ contract AludelV3Test is Test {
         stakingToken = new MockERC20("", "STK");
         rewardToken = new MockERC20("", "RWD");
 
-        rewardScaling = IAludelV3.RewardScaling({
-            floor: 1 ether,
-            ceiling: 1 ether,
-            time: 1 days
-        });
+        rewardScaling = IAludelV3.RewardScaling({floor: 1 ether, ceiling: 1 ether, time: 1 days});
 
         factory.addTemplate(address(template), "aludel v3", false);
 
@@ -115,14 +109,13 @@ contract AludelV3Test is Test {
             initParams: abi.encode(defaultInitParams)
         });
 
-        aludel = AludelV3(Utils.launchProgram(factory, defaultLaunchParams));   
+        aludel = AludelV3(Utils.launchProgram(factory, defaultLaunchParams));
         vm.warp(START_TIME);
     }
 
     function test_funding_shares() public {
-
         AludelV3.AludelData memory data;
-        
+
         Utils.fundMockToken(admin.addr(), rewardToken, REWARD_AMOUNT * 5);
         vm.startPrank(admin.addr());
         rewardToken.approve(address(aludel), REWARD_AMOUNT * 5);
@@ -132,8 +125,7 @@ contract AludelV3Test is Test {
         data = aludel.getAludelData();
         assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI);
         assertEq(
-            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp),
-            REWARD_AMOUNT * BASE_SHARES_PER_WEI
+            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp), REWARD_AMOUNT * BASE_SHARES_PER_WEI
         );
 
         // 2. Advance time 1 minute
@@ -149,8 +141,7 @@ contract AludelV3Test is Test {
         assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 2);
         assertEq(aludel.calculateUnlockedRewards(block.timestamp), REWARD_AMOUNT);
         assertEq(
-            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp),
-            REWARD_AMOUNT * BASE_SHARES_PER_WEI
+            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp), REWARD_AMOUNT * BASE_SHARES_PER_WEI
         );
 
         // 4. Advance time 1 minute
@@ -158,10 +149,7 @@ contract AludelV3Test is Test {
         data = aludel.getAludelData();
         assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 2);
         assertEq(aludel.calculateUnlockedRewards(block.timestamp), REWARD_AMOUNT * 2);
-        assertEq(
-            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp),
-            0
-        );
+        assertEq(aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp), 0);
 
         // 5. Admin funds 600 eth for 1 minute
         //    1 minute elapses
@@ -171,10 +159,7 @@ contract AludelV3Test is Test {
         data = aludel.getAludelData();
         assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 3);
         assertEq(aludel.calculateUnlockedRewards(block.timestamp), REWARD_AMOUNT * 3);
-        assertEq(
-            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp),
-            0
-        );
+        assertEq(aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp), 0);
 
         // 6. Admin funds 600 eth for 1 minute
         //    Admin funds 600 eth for 2 minute
@@ -186,14 +171,10 @@ contract AludelV3Test is Test {
         data = aludel.getAludelData();
         assertEq(data.rewardSharesOutstanding, REWARD_AMOUNT * BASE_SHARES_PER_WEI * 5);
         // previous four schedule amounts and half of the fifth.
-        assertEq(
-            aludel.calculateUnlockedRewards(block.timestamp),
-            REWARD_AMOUNT * 4 + REWARD_AMOUNT / 2
-        );
+        assertEq(aludel.calculateUnlockedRewards(block.timestamp), REWARD_AMOUNT * 4 + REWARD_AMOUNT / 2);
         // fifth schedule shares are half-locked
         assertEq(
-            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp),
-            REWARD_AMOUNT * BASE_SHARES_PER_WEI / 2
+            aludel.calculateSharesLocked(data.rewardSchedules, block.timestamp), REWARD_AMOUNT * BASE_SHARES_PER_WEI / 2
         );
     }
 
@@ -201,11 +182,9 @@ contract AludelV3Test is Test {
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
 
         vm.warp(block.timestamp + 15);
-        bytes memory lockSig = Utils.getLockPermission(
-            user, crucible, address(aludel), stakingToken, 0
-        );
+        bytes memory lockSig = Utils.getLockPermission(user, crucible, address(aludel), stakingToken, 0);
         vm.expectRevert(AludelV3.NoAmountStaked.selector);
-        aludel.stake(address(crucible), 0, lockSig);    
+        aludel.stake(address(crucible), 0, lockSig);
     }
 
     function test_stakes_invalid_vault() public {
@@ -217,21 +196,19 @@ contract AludelV3Test is Test {
         Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
 
         vm.warp(block.timestamp + 15);
-        bytes memory lockSig = Utils.getLockPermission(
-            user, crucible, address(aludel), stakingToken, 1
-        );
+        bytes memory lockSig = Utils.getLockPermission(user, crucible, address(aludel), stakingToken, 1);
         vm.expectRevert(AludelV3.InvalidVault.selector);
-        aludel.stake(address(crucible), 1, lockSig); 
+        aludel.stake(address(crucible), 1, lockSig);
     }
 
     function test_stakes_max_stakes_reached() public {
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
         Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
-        
+
         bytes memory lockSig;
 
         // stake 30 times 1 wei
-        for (uint i = 0; i < 30; i++) {
+        for (uint256 i = 0; i < 30; i++) {
             Utils.stake(user, crucible, aludel, stakingToken, 1);
         }
 
@@ -245,9 +222,7 @@ contract AludelV3Test is Test {
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
         Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
         vm.warp(block.timestamp + 15);
-        bytes memory lockSig = Utils.getLockPermission(
-            user, crucible, address(aludel), stakingToken, STAKE_AMOUNT + 1
-        );
+        bytes memory lockSig = Utils.getLockPermission(user, crucible, address(aludel), stakingToken, STAKE_AMOUNT + 1);
         vm.expectRevert(bytes("UniversalVault: insufficient balance"));
         aludel.stake(address(crucible), STAKE_AMOUNT + 1, lockSig);
     }
@@ -255,12 +230,10 @@ contract AludelV3Test is Test {
     function test_aludel_stake_invalid_permission() public {
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
         Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT);
-        
+
         vm.startPrank(user.addr());
         vm.warp(block.timestamp + 15);
-        bytes memory lockSig = Utils.getLockPermission(
-            user, crucible, address(aludel), stakingToken, STAKE_AMOUNT
-        );
+        bytes memory lockSig = Utils.getLockPermission(user, crucible, address(aludel), stakingToken, STAKE_AMOUNT);
         vm.expectRevert(bytes("ERC1271: Invalid signature"));
         aludel.stake(address(crucible), STAKE_AMOUNT + 1, lockSig);
     }
@@ -270,7 +243,7 @@ contract AludelV3Test is Test {
         Utils.fundMockToken(address(crucible), stakingToken, STAKE_AMOUNT * 2);
 
         IAludelV3.AludelData memory data = aludel.getAludelData();
-        
+
         assertEq(data.totalStake, 0);
         assertEq(data.totalStakeUnits, 0);
         assertEq(data.lastUpdate, 0);
@@ -298,19 +271,16 @@ contract AludelV3Test is Test {
         assertEq(data.lastUpdate, block.timestamp);
     }
 
-    function test_single_unstake(
-        uint8 schedules,
-        uint40 scheduleDuration,
-        uint256 rewardAmount,
-        uint256 stakingAmount
-    ) public {
+    function test_single_unstake(uint8 schedules, uint40 scheduleDuration, uint256 rewardAmount, uint256 stakingAmount)
+        public
+    {
         vm.assume(schedules > 0);
         vm.assume(scheduleDuration > 0);
 
         // I'm capping the amounts to avoid shares overflow
         stakingAmount = bound(stakingAmount, 1, 1_000_000_000_000 ether);
         rewardAmount = bound(rewardAmount, 1, 1_000_000_000_000 ether);
-        
+
         Crucible crucible = Utils.createCrucible(user, crucibleFactory);
         Utils.fundMockToken(address(crucible), stakingToken, stakingAmount * schedules);
 
@@ -318,7 +288,7 @@ contract AludelV3Test is Test {
 
         Utils.stake(user, crucible, aludel, stakingToken, stakingAmount);
 
-        for (uint i = 0; i < schedules; i++) {
+        for (uint256 i = 0; i < schedules; i++) {
             Utils.fundAludel(aludel, admin, rewardToken, rewardAmount, scheduleDuration);
             vm.warp(block.timestamp + scheduleDuration);
         }
@@ -327,7 +297,7 @@ contract AludelV3Test is Test {
         uint256[] memory amounts = new uint256[](1);
         indices[0] = 0;
         amounts[0] = stakingAmount;
-        
+
         Utils.unstake(user, crucible, aludel, stakingToken, indices, amounts);
     }
 
@@ -362,7 +332,7 @@ contract AludelV3Test is Test {
         assertEq(data.rewardSchedules.length, 0);
 
         aludel.fund(reward, duration);
-        
+
         // after fund there should be one schedule
         assertEq(aludel.getAludelData().rewardSchedules.length, 1);
 
@@ -394,7 +364,7 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
     MockERC20 private rewardToken;
     RewardPoolFactory private rewardPoolFactory;
     PowerSwitchFactory private powerSwitchFactory;
-    
+
     IAludelV3.RewardScaling private rewardScaling;
 
     CrucibleFactory private crucibleFactory;
@@ -408,7 +378,7 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
     uint256 public constant STAKE_AMOUNT = 60 ether;
     uint256 public constant REWARD_AMOUNT = 600 ether;
 
-    // we should find whats the maximum possible to fund 
+    // we should find whats the maximum possible to fund
     // without causing an overflow in the shares accounting
     // but i think a trillion ether is enough for now
     uint256 public constant MAX_REWARD = 1e12 ether;
@@ -419,7 +389,6 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
     event AludelFunded(uint256 amount, uint256 duration);
 
     function setUp() public {
-
         UserFactory userFactory = new UserFactory();
         user = userFactory.createUser("user", 0);
         anotherUser = userFactory.createUser("anotherUser", 1);
@@ -442,11 +411,7 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
         stakingToken = new MockERC20("", "STK");
         rewardToken = new MockERC20("", "RWD");
 
-        rewardScaling = IAludelV3.RewardScaling({
-            floor: 1,
-            ceiling: 1,
-            time: 1 days
-        });
+        rewardScaling = IAludelV3.RewardScaling({floor: 1, ceiling: 1, time: 1 days});
 
         factory.addTemplate(address(template), "aludel v3", false);
 
@@ -470,7 +435,7 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
             initParams: abi.encode(defaultInitParams)
         });
 
-        aludel = AludelV3(Utils.launchProgram(factory, defaultLaunchParams));   
+        aludel = AludelV3(Utils.launchProgram(factory, defaultLaunchParams));
         vm.warp(START_TIME);
     }
 
@@ -494,12 +459,10 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
         aludel.fund(reward, duration);
     }
 
-    function test_revert_when_aludel_has_not_enough_allowance(
-        uint256 reward,
-        uint256 duration,
-        uint256 allowance
-    ) public callerOwner {
-
+    function test_revert_when_aludel_has_not_enough_allowance(uint256 reward, uint256 duration, uint256 allowance)
+        public
+        callerOwner
+    {
         reward = bound(reward, 1, MAX_REWARD);
         duration = bound(duration, 1, 1000 days);
         vm.assume(allowance < reward);
@@ -538,7 +501,7 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
         rewardToken.approve(address(aludel), reward * iterations);
 
         assertEq(aludel.getAludelData().rewardSchedules.length, 0);
-        
+
         aludel.fund(reward, duration);
 
         IAludelV3.RewardSchedule[] memory schedules = aludel.getAludelData().rewardSchedules;
@@ -547,7 +510,6 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
         assertEq(schedules[0].shares, reward * BASE_SHARES_PER_WEI);
         assertEq(schedules[0].start, block.timestamp);
     }
-
 
     // function test_when_fund_params_are_valid_then_adds_new_schedule(uint256 reward, uint256 duration) public callerOwner {
     function test_when_fund_succeeds_then_adds_new_schedule(uint256 reward, uint256 duration) public callerOwner {
@@ -560,7 +522,7 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
         rewardToken.approve(address(aludel), reward * iterations);
 
         assertEq(aludel.getAludelData().rewardSchedules.length, 0);
-        
+
         aludel.fund(reward, duration);
 
         IAludelV3.RewardSchedule[] memory schedules = aludel.getAludelData().rewardSchedules;
@@ -572,8 +534,11 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
 
     // test_when_fund_params_are_valid_and_is_already_funded_then_adds_new_schedule
     // test_when_fund_params_are_valid_and_is_already_funded_but__then_adds_new_schedule
-    
-    function test_when_fund_succeeds_then_transfer_funds_to_reward_pool(uint256 reward, uint256 duration) public callerOwner {
+
+    function test_when_fund_succeeds_then_transfer_funds_to_reward_pool(uint256 reward, uint256 duration)
+        public
+        callerOwner
+    {
         reward = bound(reward, 1, MAX_REWARD);
         duration = bound(duration, 1, 1000 days);
 
@@ -600,11 +565,13 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
         vm.expectEmit(true, true, true, true, address(aludel));
         emit AludelFunded(reward, duration);
 
-
         aludel.fund(reward, duration);
     }
 
-    function test_when_fund_succeeds_then_single_fund_mints_shares(uint256 reward, uint256 duration) public callerOwner {
+    function test_when_fund_succeeds_then_single_fund_mints_shares(uint256 reward, uint256 duration)
+        public
+        callerOwner
+    {
         reward = bound(reward, 1, MAX_REWARD);
         duration = bound(duration, 1, 1000 days);
 
@@ -617,7 +584,10 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
         assertEq(aludel.getAludelData().rewardSharesOutstanding, reward * BASE_SHARES_PER_WEI);
     }
 
-    function test_when_a_schedule_expires_and_funds_again_then_removes_expired_schedule(uint256 reward, uint256 duration) public callerOwner {
+    function test_when_a_schedule_expires_and_funds_again_then_removes_expired_schedule(
+        uint256 reward,
+        uint256 duration
+    ) public callerOwner {
         reward = bound(reward, 1, MAX_REWARD);
         duration = bound(duration, 1, 1000 days);
 
@@ -630,7 +600,7 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
         assertEq(data.rewardSchedules.length, 0);
 
         aludel.fund(reward, duration);
-        
+
         // after fund there should be one schedule
         assertEq(aludel.getAludelData().rewardSchedules.length, 1);
 
@@ -644,7 +614,7 @@ contract Given_A_New_Aludel_Is_Being_Funded is Test {
         // now the first schedule should expired
         vm.warp(block.timestamp + 1);
 
-        // but since the aludel hasn't been funded again 
+        // but since the aludel hasn't been funded again
         // the reward schedules is still length 2 because the expired schedule hasn't been removed yet
         assertEq(aludel.getAludelData().rewardSchedules.length, 2);
 
