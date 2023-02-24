@@ -4344,8 +4344,8 @@ forever-agent@~0.6.1:
   integrity sha512-j0KLYPhm6zeac4lz3oJ3o65qvgQCcPubiyotZrXqEaG4hNagNYO8qdlUrX5vwqv9ohqeT/Z3j6+yW067yWWdUw==
 
 "forge-std@https://github.com/foundry-rs/forge-std":
-  version "0.0.0"
-  resolved "https://github.com/foundry-rs/forge-std#0d0485bdea9f9455bd684acb0ba88548a104d99b"
+  version "1.4.0"
+  resolved "https://github.com/foundry-rs/forge-std#fd86115ed6aba8e234ee0fb86c12fe35eff0b2a0"
 
 form-data-encoder@1.7.1:
   version "1.7.1"
@@ -7646,7 +7646,7 @@ solidity-coverage@0.8.0-rc.test.0:
     shelljs "^0.8.3"
     web3-utils "^1.3.0"
 
-"solmate@https://github.com/transmissions11/solmate":
+"solmate@https://github.com/transmissions11/solmate#3998897acb502fa7b480f505138a6ae1842e8d10":
   version "6.6.2"
   resolved "https://github.com/transmissions11/solmate#3998897acb502fa7b480f505138a6ae1842e8d10"
 
