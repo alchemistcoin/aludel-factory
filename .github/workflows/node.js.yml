@@ -12,8 +12,10 @@ jobs:
       DEV_MNEMONIC: ${{ secrets.DEV_MNEMONIC }}
       MUMBAI_URL: ${{secrets.MUMBAI_URL}}
       FORK_URL: ${{ secrets.FORK_URL }}
+      FOUNDRY_PROFILE: ci
     steps:
       - uses: actions/checkout@v2
+      - uses: foundry-rs/foundry-toolchain@v1
       - uses: actions/setup-node@v3
         with:
           node-version: '16'
@@ -21,5 +23,7 @@ jobs:
       - run: yarn compile
       - run: yarn lint-sol
       - run: yarn lint-ts
+      - run: forge test
+      - run: yarn hardhat typechain
       - run: yarn test-ts
       - run: rm deployments/mumbai/AludelFactory.json && yarn hardhat deploy --network mumbai --tags templates

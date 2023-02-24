@@ -7,5 +7,3 @@ ffi = true
 via_ir = false
 optimizer = false
 optimizer_runs = 1000000
-
-eth-rpc-url = "http://localhost:8545"
