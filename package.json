@@ -63,15 +63,15 @@
     "@openzeppelin/contracts": "4.6.0",
     "solmate": "https://github.com/transmissions11/solmate#3998897acb502fa7b480f505138a6ae1842e8d10",
     "@types/chai-as-promised": "^7.1.5",
-    "@uniswap/lib": "https://github.com/Uniswap/solidity-lib",
-    "@uniswap/v2-periphery": "https://github.com/Uniswap/v2-periphery",
-    "alchemist": "https://github.com/itirabasso/alchemist",
+    "@uniswap/lib": "https://github.com/Uniswap/solidity-lib#v2.1.0",
+    "@uniswap/v2-periphery": "https://github.com/Uniswap/v2-periphery#v1.0.0-beta.0",
+    "alchemist": "https://github.com/itirabasso/alchemist#56f35ed52c8c5ebe3be06f8844af894e265d81ca",
     "chai-as-promised": "^7.1.1",
-    "ds-auth": "https://github.com/dapphub/ds-auth",
-    "ds-math": "https://github.com/dapphub/ds-math",
-    "ds-test": "https://github.com/dapphub/ds-test",
-    "ds-token": "https://github.com/dapphub/ds-token",
-    "forge-std": "https://github.com/foundry-rs/forge-std",
+    "ds-auth": "https://github.com/dapphub/ds-auth#a51e7caa1f03eeffed66d67f3b38605e0f1f881d",
+    "ds-math": "https://github.com/dapphub/ds-math#e70a364787804c1ded9801ed6c27b440a86ebd32",
+    "ds-test": "https://github.com/dapphub/ds-test#6da7dd8f7395f83e1fb6fa88a64ba9a030f85d4f",
+    "ds-token": "https://github.com/dapphub/ds-token#16f187acc15dd839589be60173ad1ebd0716eb82",
+    "forge-std": "https://github.com/foundry-rs/forge-std#v1.4.0",
     "eslint-plugin-mocha": "^10.1.0"
   }
 }
