@@ -1,7 +1,6 @@
 import { AbiCoder } from "@ethersproject/abi";
 import { formatEther } from "ethers/lib/utils";
 import { task, types } from "hardhat/config";
-import "@nomiclabs/hardhat-ethers";
 import { parseEther } from "@ethersproject/units";
 
 // this function is meant to avoid polluting the tests with console output, and
