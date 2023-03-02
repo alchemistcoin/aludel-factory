@@ -18,7 +18,6 @@ import {IRewardPool} from "alchemist/contracts/aludel/RewardPool.sol";
 import {Powered} from "../powerSwitch/Powered.sol";
 
 import {IAludel} from "./IAludel.sol";
-import "hardhat/console.sol";
 
 /// @title Aludel
 /// @notice Reward distribution contract with time multiplier
