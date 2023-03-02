@@ -26,8 +26,6 @@ import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol"
 import {ERC721Holder} from "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 
-import "forge-std/console2.sol";
-
 contract AludelFactoryIntegrationTest is Test {
     AludelFactory private factory;
     IAludelV3 private aludel;

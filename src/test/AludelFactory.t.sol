@@ -13,8 +13,6 @@ import {IAludel} from "../contracts/aludel/IAludel.sol";
 import {MockERC20} from "../contracts/mocks/MockERC20.sol";
 import {Spy} from "../contracts/mocks/Spy.sol";
 
-import "forge-std/console2.sol";
-
 contract AludelFactoryTest is Test {
     AludelFactory private factory;
     IAludel private aludel;

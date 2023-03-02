@@ -27,8 +27,6 @@ import {User} from "./User.sol";
 import {Utils} from "./Utils.sol";
 import {UserFactory} from "./UserFactory.sol";
 
-import "forge-std/console2.sol";
-
 contract AludelV3Test is Test {
     
     AludelFactory private factory;

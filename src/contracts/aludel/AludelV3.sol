@@ -21,7 +21,6 @@ import {IAludel} from "./IAludel.sol";
 import {IAludelV3} from "./IAludelV3.sol";
 import {IAludelHooks} from "./IAludelHooks.sol";
 import {AludelV3Lib} from "./AludelV3Lib.sol";
-import "hardhat/console.sol";
 
 /// @title Aludel
 /// @notice Reward distribution contract with time multiplier

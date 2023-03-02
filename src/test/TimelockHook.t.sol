@@ -5,7 +5,6 @@ import "forge-std/Test.sol";
 import {IAludelV3} from "../contracts/aludel/AludelV3.sol";
 
 import {TimelockHook} from "../contracts/aludel/TimelockHook.sol";
-import "forge-std/console2.sol";
 
 contract TimelockHookTest is Test {
 
