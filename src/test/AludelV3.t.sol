@@ -3,7 +3,7 @@
 pragma solidity ^0.8.6;
 
 import {Test} from "forge-std/Test.sol";
-import {ERC20} from "solmate/src/tokens/ERC20.sol";
+import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -26,8 +26,6 @@ import {CrucibleFactory} from "alchemist/contracts/crucible/CrucibleFactory.sol"
 import {User} from "./User.sol";
 import {Utils} from "./Utils.sol";
 import {UserFactory} from "./UserFactory.sol";
-
-import "forge-std/console2.sol";
 
 contract AludelV3Test is Test {
     
