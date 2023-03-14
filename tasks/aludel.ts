@@ -2,6 +2,7 @@ import { AbiCoder } from "@ethersproject/abi";
 import { formatEther } from "ethers/lib/utils";
 import { task, types } from "hardhat/config";
 import { parseEther } from "@ethersproject/units";
+import { AludelFactory } from "../typechain-types";
 
 // this function is meant to avoid polluting the tests with console output, and
 // log on every other scenario
@@ -225,3 +226,33 @@ task("add-program", "add a pre-existing aludel to the network's aludel factory")
       ).wait();
     }
   );
+
+task("update-program", "update an already added template")
+  .addParam("program", "address of the program to update")
+  .addOptionalParam("newName", "a new name for the program. Optional.", "")
+  .addOptionalParam("newUrl", "a new URL for the program. Optional.", "")
+  .setAction(async (args, { ethers, deployments }) => {
+    const factoryAddress = (await deployments.get("AludelFactory")).address;
+    const factory = (await ethers.getContractAt(
+      "src/contracts/AludelFactory.sol:AludelFactory",
+      factoryAddress
+    )) as AludelFactory;
+
+    const programData = await factory.programs(args.program);
+    if (args.newName.length == 0 && args.newUrl.length == 0) {
+      throw new Error("pass --newName and/or --newUrl");
+    }
+
+    log(`updating program ${programData.name} on factory ${factoryAddress}`);
+
+    if (args.newName) {
+      log(`rename ${programData.name} to ${args.newName}`);
+    }
+    if (args.newUrl) {
+      log(`update URL ${programData.name} to ${args.newName}`);
+    }
+
+    await (
+      await factory.updateProgram(args.program, args.newName, args.newUrl)
+    ).wait();
+  });

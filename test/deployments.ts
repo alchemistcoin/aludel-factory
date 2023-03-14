@@ -120,7 +120,7 @@ describe("Aludel factory deployments", function () {
         preexistingProgram = (await ethersFactory.deploy()) as Aludel;
       });
 
-      describe("WHEN adding it with the add-program task, AND passing al parameters", () => {
+      describe("WHEN adding it with the add-program task, AND passing all parameters", () => {
         beforeEach(async () => {
           await run("add-program", {
             program: preexistingProgram.address,
@@ -133,6 +133,77 @@ describe("Aludel factory deployments", function () {
         it("THEN it is listed", async () => {
           const program = await factory.programs(preexistingProgram.address);
           expect(program.name).to.eq("some name");
+        });
+        describe("WHEN updates the program using update-program", () => {
+          let program: AludelFactory.ProgramDataStruct;
+          beforeEach(async () => {
+            program = await factory.programs(preexistingProgram.address);
+          });
+          describe("AND updates the name", async () => {
+            beforeEach(async () => {
+              await run("update-program", {
+                program: preexistingProgram.address,
+                newName: "a brave new name",
+              });
+            });
+            it("THEN only the name is changed", async () => {
+              const updatedProgram = await factory.programs(
+                preexistingProgram.address
+              );
+              expect(updatedProgram.name).to.eq("a brave new name");
+              expect(updatedProgram.stakingTokenUrl).to.eq(
+                program.stakingTokenUrl
+              );
+              expect(updatedProgram.template).to.eq(program.template);
+              expect(updatedProgram.startTime).to.eq(program.startTime);
+            });
+          });
+          describe("AND updates the url", async () => {
+            beforeEach(async () => {
+              await run("update-program", {
+                program: preexistingProgram.address,
+                newUrl: "https://new.domain",
+              });
+            });
+            it("THEN only the url is changed", async () => {
+              const updatedProgram = await factory.programs(
+                preexistingProgram.address
+              );
+              expect(updatedProgram.name).to.eq(program.name);
+              expect(updatedProgram.stakingTokenUrl).to.eq(
+                "https://new.domain"
+              );
+              expect(updatedProgram.template).to.eq(program.template);
+              expect(updatedProgram.startTime).to.eq(program.startTime);
+            });
+          });
+          describe("AND update the name and the url", async () => {
+            beforeEach(async () => {
+              await run("update-program", {
+                program: preexistingProgram.address,
+                newName: "a brave new name",
+                newUrl: "https://new.domain",
+              });
+            });
+            it("THEN only the name and the url are changed", async () => {
+              const updatedProgram = await factory.programs(
+                preexistingProgram.address
+              );
+              expect(updatedProgram.name).to.eq("a brave new name");
+              expect(updatedProgram.stakingTokenUrl).to.eq(
+                "https://new.domain"
+              );
+              expect(updatedProgram.template).to.eq(program.template);
+              expect(updatedProgram.startTime).to.eq(program.startTime);
+            });
+          });
+          describe("BUT updates nothing", async () => {
+            it("THEN it throws", async () => {
+              await expect(
+                run("update-program", { program: preexistingProgram.address })
+              ).to.be.rejectedWith("pass --newName and/or --newUrl");
+            });
+          });
         });
       });
 
